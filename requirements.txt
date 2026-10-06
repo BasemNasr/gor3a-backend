@@ -1,0 +1,2 @@
+# Prescription AI Requirements
+-r backend/requirements.txt

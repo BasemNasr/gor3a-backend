@@ -1,0 +1,34 @@
+{
+  "prescription": {
+    "patient_age": "58 years",
+    "patient_weight_kg": 82.0
+  },
+  "medications": [
+    {
+      "raw_text": "Losec 20mg cap 1 cap daily ac x 14d",
+      "name": "Losec",
+      "active_ingredient": "Omeprazole",
+      "strength": "20mg",
+      "dose": "1 capsule",
+      "frequency": "once daily",
+      "duration": "14 days",
+      "instructions": "before breakfast (ac)",
+      "confidence": 0.93,
+      "status": "identified"
+    },
+    {
+      "raw_text": "Gaviscon susp 10 ml tid pc",
+      "name": "Gaviscon",
+      "active_ingredient": "Sodium alginate + Sodium bicarbonate",
+      "strength": null,
+      "dose": "10 ml",
+      "frequency": "3 times daily (tid)",
+      "duration": null,
+      "instructions": "after meals (pc)",
+      "confidence": 0.91,
+      "status": "identified"
+    }
+  ],
+  "uncertain_items": [],
+  "overall_confidence": 0.92
+}

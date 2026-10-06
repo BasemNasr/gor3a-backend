@@ -1,0 +1,89 @@
+{
+  "analysis": {
+    "prescription": {
+      "patient_age": "58 years",
+      "patient_weight_kg": 82.0
+    },
+    "medications": [
+      {
+        "raw_text": "Losec 20mg cap 1 cap daily ac x 14d",
+        "name": "Losec",
+        "active_ingredient": "Omeprazole Magnesium",
+        "strength": "20mg",
+        "dose": "1 capsule",
+        "frequency": "once daily",
+        "duration": "14 days",
+        "instructions": "before breakfast (ac)",
+        "confidence": 0.98,
+        "status": "identified",
+        "candidates": [
+          {
+            "drug_id": "EDA-00501",
+            "name": "Losec",
+            "commercial_name_ar": "لوسك",
+            "generic_name": "Omeprazole",
+            "dosage_form": "Capsule",
+            "strength": "20mg",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": "Look-Alike / Sound-Alike (LASA) Warning: High clinical risk of confusion with 'Lasix'. Carefully inspect prescription image before confirming."
+          }
+        ],
+        "eda_id": "EDA-00501",
+        "lasa_warning": "Look-Alike / Sound-Alike (LASA) Warning: High clinical risk of confusion with 'Lasix'. Carefully inspect prescription image before confirming.",
+        "pipeline_version": "v2"
+      },
+      {
+        "raw_text": "Gaviscon susp 10 ml tid pc",
+        "name": "Gaviscon",
+        "active_ingredient": "Sodium Alginate, Sodium Bicarbonate, Calcium Carbonate",
+        "strength": null,
+        "dose": "10 ml",
+        "frequency": "3 times daily (tid)",
+        "duration": null,
+        "instructions": "after meals (pc)",
+        "confidence": 0.98,
+        "status": "identified",
+        "candidates": [
+          {
+            "drug_id": "EDA-00108",
+            "name": "Gaviscon",
+            "commercial_name_ar": "جافيسكون",
+            "generic_name": "Sodium Alginate + Sodium Bicarbonate",
+            "dosage_form": "Suspension",
+            "strength": "Standard Liquid",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          }
+        ],
+        "eda_id": "EDA-00108",
+        "lasa_warning": null,
+        "pipeline_version": "v2"
+      }
+    ],
+    "uncertain_items": [
+      "[Losec 20mg cap 1 cap...] Look-Alike / Sound-Alike (LASA) Warning: High clinical risk of confusion with 'Lasix'. Carefully inspect prescription image before confirming."
+    ],
+    "overall_confidence": 0.98
+  },
+  "metadata": {
+    "provider": "mock",
+    "model": "mock-conservative-v1",
+    "processing_time_ms": 152,
+    "cost_estimate": null,
+    "usage": {
+      "prompt_tokens": 1200,
+      "completion_tokens": 280,
+      "total_tokens": 1480
+    },
+    "image_info": {
+      "filename": "rx_003_image.jpg",
+      "width": 900,
+      "height": 1200,
+      "format": "JPEG",
+      "size_bytes": 69224
+    },
+    "raw_model_output": "{\n  \"prescription\": {\n    \"patient_age\": \"58 years\",\n    \"patient_weight_kg\": 82.0\n  },\n  \"medications\": [\n    {\n      \"raw_text\": \"Losec 20mg cap 1 cap daily ac x 14d\",\n      \"name\": \"Losec\",\n      \"active_ingredient\": \"Omeprazole\",\n      \"strength\": \"20mg\",\n      \"dose\": \"1 capsule\",\n      \"frequency\": \"once daily\",\n      \"duration\": \"14 days\",\n      \"instructions\": \"before breakfast (ac)\",\n      \"confidence\": 0.93,\n      \"status\": \"identified\"\n    },\n    {\n      \"raw_text\": \"Gaviscon susp 10 ml tid pc\",\n      \"name\": \"Gaviscon\",\n      \"active_ingredient\": \"Sodium alginate\",\n      \"strength\": null,\n      \"dose\": \"10 ml\",\n      \"frequency\": \"3 times daily (tid)\",\n      \"duration\": null,\n      \"instructions\": \"after meals (pc)\",\n      \"confidence\": 0.91,\n      \"status\": \"identified\"\n    }\n  ],\n  \"uncertain_items\": [],\n  \"overall_confidence\": 0.92\n}"
+  }
+}

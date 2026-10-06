@@ -1,0 +1,163 @@
+{
+  "analysis": {
+    "prescription": {
+      "patient_age": "8 months",
+      "patient_weight_kg": 8.14
+    },
+    "medications": [
+      {
+        "raw_text": "Flagyl 125mg/5ml susp 3.5 ml tid x 5d",
+        "name": "Flagyl",
+        "active_ingredient": "Metronidazole",
+        "strength": "125mg/5ml",
+        "dose": "3.5 ml",
+        "frequency": "tid (every 8 hours)",
+        "duration": "5 days",
+        "instructions": "after feeding",
+        "confidence": 0.98,
+        "status": "identified",
+        "candidates": [
+          {
+            "drug_id": "EDA-00101",
+            "name": "Flagyl",
+            "commercial_name_ar": "فلاجيل",
+            "generic_name": "Metronidazole",
+            "dosage_form": "Suspension",
+            "strength": "125mg/5ml",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          },
+          {
+            "drug_id": "EDA-00102",
+            "name": "Flagyl",
+            "commercial_name_ar": "فلاجيل",
+            "generic_name": "Metronidazole",
+            "dosage_form": "Tablet",
+            "strength": "500mg",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          }
+        ],
+        "eda_id": "EDA-00101",
+        "lasa_warning": null,
+        "pipeline_version": "v2"
+      },
+      {
+        "raw_text": "Cetal drops 100mg/ml 10 drops prn",
+        "name": "Cetal",
+        "active_ingredient": "Paracetamol",
+        "strength": "100mg/ml",
+        "dose": "10 drops",
+        "frequency": "upon fever / prn (عند اللزوم)",
+        "duration": null,
+        "instructions": "for temperature above 38.5C",
+        "confidence": 0.98,
+        "status": "identified",
+        "candidates": [
+          {
+            "drug_id": "EDA-00105",
+            "name": "Cetal",
+            "commercial_name_ar": "سيتال",
+            "generic_name": "Paracetamol",
+            "dosage_form": "Oral Drops",
+            "strength": "100mg/ml",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          },
+          {
+            "drug_id": "EDA-00106",
+            "name": "Cetal",
+            "commercial_name_ar": "سيتال",
+            "generic_name": "Paracetamol",
+            "dosage_form": "Syrup",
+            "strength": "250mg/5ml",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          },
+          {
+            "drug_id": "EDA-00107",
+            "name": "Cetal",
+            "commercial_name_ar": "سيتال",
+            "generic_name": "Paracetamol",
+            "dosage_form": "Tablet",
+            "strength": "500mg",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          }
+        ],
+        "eda_id": "EDA-00105",
+        "lasa_warning": null,
+        "pipeline_version": "v2"
+      },
+      {
+        "raw_text": "Antinal susp 1 spoon [blurred]",
+        "name": "Antinal",
+        "active_ingredient": "Nifuroxazide",
+        "strength": null,
+        "dose": "1 spoon",
+        "frequency": null,
+        "duration": null,
+        "instructions": null,
+        "confidence": 0.47,
+        "status": "uncertain",
+        "candidates": [
+          {
+            "drug_id": "EDA-00103",
+            "name": "Antinal",
+            "commercial_name_ar": "أنتينال",
+            "generic_name": "Nifuroxazide",
+            "dosage_form": "Suspension",
+            "strength": "220mg/5ml",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          },
+          {
+            "drug_id": "EDA-00104",
+            "name": "Antinal",
+            "commercial_name_ar": "أنتينال",
+            "generic_name": "Nifuroxazide",
+            "dosage_form": "Capsule",
+            "strength": "200mg",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          }
+        ],
+        "eda_id": null,
+        "lasa_warning": null,
+        "pipeline_version": "v2"
+      }
+    ],
+    "uncertain_items": [
+      "Medication #3 (Antinal) strength is obscured by ink blot",
+      "Medication #3 frequency handwriting is blurred; not inferred per clinical safety protocol",
+      "[Antinal susp 1 spoon...] Vision reading confidence (52%) is below clinical safety threshold (70%). Preserved as uncertain."
+    ],
+    "overall_confidence": 0.81
+  },
+  "metadata": {
+    "provider": "mock",
+    "model": "mock-conservative-v1",
+    "processing_time_ms": 152,
+    "cost_estimate": null,
+    "usage": {
+      "prompt_tokens": 1200,
+      "completion_tokens": 280,
+      "total_tokens": 1480
+    },
+    "image_info": {
+      "filename": "rx_001_image.jpg",
+      "width": 900,
+      "height": 1200,
+      "format": "JPEG",
+      "size_bytes": 74474
+    },
+    "raw_model_output": "{\n  \"prescription\": {\n    \"patient_age\": \"8 months\",\n    \"patient_weight_kg\": 8.14\n  },\n  \"medications\": [\n    {\n      \"raw_text\": \"Flagyl 125mg/5ml susp 3.5 ml tid x 5d\",\n      \"name\": \"Flagyl\",\n      \"active_ingredient\": \"Metronidazole\",\n      \"strength\": \"125mg/5ml\",\n      \"dose\": \"3.5 ml\",\n      \"frequency\": \"tid (every 8 hours)\",\n      \"duration\": \"5 days\",\n      \"instructions\": \"after feeding\",\n      \"confidence\": 0.94,\n      \"status\": \"identified\"\n    },\n    {\n      \"raw_text\": \"Cetal drops 100mg/ml 10 drops prn\",\n      \"name\": \"Cetal\",\n      \"active_ingredient\": \"Paracetamol\",\n      \"strength\": \"100mg/ml\",\n      \"dose\": \"10 drops\",\n      \"frequency\": \"upon fever / prn (عند اللزوم)\",\n      \"duration\": null,\n      \"instructions\": \"for temperature above 38.5C\",\n      \"confidence\": 0.89,\n      \"status\": \"identified\"\n    },\n    {\n      \"raw_text\": \"Antinal susp 1 spoon [blurred]\",\n      \"name\": \"Antinal\",\n      \"active_ingredient\": \"Nifuroxazide\",\n      \"strength\": null,\n      \"dose\": \"1 spoon\",\n      \"frequency\": null,\n      \"duration\": null,\n      \"instructions\": null,\n      \"confidence\": 0.52,\n      \"status\": \"uncertain\"\n    }\n  ],\n  \"uncertain_items\": [\n    \"Medication #3 (Antinal) strength is obscured by ink blot\",\n    \"Medication #3 frequency handwriting is blurred; not inferred per clinical safety protocol\"\n  ],\n  \"overall_confidence\": 0.81\n}"
+  }
+}

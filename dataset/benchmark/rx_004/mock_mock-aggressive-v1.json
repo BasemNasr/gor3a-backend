@@ -1,0 +1,55 @@
+{
+  "analysis": {
+    "prescription": {
+      "patient_age": "45 years",
+      "patient_weight_kg": null
+    },
+    "medications": [
+      {
+        "raw_text": "Cataflam 50mg tab قرص بعد الأكل عند اللزوم",
+        "name": "Cataflam",
+        "active_ingredient": "Diclofenac potassium",
+        "strength": "50mg",
+        "dose": "قرص واحد",
+        "frequency": "عند اللزوم",
+        "duration": null,
+        "instructions": "بعد الأكل",
+        "confidence": 0.92,
+        "status": "identified"
+      },
+      {
+        "raw_text": "Brufen 400mg tab قرص كل ٨ ساعات بعد الأكل لمدة ٥ أيام",
+        "name": "Brufen",
+        "active_ingredient": "Ibuprofen",
+        "strength": "400mg",
+        "dose": "قرص واحد",
+        "frequency": "كل ٨ ساعات",
+        "duration": "لمدة ٥ أيام",
+        "instructions": "بعد الأكل",
+        "confidence": 0.9,
+        "status": "identified"
+      }
+    ],
+    "uncertain_items": [],
+    "overall_confidence": 0.91
+  },
+  "metadata": {
+    "provider": "mock",
+    "model": "mock-aggressive-v1",
+    "processing_time_ms": 155,
+    "cost_estimate": null,
+    "usage": {
+      "prompt_tokens": 1200,
+      "completion_tokens": 280,
+      "total_tokens": 1480
+    },
+    "image_info": {
+      "filename": "rx_004_image.jpg",
+      "width": 900,
+      "height": 1200,
+      "format": "JPEG",
+      "size_bytes": 70570
+    },
+    "raw_model_output": "{\n  \"prescription\": {\n    \"patient_age\": \"45 years\",\n    \"patient_weight_kg\": null\n  },\n  \"medications\": [\n    {\n      \"raw_text\": \"Cataflam 50mg tab قرص بعد الأكل عند اللزوم\",\n      \"name\": \"Cataflam\",\n      \"active_ingredient\": \"Diclofenac potassium\",\n      \"strength\": \"50mg\",\n      \"dose\": \"قرص واحد\",\n      \"frequency\": \"عند اللزوم\",\n      \"duration\": null,\n      \"instructions\": \"بعد الأكل\",\n      \"confidence\": 0.92,\n      \"status\": \"identified\"\n    },\n    {\n      \"raw_text\": \"Brufen 400mg tab قرص كل ٨ ساعات بعد الأكل لمدة ٥ أيام\",\n      \"name\": \"Brufen\",\n      \"active_ingredient\": \"Ibuprofen\",\n      \"strength\": \"400mg\",\n      \"dose\": \"قرص واحد\",\n      \"frequency\": \"كل ٨ ساعات\",\n      \"duration\": \"لمدة ٥ أيام\",\n      \"instructions\": \"بعد الأكل\",\n      \"confidence\": 0.9,\n      \"status\": \"identified\"\n    }\n  ],\n  \"uncertain_items\": [],\n  \"overall_confidence\": 0.91\n}"
+  }
+}

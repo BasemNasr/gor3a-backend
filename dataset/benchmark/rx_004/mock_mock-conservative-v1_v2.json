@@ -1,0 +1,89 @@
+{
+  "analysis": {
+    "prescription": {
+      "patient_age": "45 years",
+      "patient_weight_kg": null
+    },
+    "medications": [
+      {
+        "raw_text": "Cataflam 50mg tab قرص بعد الأكل عند اللزوم",
+        "name": "Cataflam",
+        "active_ingredient": "Diclofenac Potassium",
+        "strength": "50mg",
+        "dose": "قرص واحد",
+        "frequency": "عند اللزوم",
+        "duration": null,
+        "instructions": "بعد الأكل",
+        "confidence": 0.98,
+        "status": "identified",
+        "candidates": [
+          {
+            "drug_id": "EDA-00301",
+            "name": "Cataflam",
+            "commercial_name_ar": "كتافلام",
+            "generic_name": "Diclofenac Potassium",
+            "dosage_form": "Tablet",
+            "strength": "50mg",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": "Look-Alike / Sound-Alike (LASA) Warning: High clinical risk of confusion with 'Capoten'. Carefully inspect prescription image before confirming."
+          }
+        ],
+        "eda_id": "EDA-00301",
+        "lasa_warning": "Look-Alike / Sound-Alike (LASA) Warning: High clinical risk of confusion with 'Capoten'. Carefully inspect prescription image before confirming.",
+        "pipeline_version": "v2"
+      },
+      {
+        "raw_text": "Brufen 400mg tab قرص كل ٨ ساعات بعد الأكل لمدة ٥ أيام",
+        "name": "Brufen",
+        "active_ingredient": "Ibuprofen",
+        "strength": "400mg",
+        "dose": "قرص واحد",
+        "frequency": "كل ٨ ساعات",
+        "duration": "لمدة ٥ أيام",
+        "instructions": "بعد الأكل",
+        "confidence": 0.98,
+        "status": "identified",
+        "candidates": [
+          {
+            "drug_id": "EDA-00302",
+            "name": "Brufen",
+            "commercial_name_ar": "بروفين",
+            "generic_name": "Ibuprofen",
+            "dosage_form": "Tablet",
+            "strength": "400mg",
+            "score": 1.0,
+            "match_type": "exact",
+            "warning": null
+          }
+        ],
+        "eda_id": "EDA-00302",
+        "lasa_warning": null,
+        "pipeline_version": "v2"
+      }
+    ],
+    "uncertain_items": [
+      "[Cataflam 50mg tab قر...] Look-Alike / Sound-Alike (LASA) Warning: High clinical risk of confusion with 'Capoten'. Carefully inspect prescription image before confirming."
+    ],
+    "overall_confidence": 0.98
+  },
+  "metadata": {
+    "provider": "mock",
+    "model": "mock-conservative-v1",
+    "processing_time_ms": 150,
+    "cost_estimate": null,
+    "usage": {
+      "prompt_tokens": 1200,
+      "completion_tokens": 280,
+      "total_tokens": 1480
+    },
+    "image_info": {
+      "filename": "rx_004_image.jpg",
+      "width": 900,
+      "height": 1200,
+      "format": "JPEG",
+      "size_bytes": 70570
+    },
+    "raw_model_output": "{\n  \"prescription\": {\n    \"patient_age\": \"45 years\",\n    \"patient_weight_kg\": null\n  },\n  \"medications\": [\n    {\n      \"raw_text\": \"Cataflam 50mg tab قرص بعد الأكل عند اللزوم\",\n      \"name\": \"Cataflam\",\n      \"active_ingredient\": \"Diclofenac potassium\",\n      \"strength\": \"50mg\",\n      \"dose\": \"قرص واحد\",\n      \"frequency\": \"عند اللزوم\",\n      \"duration\": null,\n      \"instructions\": \"بعد الأكل\",\n      \"confidence\": 0.92,\n      \"status\": \"identified\"\n    },\n    {\n      \"raw_text\": \"Brufen 400mg tab قرص كل ٨ ساعات بعد الأكل لمدة ٥ أيام\",\n      \"name\": \"Brufen\",\n      \"active_ingredient\": \"Ibuprofen\",\n      \"strength\": \"400mg\",\n      \"dose\": \"قرص واحد\",\n      \"frequency\": \"كل ٨ ساعات\",\n      \"duration\": \"لمدة ٥ أيام\",\n      \"instructions\": \"بعد الأكل\",\n      \"confidence\": 0.9,\n      \"status\": \"identified\"\n    }\n  ],\n  \"uncertain_items\": [],\n  \"overall_confidence\": 0.91\n}"
+  }
+}

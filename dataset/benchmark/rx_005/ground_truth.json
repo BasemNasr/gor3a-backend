@@ -1,0 +1,36 @@
+{
+  "prescription": {
+    "patient_age": null,
+    "patient_weight_kg": null
+  },
+  "medications": [
+    {
+      "raw_text": "~~~~~~~ [illegible scribble]",
+      "name": null,
+      "active_ingredient": null,
+      "strength": null,
+      "dose": null,
+      "frequency": null,
+      "duration": null,
+      "instructions": null,
+      "confidence": 0.2,
+      "status": "unreadable"
+    },
+    {
+      "raw_text": "Panadol 500mg tab 2 tabs q6h prn for pain",
+      "name": "Panadol",
+      "active_ingredient": "Paracetamol",
+      "strength": "500mg",
+      "dose": "2 tablets",
+      "frequency": "every 6 hours (q6h)",
+      "duration": null,
+      "instructions": "for pain / prn",
+      "confidence": 0.88,
+      "status": "identified"
+    }
+  ],
+  "uncertain_items": [
+    "Medication line #1 is completely illegible due to severe ink smearing and scribble; preserved as unreadable per safety rules"
+  ],
+  "overall_confidence": 0.54
+}

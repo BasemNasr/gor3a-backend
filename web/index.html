@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prescription AI — Egyptian Medical Prescriptions</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">℞</div>
+        <div class="brand-text">
+          <h1>Prescription AI Lab</h1>
+          <span class="badge phase-badge" id="phaseBadge">PHASE 1 & 2 — LAB & BENCHMARK</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button type="button" class="tab-btn active" id="tabLabBtn">🔬 Single Prescription Lab</button>
+        <button type="button" class="tab-btn" id="tabBenchmarkBtn">📊 Model Benchmark Suite</button>
+      </nav>
+
+      <div class="safety-indicator">
+        <span class="safety-dot"></span>
+        <span>Safety Mandate: 0% Critical Errors</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================================= -->
+  <!-- TAB 1: Single Prescription Lab (Phase 1)                                -->
+  <!-- ======================================================================= -->
+  <main class="main-layout" id="labView">
+    
+    <!-- Left Column: Controls & Input -->
+    <section class="control-panel">
+      <div class="card">
+        <h2 class="card-title">
+          <span class="icon">📷</span>
+          1. Upload Prescription
+        </h2>
+        
+        <!-- Upload Box -->
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="file-input">
+          <div class="dropzone-content" id="dropzoneContent">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <p class="dropzone-text"><strong>Click to upload</strong> or drag & drop</p>
+            <p class="dropzone-sub">Egyptian handwritten prescription (JPEG, PNG, WEBP)</p>
+          </div>
+        </div>
+
+        <!-- Quick Sample Button -->
+        <div class="sample-action-row">
+          <button type="button" id="loadSampleBtn" class="btn btn-secondary btn-sm">
+            🧪 Load Sample Egyptian Prescription
+          </button>
+        </div>
+
+        <!-- Image Preview Container -->
+        <div class="preview-wrapper hidden" id="previewWrapper">
+          <div class="preview-header">
+            <span class="preview-title" id="previewFilename">prescription.jpg</span>
+            <span class="preview-meta" id="previewMeta">1200 x 800 • 450 KB</span>
+          </div>
+          <div class="preview-box">
+            <img id="prescriptionPreview" src="" alt="Prescription Preview">
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Provider & Model Configuration -->
+      <div class="card">
+        <h2 class="card-title">
+          <span class="icon">⚙️</span>
+          2. Model Selection
+        </h2>
+
+        <div class="form-group">
+          <label for="providerSelect">Vision AI Provider:</label>
+          <select id="providerSelect" class="form-control">
+            <option value="">Loading providers...</option>
+          </select>
+          <div id="providerStatusHint" class="status-hint"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="modelSelect">Vision Model:</label>
+          <select id="modelSelect" class="form-control">
+            <option value="">Select model...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="pipelineSelect">AI Pipeline Architecture:</label>
+          <select id="pipelineSelect" class="form-control">
+            <option value="v2" selected>Pipeline V2: Vision + Egyptian Drug Database (Recommended)</option>
+            <option value="v1">Pipeline V1: Raw Multimodal Vision Only</option>
+          </select>
+          <div class="status-hint configured">● V2 cross-references and normalizes against official Egyptian Drug Authority (EDA) records</div>
+        </div>
+
+        <!-- Action Button -->
+        <button id="analyzeBtn" class="btn btn-primary btn-block" disabled>
+          <span class="btn-spinner hidden" id="btnSpinner"></span>
+          <span id="btnText">Analyze Prescription</span>
+        </button>
+
+        <div id="errorAlert" class="alert alert-error hidden"></div>
+      </div>
+
+      <!-- Safety Rules Card -->
+      <div class="card safety-card">
+        <h3 class="safety-title">⚠️ Clinical Safety Protocol</h3>
+        <ul class="safety-list">
+          <li><strong>Zero Hallucination:</strong> If handwriting is illegible, value is returned as <code>null</code>.</li>
+          <li><strong>No Guessing:</strong> Ambiguous doses or strengths are NOT inferred from clinical context.</li>
+          <li><strong>Preserve Uncertainty:</strong> Unreadable items are flagged for human pharmacist review.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Right Column: Results & Analysis -->
+    <section class="results-panel">
+      
+      <!-- Placeholder State -->
+      <div class="card empty-state" id="emptyState">
+        <div class="empty-icon">📋</div>
+        <h3>No Prescription Analyzed Yet</h3>
+        <p>Upload a handwritten prescription image on the left, select your vision model, and click <strong>Analyze Prescription</strong>.</p>
+        <div class="sample-hint">Tip: Click <em>Load Sample Egyptian Prescription</em> to test the lab immediately.</div>
+      </div>
+
+      <!-- Active Loading State -->
+      <div class="card loading-state hidden" id="loadingState">
+        <div class="spinner-large"></div>
+        <h3>Analyzing Egyptian Handwritten Prescription...</h3>
+        <p>Applying specialized medical OCR extraction and strict clinical non-hallucination verification.</p>
+        <div class="timer-badge">Elapsed: <span id="elapsedSeconds">0.0</span>s</div>
+      </div>
+
+      <!-- Analysis Results View -->
+      <div class="results-content hidden" id="resultsContent">
+        
+        <!-- Summary Stats Ribbon -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Overall Confidence</div>
+            <div class="stat-value" id="statConfidence">--</div>
+            <div class="confidence-bar-bg">
+              <div class="confidence-bar-fill" id="statConfidenceBar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Medications Found</div>
+            <div class="stat-value" id="statMedCount">0</div>
+            <div class="stat-sub" id="statMedBreakdown">0 identified • 0 uncertain</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Processing Time</div>
+            <div class="stat-value" id="statLatency">-- ms</div>
+            <div class="stat-sub" id="statModelUsed">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Estimated Cost</div>
+            <div class="stat-value" id="statCost">$0.0000</div>
+            <div class="stat-sub" id="statTokens">-- tokens</div>
+          </div>
+        </div>
+
+        <!-- Uncertain Items Banner (If Any) -->
+        <div class="card alert-card-uncertain hidden" id="uncertainBanner">
+          <div class="uncertain-header">
+            <span class="uncertain-icon">⚠️</span>
+            <h4>Uncertain / Unreadable Items Detected</h4>
+          </div>
+          <p class="uncertain-desc">The AI detected ambiguous or degraded handwriting. Values were preserved as <code>null</code> rather than guessing:</p>
+          <ul class="uncertain-items-list" id="uncertainItemsList"></ul>
+        </div>
+
+        <!-- Patient Demographics Card -->
+        <div class="card patient-card">
+          <h3 class="section-title">
+            <span>👤</span> Patient Information
+          </h3>
+          <div class="patient-grid">
+            <div class="patient-cell">
+              <span class="patient-label">Patient Age</span>
+              <span class="patient-val" id="patientAge">Not Specified</span>
+            </div>
+            <div class="patient-cell">
+              <span class="patient-label">Patient Weight</span>
+              <span class="patient-val" id="patientWeight">Not Specified</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Extracted Medications List -->
+        <div class="card medications-card">
+          <h3 class="section-title">
+            <span>💊</span> Extracted Medications (<span id="medListCount">0</span>)
+          </h3>
+          <div class="medications-list" id="medicationsList">
+            <!-- Dynamic Medication Cards injected here -->
+          </div>
+        </div>
+
+        <!-- Raw JSON Inspector -->
+        <div class="card json-card">
+          <div class="json-header">
+            <h3 class="section-title">
+              <span>{ }</span> Raw Structured JSON Output
+            </h3>
+            <button class="btn btn-secondary btn-xs" id="copyJsonBtn">Copy JSON</button>
+          </div>
+          <pre class="json-viewer"><code id="rawJsonCode"></code></pre>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- TAB 2: Model Benchmark Suite (Phase 2)                                 -->
+  <!-- ======================================================================= -->
+  <section class="benchmark-layout hidden" id="benchmarkView">
+    <div class="benchmark-container">
+      
+      <!-- Benchmark Action Header -->
+      <div class="card benchmark-header-card">
+        <div class="bench-title-row">
+          <div>
+            <h2>Model Benchmark Suite — Egyptian Prescriptions</h2>
+            <p class="text-muted">Compare OpenAI, Gemini, Claude, and baseline models on standardized Egyptian clinical cases with verified ground truth.</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="runBenchmarkBtn">
+            <span class="btn-spinner hidden" id="benchSpinner"></span>
+            <span id="benchBtnText">▶ Run Multi-Model Benchmark</span>
+          </button>
+        </div>
+
+        <div class="benchmark-model-selector">
+          <span class="selector-lbl">Models Included in Evaluation:</span>
+            <label class="checkbox-label">
+              <input type="checkbox" name="benchModel" value="mock:mock-conservative-v1:v2" checked>
+              <span>Mock Conservative [Pipeline V2 + EDA]</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="benchModel" value="mock:mock-conservative-v1:v1" checked>
+              <span>Mock Conservative [Pipeline V1 Vision Only]</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="benchModel" value="mock:mock-aggressive-v1:v1" checked>
+              <span>Mock Aggressive [Pipeline V1 Baseline]</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="benchModel" value="gemini:gemini-2.5-flash:v2">
+              <span>Gemini 2.5 Flash [Pipeline V2]</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="benchModel" value="openai:gpt-4o:v2">
+              <span>OpenAI GPT-4o [Pipeline V2]</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="benchModel" value="claude:claude-3-5-sonnet-20241022:v2">
+              <span>Claude 3.5 Sonnet [Pipeline V2]</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparative Results Matrix -->
+      <div class="card benchmark-matrix-card" id="benchMatrixCard">
+        <h3 class="section-title">
+          <span>🏆</span> Comparative Model Ranking & Safety Matrix
+        </h3>
+        <div class="table-responsive">
+          <table class="benchmark-table" id="benchmarkTable">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Med Name Acc.</th>
+                <th>Critical Error Rate 🛡️</th>
+                <th>Uncertainty Acc.</th>
+                <th>Strength Acc.</th>
+                <th>Dose Acc.</th>
+                <th>Freq. Acc.</th>
+                <th>Latency (ms)</th>
+                <th>Cost / Rx</th>
+              </tr>
+            </thead>
+            <tbody id="benchmarkTableBody">
+              <tr>
+                <td colspan="9" class="text-center">Click <strong>Run Multi-Model Benchmark</strong> to evaluate models.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Benchmark Cases Browser -->
+      <div class="card benchmark-cases-card">
+        <h3 class="section-title">
+          <span>📁</span> Benchmark Dataset Cases (<span id="benchCaseCount">0</span>)
+        </h3>
+        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.85rem;">Standardized Egyptian prescription test cases covering pediatric dosing, English brand handwriting, Egyptian Arabic instructions, and high-risk look-alike sound-alike (LASA) safety traps.</p>
+        <div class="cases-grid" id="benchmarkCasesGrid">
+          <!-- Test cases injected dynamically -->
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>Prescription AI — Egyptian Medical Prescriptions. Phase 1 Lab & Phase 2 Model Benchmark.</p>
+      <p class="disclaimer">Clinical Disclaimer: This system is strictly an OCR information extraction and benchmarking tool. It does not provide medical diagnosis or therapeutic validation.</p>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
