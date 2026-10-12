@@ -1,8 +1,8 @@
 ---
 title: Gor3a Backend Api
 emoji: 💊
-colorFrom: teal
-colorTo: green
+colorFrom: green
+colorTo: blue
 sdk: gradio
 app_file: app.py
 pinned: false
