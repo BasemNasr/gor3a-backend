@@ -3,8 +3,11 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, List, Optional
-from openai import AsyncOpenAI
+try:
+    from openai import AsyncOpenAI
+except ImportError:
+    AsyncOpenAI = None
+
 
 from ..config import settings
 from ..models.prescription import TokenUsage
@@ -54,6 +57,8 @@ class OpenAIProvider(VisionProvider):
         return "gpt-4o"
 
     def is_configured(self) -> bool:
+        if AsyncOpenAI is None:
+            return False
         return bool(self._api_key and self._api_key.strip())
 
     async def analyze(

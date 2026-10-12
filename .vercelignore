@@ -1,0 +1,41 @@
+# Version control & OS metadata
+.git
+.gitignore
+.DS_Store
+.pytest_cache
+__pycache__
+*.pyc
+
+# Local environment & secret files
+.venv
+.env
+.env.example
+
+# Heavy Datasets & Training files (Keep only dataset/drugs/ for EDA database)
+dataset/training_exports
+dataset/bilingual_prescriptions
+dataset/egyptian_100_prescriptions
+dataset/new Prescriptions images
+dataset/last
+dataset/benchmark
+dataset/raw
+dataset/ground_truth
+backend/tests
+tests
+notebooks
+models
+
+# Mobile application directory & raw media
+Gor3a App
+Gor3a.zip
+*.png
+*.jpg
+*.jpeg
+*.webp
+!web/**
+
+# Container & alternate deploy configs
+Dockerfile
+.dockerignore
+render.yaml
+pytest.ini

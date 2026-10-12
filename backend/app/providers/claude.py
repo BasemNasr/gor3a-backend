@@ -3,8 +3,11 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, List, Optional
-from anthropic import AsyncAnthropic
+try:
+    from anthropic import AsyncAnthropic
+except ImportError:
+    AsyncAnthropic = None
+
 
 from ..config import settings
 from ..models.prescription import TokenUsage
@@ -54,6 +57,8 @@ class ClaudeProvider(VisionProvider):
         return "claude-3-5-sonnet-20241022"
 
     def is_configured(self) -> bool:
+        if AsyncAnthropic is None:
+            return False
         return bool(self._api_key and self._api_key.strip())
 
     async def analyze(

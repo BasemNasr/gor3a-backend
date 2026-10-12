@@ -3,8 +3,13 @@ import logging
 import re
 import time
 from typing import Any, Dict, List, Optional
-from google import genai
-from google.genai import types
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    genai = None
+    types = None
+
 
 from ..config import settings
 from ..models.prescription import TokenUsage
@@ -27,8 +32,8 @@ class GeminiProvider(VisionProvider):
 
     def __init__(self, api_key: Optional[str] = None):
         self._api_key = api_key or settings.gemini_api_key
-        self._client: Optional[genai.Client] = None
-        if self._api_key:
+        self._client = None
+        if self._api_key and genai:
             try:
                 self._client = genai.Client(api_key=self._api_key)
             except Exception as e:
@@ -74,8 +79,11 @@ class GeminiProvider(VisionProvider):
 
         model_name = model or self.default_model
 
-        if not self._client:
-            self._client = genai.Client(api_key=self._api_key)
+        if not self._client and genai:
+            try:
+                self._client = genai.Client(api_key=self._api_key)
+            except Exception:
+                pass
 
         import base64
         import httpx
