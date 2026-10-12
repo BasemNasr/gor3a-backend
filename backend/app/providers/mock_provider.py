@@ -236,10 +236,10 @@ class MockProvider(VisionProvider):
 
         model_name = model or self.default_model
 
-        # Detect case by image size or default to rx_001
+        # Detect case by prompt context or default to rx_001
         case_key = "rx_001"
         for k in MOCK_CASE_RESPONSES:
-            if k in prompt:
+            if k in prompt or f"test_{k[3:]}" in prompt:
                 case_key = k
                 break
 

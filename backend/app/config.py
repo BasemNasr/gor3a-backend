@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
     anthropic_api_key: Optional[str] = Field(default=None, alias="ANTHROPIC_API_KEY")
 
+    # Local Open-Source VLM (Ollama / vLLM / Local Server)
+    local_vlm_url: str = Field(default="http://localhost:11434/v1", alias="LOCAL_VLM_URL")
+    local_vlm_api_key: str = Field(default="ollama", alias="LOCAL_VLM_API_KEY")
+    local_vlm_model: str = Field(default="gor3a-rx", alias="LOCAL_VLM_MODEL")
+
     # Defaults
     default_provider: str = Field(default="gemini", alias="DEFAULT_PROVIDER")
     default_model: str = Field(default="gemini-2.5-flash", alias="DEFAULT_MODEL")

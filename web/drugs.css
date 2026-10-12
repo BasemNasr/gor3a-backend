@@ -1,0 +1,1305 @@
+/* ==========================================================================
+   EDA Drug Database Web Page Styles (drugs.css)
+   Egyptian Medical Prescriptions & 25,098 Medicines Search
+   ========================================================================== */
+
+/* Layout & Typography */
+.eda-body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+}
+
+.eda-icon {
+  background: linear-gradient(135deg, #10b981, #06b6d4) !important;
+}
+
+.tab-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Advisory Banner */
+.eda-advisory-banner {
+  background: linear-gradient(90deg, #064e3b, #0f172a);
+  color: #ecfdf5;
+  border-bottom: 1px solid #059669;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.85rem;
+}
+
+.eda-advisory-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.advisory-pill {
+  background: #10b981;
+  color: #064e3b;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-family: 'Cairo', sans-serif;
+}
+
+.advisory-text {
+  line-height: 1.4;
+  font-family: 'Cairo', 'Inter', sans-serif;
+  font-size: 0.825rem;
+}
+
+.advisory-text strong {
+  color: #a7f3d0;
+}
+
+/* Main Container */
+.eda-main-container {
+  max-width: 1440px;
+  margin: 1.5rem auto;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+/* Stats Bar */
+.eda-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.eda-stat-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.eda-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eda-stat-val {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0.2rem 0;
+  font-feature-settings: "tnum";
+}
+
+.eda-stat-sub {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+  font-family: 'Cairo', sans-serif;
+}
+
+/* Search Hero Card */
+.eda-search-hero {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.search-icon-box {
+  position: absolute;
+  left: 1rem;
+  font-size: 1.2rem;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.drug-search-input {
+  width: 100%;
+  padding: 0.85rem 3rem 0.85rem 3rem;
+  font-size: 1.05rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+  font-family: 'Cairo', 'Inter', sans-serif;
+}
+
+.drug-search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 180px;
+  background: #e2e8f0;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: background 0.15s;
+}
+
+.clear-search-btn:hover {
+  background: #cbd5e1;
+  color: var(--text-main);
+}
+
+.search-submit-btn {
+  flex-shrink: 0;
+  padding: 0.85rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Quick Search Chips */
+.quick-chips-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.chips-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.chips-list {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.quick-chip {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Cairo', 'Inter', sans-serif;
+}
+
+.quick-chip:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+/* Filter Controls Row */
+.filter-controls-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.filter-item label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.form-control-sm {
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-main);
+}
+
+.form-control-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.filter-action-item {
+  justify-content: flex-end;
+}
+
+/* Results Header Bar */
+.results-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.results-count-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.results-count-wrapper h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.results-counter-pill {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.results-view-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Drugs Grid */
+.drugs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.15rem;
+  margin-bottom: 2rem;
+}
+
+/* Drug Card */
+.drug-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.drug-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.drug-card-top {
+  margin-bottom: 0.75rem;
+}
+
+.drug-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.card-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+.badge-form {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-route {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.badge-eda {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.drug-card-names {
+  margin-bottom: 0.65rem;
+}
+
+.drug-name-en {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+  margin-bottom: 0.2rem;
+}
+
+.drug-name-ar {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #065f46;
+  font-family: 'Cairo', sans-serif;
+  line-height: 1.3;
+  direction: rtl;
+  text-align: right;
+}
+
+.drug-scientific-row {
+  background: var(--bg-page);
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.65rem;
+  border: 1px solid #f1f5f9;
+}
+
+.drug-generic-lbl {
+  font-size: 0.675rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+}
+
+.drug-generic-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  font-family: 'JetBrains Mono', monospace;
+  word-break: break-word;
+}
+
+.drug-mfg-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.775rem;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+}
+
+.drug-mfg-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Pricing Card Box in Card */
+.drug-card-pricing {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.pricing-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.35rem;
+}
+
+.price-reg-lbl {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+}
+
+.price-reg-val {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.price-current-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.price-current-lbl {
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: #065f46;
+  font-family: 'Cairo', 'Inter', sans-serif;
+}
+
+.price-current-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #059669;
+  font-feature-settings: "tnum";
+}
+
+.strip-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding-top: 0.35rem;
+  border-top: 1px dashed var(--border);
+  font-family: 'Cairo', 'Inter', sans-serif;
+}
+
+.strip-price-badge {
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.drug-card-action {
+  width: 100%;
+}
+
+.view-details-btn {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  font-family: 'Cairo', 'Inter', sans-serif;
+}
+
+/* Pagination */
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 1.5rem 0 3rem 0;
+  flex-wrap: wrap;
+}
+
+.page-numbers-list {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.page-num-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.page-num-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--primary);
+}
+
+.page-num-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.page-indicator {
+  margin-left: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Drug Detail Modal
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.modal-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #f8fafc;
+}
+
+.modal-title-group {
+  flex: 1;
+}
+
+.modal-badge-row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+
+.badge-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-neutral {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.modal-commercial-en {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.25;
+  margin-bottom: 0.2rem;
+}
+
+.modal-commercial-ar {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #065f46;
+  font-family: 'Cairo', sans-serif;
+  line-height: 1.3;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+}
+
+.modal-close-btn:hover {
+  background: #e2e8f0;
+  color: var(--text-main);
+}
+
+.modal-body {
+  padding: 1.5rem 1.75rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+#modalDrugVisual {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 6px;
+  transition: opacity 0.25s ease-in-out;
+}
+
+#modalDrugVisual:not([src]), #modalDrugVisual[src=""], #modalDrugVisual.hidden {
+  opacity: 0;
+  visibility: hidden;
+  display: none;
+}
+
+/* Shimmer Loading Skeleton */
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-active {
+  background: linear-gradient(90deg, #f8fafc 25%, #e2e8f0 37%, #f8fafc 50%, #e2e8f0 63%, #f8fafc 75%) !important;
+  background-size: 200% 100% !important;
+  animation: shimmerWave 1.4s ease-in-out infinite !important;
+  color: transparent !important;
+  border-color: #cbd5e1 !important;
+  border-radius: 6px;
+  user-select: none;
+  pointer-events: none;
+  min-height: 1.25rem;
+}
+
+.shimmer-active * {
+  visibility: hidden !important;
+}
+
+.shimmer-image-placeholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #f8fafc 25%, #e2e8f0 37%, #f8fafc 50%, #e2e8f0 63%, #f8fafc 75%);
+  background-size: 200% 100%;
+  animation: shimmerWave 1.4s ease-in-out infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 5;
+  border-radius: 8px;
+  color: #64748b;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: opacity 0.2s ease-out;
+}
+
+.shimmer-spinner-icon {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(2, 132, 199, 0.2);
+  border-top-color: #0284c7;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Drug Modal Hero Showcase Card */
+.drug-modal-hero-card {
+  padding: 1.25rem;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.drug-modal-hero-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (max-width: 768px) {
+  .drug-modal-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.drug-modal-visual-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.drug-modal-visual-frame {
+  width: 100%;
+  height: 220px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  position: relative;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.02);
+}
+
+.drug-modal-visual-caption {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 0.4rem;
+  font-family: 'Cairo', sans-serif;
+}
+
+.drug-modal-clinical-col {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Cairo', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  justify-content: space-between;
+}
+
+.clinical-sec-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #0284c7;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 3px;
+}
+
+.clinical-sec-text {
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.likely-diagnosis-badge-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #065f46;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.detailed-uses-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  max-height: 135px;
+  overflow-y: auto;
+}
+
+.detailed-uses-title {
+  font-weight: 700;
+  color: #0369a1;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.detailed-uses-content {
+  color: #334155;
+  line-height: 1.6;
+  font-size: 0.85rem;
+  white-space: pre-line;
+}
+
+.source-link-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.altibbi-portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: #0284c7;
+  font-weight: 700;
+  text-decoration: none;
+  background: #e0f2fe;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.altibbi-portal-link:hover {
+  background: #bae6fd;
+}
+
+.precautions-brief {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Pricing Highlight Card in Modal */
+.pricing-highlight-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #86efac;
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.pricing-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.pricing-card-header h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #065f46;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pricing-card-header .ar-title {
+  font-family: 'Cairo', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #047857;
+  margin-left: 0.5rem;
+}
+
+.eda-law-badge {
+  background: #059669;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Cairo', sans-serif;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.pricing-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pricing-metric-box {
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-metric-box.highlight-box {
+  border-color: #059669;
+  box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.1);
+  background: #fafffc;
+}
+
+.metric-title {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.metric-ar-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #065f46;
+  font-family: 'Cairo', sans-serif;
+  margin-bottom: 0.35rem;
+}
+
+.metric-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-main);
+  font-feature-settings: "tnum";
+}
+
+.current-price-val {
+  color: #059669;
+  font-size: 1.55rem;
+  font-weight: 800;
+}
+
+.metric-range {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #047857;
+  margin-top: 0.15rem;
+}
+
+.strip-price-val {
+  color: #0284c7;
+}
+
+.metric-sub {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0369a1;
+  font-family: 'Cairo', sans-serif;
+}
+
+.metric-note {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-family: 'Cairo', 'Inter', sans-serif;
+}
+
+.pricing-regulatory-note {
+  display: flex;
+  gap: 0.65rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.pricing-regulatory-note .note-icon {
+  font-size: 1.1rem;
+}
+
+.pricing-regulatory-note p {
+  color: #065f46;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 600;
+}
+
+.pricing-regulatory-note .en-note {
+  color: #475569;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+/* Modal Specs Grid */
+.modal-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.spec-card {
+  padding: 1.15rem;
+}
+
+.spec-card-title {
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.spec-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--bg-subtle);
+}
+
+.spec-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.spec-label {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.15rem;
+}
+
+.spec-value {
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.code-font {
+  font-family: 'JetBrains Mono', monospace;
+  color: #1e293b;
+}
+
+.active-ingredients-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+
+.ingredient-chip {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ingredient-chip:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+/* Alternatives & Substitutes Section */
+.alternatives-section {
+  padding: 1.25rem;
+  border-color: var(--border);
+}
+
+.alternatives-header {
+  margin-bottom: 1rem;
+}
+
+.alternatives-header h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.alternatives-header .ar-title {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+.alternatives-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: 'Cairo', sans-serif;
+  line-height: 1.4;
+  margin-top: 0.25rem;
+}
+
+.alts-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+
+.alts-group-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: 'Cairo', sans-serif;
+}
+
+.alts-group-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'Cairo', sans-serif;
+}
+
+.alts-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.alt-mini-card {
+  background: var(--bg-page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.alt-mini-card:hover {
+  background: #ffffff;
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.alt-name-en {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.15rem;
+}
+
+.alt-name-ar {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #065f46;
+  font-family: 'Cairo', sans-serif;
+  direction: rtl;
+  text-align: right;
+  margin-bottom: 0.35rem;
+}
+
+.alt-mfg {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.alt-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.75rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border);
+}
+
+.alt-base-price {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-size: 0.7rem;
+}
+
+.alt-curr-price {
+  font-weight: 700;
+  color: #059669;
+}
+
+/* Modal Footer */
+.modal-footer {
+  padding: 1rem 1.75rem;
+  background: #f8fafc;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Toast */
+.eda-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  z-index: 2000;
+  transition: opacity 0.2s, transform 0.2s;
+  animation: toastFade 0.2s ease-out;
+}
+
+@keyframes toastFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .eda-advisory-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .search-input-wrapper {
+    flex-direction: column;
+  }
+  .clear-search-btn {
+    right: 15px;
+    top: 14px;
+  }
+  .search-submit-btn {
+    width: 100%;
+  }
+  .pricing-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-card {
+    max-height: 95vh;
+  }
+}

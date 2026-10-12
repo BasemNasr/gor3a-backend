@@ -47,6 +47,38 @@ document.addEventListener("DOMContentLoaded", () => {
   const rawJsonCode = document.getElementById("rawJsonCode");
   const copyJsonBtn = document.getElementById("copyJsonBtn");
 
+  // DOM Elements - Overall Diagnosis Card
+  const overallDiagnosisCard = document.getElementById("overallDiagnosisCard");
+  const overallDiagnosisBody = document.getElementById("overallDiagnosisBody");
+
+  // DOM Elements - Prescription Medication Detail Modal
+  const medicationDetailModal = document.getElementById("medicationDetailModal");
+  const closeMedModalBtn = document.getElementById("closeMedModalBtn");
+  const closeMedModalBottomBtn = document.getElementById("closeMedModalBottomBtn");
+  const copyMedModalInfoBtn = document.getElementById("copyMedModalInfoBtn");
+  const medModalExploreAlternativesBtn = document.getElementById("medModalExploreAlternativesBtn");
+  const medModalCommercialEn = document.getElementById("medModalCommercialEn");
+  const medModalCommercialAr = document.getElementById("medModalCommercialAr");
+  const medModalEdaId = document.getElementById("medModalEdaId");
+  const medModalStatusBadge = document.getElementById("medModalStatusBadge");
+  const medModalDosageBadge = document.getElementById("medModalDosageBadge");
+  const medModalImage = document.getElementById("medModalImage");
+  const medModalVisualSkeleton = document.getElementById("medModalVisualSkeleton");
+  const medModalActive = document.getElementById("medModalActive");
+  const medModalStrengthForm = document.getElementById("medModalStrengthForm");
+  const medModalCategory = document.getElementById("medModalCategory");
+  const medModalPrice = document.getElementById("medModalPrice");
+  const medModalWhatItTreats = document.getElementById("medModalWhatItTreats");
+  const medModalLikelyDiagnosis = document.getElementById("medModalLikelyDiagnosis");
+  const medModalMechanism = document.getElementById("medModalMechanism");
+  const medModalPrecautions = document.getElementById("medModalPrecautions");
+  const medModalDose = document.getElementById("medModalDose");
+  const medModalFrequency = document.getElementById("medModalFrequency");
+  const medModalDuration = document.getElementById("medModalDuration");
+  const medModalInstructions = document.getElementById("medModalInstructions");
+  const medModalRawText = document.getElementById("medModalRawText");
+  const medModalAltibbiLink = document.getElementById("medModalAltibbiLink");
+
   // Application State
   let currentFile = null;
   let availableProviders = [];
@@ -111,7 +143,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!prov) return;
 
     // Update status hint
-    if (prov.is_configured) {
+    if (prov.id === "local_vlm") {
+      providerStatusHint.textContent = `● Local Endpoint: Ollama / vLLM (Ensure 'ollama serve' is active on your Mac)`;
+      providerStatusHint.className = "status-hint configured";
+    } else if (prov.id === "mock") {
+      providerStatusHint.textContent = `● Offline Simulation Mode (Pre-baked test data; does not inspect pixels)`;
+      providerStatusHint.className = "status-hint configured";
+    } else if (prov.is_configured) {
       providerStatusHint.textContent = `● API key detected for ${prov.display_name}`;
       providerStatusHint.className = "status-hint configured";
     } else {
@@ -175,6 +213,47 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => { copyJsonBtn.textContent = orig; }, 2000);
       });
     });
+
+    // Prescription Medication Detail Modal Event Listeners
+    if (closeMedModalBtn) {
+      closeMedModalBtn.addEventListener("click", closeMedModal);
+    }
+    if (closeMedModalBottomBtn) {
+      closeMedModalBottomBtn.addEventListener("click", closeMedModal);
+    }
+    if (medicationDetailModal) {
+      medicationDetailModal.addEventListener("click", (e) => {
+        if (e.target === medicationDetailModal) {
+          closeMedModal();
+        }
+      });
+    }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && medicationDetailModal && !medicationDetailModal.classList.contains("hidden")) {
+        closeMedModal();
+      }
+    });
+
+    if (copyMedModalInfoBtn) {
+      copyMedModalInfoBtn.addEventListener("click", () => {
+        const nameEn = medModalCommercialEn.textContent || "";
+        const nameAr = medModalCommercialAr.textContent || "";
+        const textToCopy = `📋 تفاصيل الدواء والتشخيص: ${nameEn} ${nameAr ? '(' + nameAr + ')' : ''}\n` +
+          `• المادة الفعالة: ${medModalActive.textContent}\n` +
+          `• ماذا يعالج الدواء: ${medModalWhatItTreats.textContent}\n` +
+          `• تشخيص الطبيب المتوقع: ${medModalLikelyDiagnosis.textContent}\n` +
+          `• طريقة عمل الدواء: ${medModalMechanism.textContent}\n` +
+          `• الجرعة بالروشتة: ${medModalDose.textContent} (${medModalFrequency.textContent})\n` +
+          `• تعليمات الاستخدام: ${medModalInstructions.textContent}\n` +
+          `• تنبيهات هامة: ${medModalPrecautions.textContent}`;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          const orig = copyMedModalInfoBtn.textContent;
+          copyMedModalInfoBtn.textContent = "تم النسخ بنجاح! ✓";
+          setTimeout(() => { copyMedModalInfoBtn.textContent = orig; }, 2000);
+        });
+      });
+    }
   }
 
   function handleFileSelection(file) {
@@ -410,8 +489,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const usage = metadata.usage;
     statTokens.textContent = usage ? `${usage.total_tokens.toLocaleString()} tokens` : "-- tokens";
 
+    function cleanVal(v) {
+      if (!v) return null;
+      const s = String(v).trim();
+      if (!s || s.toLowerCase() === 'null' || s.toLowerCase() === 'none' || s.toLowerCase() === 'unknown' || s.toLowerCase() === 'n/a' || s.toLowerCase() === 'null null for null') {
+        return null;
+      }
+      return s;
+    }
+
     // Uncertain Items Callout
-    const uncertains = analysis.uncertain_items || [];
+    const uncertains = (analysis.uncertain_items || []).filter(u => cleanVal(u));
     if (uncertains.length > 0) {
       uncertainBanner.classList.remove("hidden");
       uncertainItemsList.innerHTML = "";
@@ -424,12 +512,35 @@ document.addEventListener("DOMContentLoaded", () => {
       uncertainBanner.classList.add("hidden");
     }
 
+    // Overall Prescription Clinical Diagnosis Insight
+    if (overallDiagnosisCard && overallDiagnosisBody) {
+      const overallDiagText = cleanVal(analysis.overall_likely_diagnosis);
+      if (overallDiagText) {
+        overallDiagnosisBody.innerHTML = `
+          <div class="overall-diag-highlight">
+            <span class="diag-bullet">🎯</span>
+            <div class="diag-content">
+              <strong>التشخيص المرجح بناءً على توليفة الأدوية:</strong>
+              <p class="diag-text">${escapeHtml(overallDiagText)}</p>
+            </div>
+          </div>
+        `;
+        overallDiagnosisCard.classList.remove("hidden");
+      } else {
+        overallDiagnosisCard.classList.add("hidden");
+        overallDiagnosisBody.innerHTML = "";
+      }
+    }
+
     // Patient Information
     const pt = analysis.prescription || {};
-    patientAge.textContent = pt.patient_age || "Not legible / Absent";
-    patientWeight.textContent = pt.patient_weight_kg ? `${pt.patient_weight_kg} kg` : "Not legible / Absent";
+    const ageVal = cleanVal(pt.patient_age);
+    const weightVal = (pt.patient_weight_kg && pt.patient_weight_kg > 0) ? `${pt.patient_weight_kg} kg` : null;
+    patientAge.textContent = ageVal || "Not legible / Absent";
+    patientWeight.textContent = weightVal || "Not legible / Absent";
 
-    // Medications List
+    // Medications List & State Storage
+    window.currentPrescriptionMeds = meds;
     medListCount.textContent = meds.length;
     medicationsList.innerHTML = "";
 
@@ -442,57 +553,121 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const confPct = Math.round(med.confidence * 100);
 
+        const cleanName = cleanVal(med.name);
+        const topCandidate = (med.candidates && med.candidates.length > 0) ? cleanVal(med.candidates[0].name) : null;
+        const rawLine = cleanVal(med.raw_text);
+        const displayName = cleanName || topCandidate || rawLine || "Unreadable Drug Name";
+        const cleanActive = cleanVal(med.active_ingredient);
+        const cleanEdaId = cleanVal(med.eda_id);
+        const cleanLasa = cleanVal(med.lasa_warning);
+        const cleanStrength = cleanVal(med.strength);
+        const cleanDose = cleanVal(med.dose);
+        const cleanFreq = cleanVal(med.frequency);
+        const cleanDur = cleanVal(med.duration);
+        const cleanInstructions = cleanVal(med.instructions);
+
+        // Clinical Indication, Diagnosis, and Image URL
+        const cleanIndication = cleanVal(med.clinical_indication);
+        const cleanDiag = cleanVal(med.likely_diagnosis);
+        const medImgUrl = med.image_url || (cleanEdaId ? `/api/drugs/${encodeURIComponent(cleanEdaId)}/image` : `/api/drugs/image-by-name?name=${encodeURIComponent(displayName)}`);
+        const arCandidateName = (med.candidates && med.candidates.length > 0 && med.candidates[0].commercial_name_ar) ? med.candidates[0].commercial_name_ar : null;
+
         card.innerHTML = `
           <div class="med-header">
             <div class="med-title-wrap">
               <span class="med-num">${idx + 1}</span>
-              <span class="med-name ${med.name ? '' : 'unreadable'}">
-                ${escapeHtml(med.name || "Unreadable Drug Name")}
-              </span>
-              ${med.active_ingredient ? `<span class="active-ingredient-badge">${escapeHtml(med.active_ingredient)}</span>` : ""}
-              ${med.eda_id ? `<span class="eda-badge" title="Registered with Egyptian Drug Authority">EDA: ${escapeHtml(med.eda_id)}</span>` : ""}
+
+              <!-- Small Drug Packaging Visual Thumbnail (صورة صغيرة للدواء) -->
+              <div class="med-thumb-preview" onclick="openMedicationModal(${idx})" title="انقر لتكبير صورة العلاج والتفاصيل الكاملة">
+                <img src="${medImgUrl}" class="med-thumb-img" alt="${escapeHtml(displayName)}" loading="lazy">
+                <span class="thumb-zoom-badge">🔍</span>
+              </div>
+
+              <div class="med-name-block">
+                <div class="med-name-row">
+                  <span class="med-name ${cleanName ? '' : (topCandidate ? 'uncertain' : 'unreadable')}" onclick="openMedicationModal(${idx})" title="انقر لعرض تفاصيل الدواء والتشخيص">
+                    ${escapeHtml(displayName)}
+                  </span>
+                  ${arCandidateName ? `<span class="med-ar-badge">(${escapeHtml(arCandidateName)})</span>` : ""}
+                </div>
+                <div class="med-tags-row">
+                  ${cleanActive ? `<span class="active-ingredient-badge">${escapeHtml(cleanActive)}</span>` : ""}
+                  ${cleanEdaId ? `<span class="eda-badge" title="Registered with Egyptian Drug Authority">EDA: ${escapeHtml(cleanEdaId)}</span>` : ""}
+                </div>
+              </div>
             </div>
+
             <div class="med-badges">
               <span class="status-pill ${med.status}">${med.status}</span>
               <span class="confidence-pill">${confPct}% Conf.</span>
             </div>
           </div>
 
-          ${med.lasa_warning ? `
+          <!-- Concise Clinical Indication & Diagnosis Box (تحت الدواء باختصار) -->
+          ${cleanIndication ? `
+            <div class="clinical-indication-summary-card" onclick="openMedicationModal(${idx})" title="انقر لعرض تفاصيل الدواء بالكامل وصورة العلاج">
+              <div class="indication-summary-header">
+                <div class="indication-tag-badge">
+                  <span class="indication-pulse-dot"></span>
+                  <strong>🩺 ماذا يعالج هذا الدواء ومؤشر التشخيص:</strong>
+                </div>
+                <span class="click-details-tag">عرض التفاصيل وصورة العلاج 🔍</span>
+              </div>
+              <p class="indication-summary-text">${escapeHtml(cleanIndication)}</p>
+              ${cleanDiag ? `
+                <div class="likely-diagnosis-callout">
+                  <span class="diag-icon-small">🎯</span>
+                  <span><strong>مؤشر تشخيص الطبيب:</strong> ${escapeHtml(cleanDiag)}</span>
+                </div>
+              ` : ""}
+            </div>
+          ` : ""}
+
+          ${cleanLasa ? `
             <div class="lasa-warning-box">
               <span>⚠️</span>
-              <div><strong>Clinical Safety Alert:</strong> ${escapeHtml(med.lasa_warning)}</div>
+              <div><strong>Clinical Safety Alert:</strong> ${escapeHtml(cleanLasa)}</div>
             </div>
           ` : ""}
 
           <div class="raw-transcription-box">
             <span class="raw-label">Doctor's Raw Handwriting:</span>
-            <span class="raw-text-value">"${escapeHtml(med.raw_text)}"</span>
+            <span class="raw-text-value">"${escapeHtml(rawLine || "Illegible / Not deciphered")}"</span>
           </div>
 
           <div class="med-details-grid">
             <div class="detail-cell">
-              <span class="detail-lbl">Strength / Concentration</span>
-              <span class="detail-val ${med.strength ? '' : 'is-null'}">${med.strength ? escapeHtml(med.strength) : "Unknown / Null"}</span>
+              <span class="detail-lbl">⚖️ Strength / Concentration</span>
+              <span class="detail-val ${cleanStrength ? '' : 'is-null'}">${cleanStrength ? escapeHtml(cleanStrength) : "Not specified"}</span>
             </div>
             <div class="detail-cell">
-              <span class="detail-lbl">Prescribed Dose</span>
-              <span class="detail-val ${med.dose ? '' : 'is-null'}">${med.dose ? escapeHtml(med.dose) : "Unknown / Null"}</span>
+              <span class="detail-lbl">💊 Prescribed Dose</span>
+              <span class="detail-val ${cleanDose ? '' : 'is-null'}">${cleanDose ? escapeHtml(cleanDose) : "Not specified"}</span>
             </div>
             <div class="detail-cell">
-              <span class="detail-lbl">Frequency</span>
-              <span class="detail-val ${med.frequency ? '' : 'is-null'}">${med.frequency ? escapeHtml(med.frequency) : "Unknown / Null"}</span>
+              <span class="detail-lbl">⏰ Frequency</span>
+              <span class="detail-val ${cleanFreq ? '' : 'is-null'}">${cleanFreq ? escapeHtml(cleanFreq) : "Not specified"}</span>
             </div>
             <div class="detail-cell">
-              <span class="detail-lbl">Duration</span>
-              <span class="detail-val ${med.duration ? '' : 'is-null'}">${med.duration ? escapeHtml(med.duration) : "Unknown / Null"}</span>
+              <span class="detail-lbl">📅 Duration</span>
+              <span class="detail-val ${cleanDur ? '' : 'is-null'}">${cleanDur ? escapeHtml(cleanDur) : "Not specified"}</span>
             </div>
-            ${med.instructions ? `
+            ${cleanInstructions ? `
               <div class="detail-cell instructions-cell">
-                <span class="detail-lbl">Instructions / Route</span>
-                <span class="detail-val">${escapeHtml(med.instructions)}</span>
+                <div class="instructions-header">
+                  <span class="detail-lbl">📋 Full Clinical Administration / Instructions:</span>
+                  ${/[\u0600-\u06FF]/.test(cleanInstructions) ? `<span class="badge badge-neutral ar-badge">تعليمات باللغة العربية 🇪🇬</span>` : ""}
+                </div>
+                <div class="instructions-text">${escapeHtml(cleanInstructions)}</div>
               </div>
             ` : ""}
+          </div>
+
+          <!-- Bottom Action Button for Full Drug Details & Packaging Photo -->
+          <div class="med-card-action-row">
+            <button type="button" class="btn btn-outline-primary btn-sm view-drug-details-btn" onclick="openMedicationModal(${idx})">
+              🔍 تفاصيل الدواء وصورة العلاج وتشخيص الطبيب بالكامل
+            </button>
           </div>
 
           ${med.candidates && med.candidates.length > 0 ? `
@@ -503,15 +678,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 </summary>
                 <div class="candidates-list">
                   ${med.candidates.map(c => `
-                    <div class="candidate-item">
+                    <div class="candidate-item" onclick="openCandidateModal('${escapeHtml(c.drug_id)}', ${idx})" title="انقر لعرض تفاصيل وصورة وسعر هذا الصنف بالكامل">
                       <div class="candidate-name-wrap">
                         <strong>${escapeHtml(c.name)}</strong>
                         ${c.commercial_name_ar ? `<span style="direction: rtl; color: var(--text-muted); font-size: 0.8rem;">(${escapeHtml(c.commercial_name_ar)})</span>` : ""}
                         <span style="color: var(--text-muted); font-size: 0.725rem;">• ${escapeHtml(c.dosage_form || "")} ${escapeHtml(c.strength || "")}</span>
                       </div>
-                      <span class="candidate-score ${c.score >= 0.85 ? 'high' : (c.score >= 0.65 ? 'mid' : '')}">
-                        ${Math.round(c.score * 100)}% Match (${escapeHtml(c.match_type)})
-                      </span>
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="candidate-score ${c.score >= 0.85 ? 'high' : (c.score >= 0.65 ? 'mid' : '')}">
+                          ${Math.round(c.score * 100)}% Match (${escapeHtml(c.match_type)})
+                        </span>
+                        <span class="candidate-inspect-badge" style="font-size: 0.72rem; color: #0284c7; background: #e0f2fe; padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
+                          🔍 تفاصيل الصنف
+                        </span>
+                      </div>
                     </div>
                   `).join('')}
                 </div>
@@ -523,9 +703,312 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Dietary & Herbal Advice Callout
+    const dietaryAdviceCard = document.getElementById("dietaryAdviceCard");
+    const dietaryAdviceContent = document.getElementById("dietaryAdviceContent");
+    const cleanDietary = cleanVal(analysis.dietary_and_herbal_advice);
+
+    if (dietaryAdviceCard && dietaryAdviceContent) {
+      if (cleanDietary) {
+        dietaryAdviceContent.textContent = cleanDietary;
+        dietaryAdviceCard.classList.remove("hidden");
+      } else {
+        dietaryAdviceCard.classList.add("hidden");
+        dietaryAdviceContent.textContent = "";
+      }
+    }
+
     // Raw JSON Viewer
     rawJsonCode.textContent = JSON.stringify(data, null, 2);
   }
+
+  // 6.1 Open Medication Clinical Detail Modal (نافذة تفاصيل الدواء بالكامل مع صورة العلاج)
+  function openMedicationModal(idx) {
+    if (!window.currentPrescriptionMeds || !window.currentPrescriptionMeds[idx]) return;
+    const med = window.currentPrescriptionMeds[idx];
+    const details = med.indication_details || {};
+
+    const cleanName = (med.name && med.name.trim()) || null;
+    const topCandidate = (med.candidates && med.candidates.length > 0) ? med.candidates[0] : null;
+    const displayName = cleanName || (topCandidate ? topCandidate.name : null) || (med.raw_text ? med.raw_text.trim() : null) || "مستحضر صيدلاني";
+    const arName = (topCandidate && topCandidate.commercial_name_ar) ? topCandidate.commercial_name_ar : (med.commercial_name_ar || "");
+
+    medModalCommercialEn.textContent = displayName;
+    medModalCommercialAr.textContent = arName ? `(${arName})` : "";
+    medModalEdaId.textContent = med.eda_id || (topCandidate ? topCandidate.drug_id : "EDA-REG");
+    medModalStatusBadge.textContent = med.status === "identified" ? "تم التعرف بنجاح ✓" : (med.status === "uncertain" ? "قيد المراجعة ⚠️" : "غير مقروء");
+    // Packaging Visual Image (with shimmer loading & SVG fallback)
+    if (medModalImage) {
+      medModalImage.src = "";
+      medModalImage.classList.add("hidden");
+      medModalImage.style.display = "none";
+      medModalImage.style.opacity = "0";
+    }
+    if (medModalVisualSkeleton) {
+      medModalVisualSkeleton.style.display = "flex";
+      medModalVisualSkeleton.style.opacity = "1";
+    }
+
+    const fallbackUrl = med.eda_id ? `/api/drugs/${encodeURIComponent(med.eda_id)}/image` : `/api/drugs/image-by-name?name=${encodeURIComponent(displayName)}`;
+    const targetSrc = med.image_url || fallbackUrl;
+
+    if (medModalImage) {
+      medModalImage.onload = function() {
+        if (medModalVisualSkeleton) medModalVisualSkeleton.style.display = "none";
+        medModalImage.classList.remove("hidden");
+        medModalImage.style.display = "block";
+        medModalImage.style.opacity = "1";
+      };
+      medModalImage.onerror = function() {
+        this.onerror = null;
+        this.src = fallbackUrl;
+      };
+      medModalImage.src = targetSrc;
+    }
+
+    // Active ingredient
+    const activeSub = (med.active_ingredient && med.active_ingredient.trim()) || (topCandidate ? topCandidate.generic_name : null) || "مادة فعالة صيدلانية مسجلة";
+    medModalActive.textContent = activeSub;
+
+    // Strength & Form
+    const strVal = (med.strength && med.strength.trim()) || (topCandidate ? topCandidate.strength : null) || "تركيز قياسي";
+    const formVal = (topCandidate && topCandidate.dosage_form) ? topCandidate.dosage_form : "مستحضر علاجي";
+    medModalStrengthForm.textContent = `${strVal} • ${formVal}`;
+
+    // Category
+    medModalCategory.textContent = details.category_ar || details.category_en || "مستحضر صيدلاني مصري";
+
+    // Pricing
+    medModalPrice.textContent = (details.price_egp != null)
+      ? `${details.price_egp.toFixed(2)} EGP (تسعيرة رسمية)`
+      : "خاضع للتسعيرة الجبرية الرسمية بهيئة الدواء";
+
+    // Clinical Details: What It Treats & Physician Diagnosis
+    const detailedUses = details.what_it_treats_detailed || details.what_it_treats || med.clinical_indication;
+    medModalWhatItTreats.textContent = detailedUses || "علاج ومكافحة الحالة المرضية المقررة بالروشتة الطبية.";
+    medModalLikelyDiagnosis.textContent = details.likely_diagnosis || med.likely_diagnosis || "حالة مرضية مشخصة ومحددة من قبل الطبيب المعالج.";
+    medModalMechanism.textContent = details.mechanism || "يعمل وفقاً للخصائص الحيوية للمادة الفعالة المسجلة بهيئة الدواء المصرية.";
+    medModalPrecautions.textContent = details.precautions || "يؤخذ بالجرعة المقررة في الروشتة وتحت إشراف الطبيب أو الصيدلي.";
+
+    // Altibbi Medical Reference Link
+    if (medModalAltibbiLink) {
+      if (details.source_url) {
+        medModalAltibbiLink.href = details.source_url;
+        medModalAltibbiLink.style.display = "inline-flex";
+        medModalAltibbiLink.textContent = `🌐 عرض صفحة ${displayName} على موسوعة الطبي ↗`;
+      } else {
+        medModalAltibbiLink.href = `https://altibbi.com/search?q=${encodeURIComponent(displayName)}`;
+        medModalAltibbiLink.style.display = "inline-flex";
+        medModalAltibbiLink.textContent = "🌐 البحث عن المستحضر في موسوعة الطبي ↗";
+      }
+    }
+
+    // Prescription Specific Regimen
+    medModalDose.textContent = (med.dose && med.dose.trim()) || "حسب إرشادات الطبيب";
+    medModalFrequency.textContent = (med.frequency && med.frequency.trim()) || "حسب المواعيد المقررة";
+    medModalDuration.textContent = (med.duration && med.duration.trim()) || "طوال فترة الكورس العلاجي";
+    medModalInstructions.textContent = (med.instructions && med.instructions.trim()) || "لا توجد تعليمات كتابية إضافية.";
+    medModalRawText.textContent = (med.raw_text && med.raw_text.trim()) || "غير محدد";
+
+    // Alternatives Button
+    medModalExploreAlternativesBtn.href = `/drugs?q=${encodeURIComponent(displayName)}`;
+
+    // If eda_id exists, asynchronously fetch live market pricing
+    if (med.eda_id) {
+      fetch(`/api/drugs/${encodeURIComponent(med.eda_id)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(drugData => {
+          if (drugData && drugData.pricing) {
+            const p = drugData.pricing;
+            if (p.expected_price_current_egp != null) {
+              medModalPrice.textContent = `${p.expected_price_current_egp.toFixed(2)} EGP (سعر الصيدليات حالياً)`;
+              if (p.expected_strip_price_egp != null) {
+                medModalPrice.textContent += ` • سعر الشريط: ${p.expected_strip_price_egp.toFixed(2)} EGP`;
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    }
+
+    // Display modal
+    medicationDetailModal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  // 6.2 Open Candidate Drug Detail Modal (عند النقر على أي صنف من أصناف هيئة الدواء المطابقة)
+  async function openCandidateModal(drugId, prescriptionIdx) {
+    if (!drugId) return;
+
+    // Retrieve parent prescription regimen context if available
+    const med = (window.currentPrescriptionMeds && prescriptionIdx != null) ? window.currentPrescriptionMeds[prescriptionIdx] : null;
+
+    // Display modal in loading state
+    medicationDetailModal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+
+    medModalCommercialEn.textContent = "Loading candidate medicine...";
+    medModalCommercialAr.textContent = "جاري جلب تفاصيل الصنف وصورة العلاج...";
+    medModalEdaId.textContent = drugId;
+    medModalStatusBadge.textContent = "صنف مطابق بهيئة الدواء";
+    medModalDosageBadge.textContent = "جاري التحميل...";
+
+    // 1. Immediately wipe previous image & activate shimmer skeleton
+    if (medModalImage) {
+      medModalImage.src = "";
+      medModalImage.classList.add("hidden");
+      medModalImage.style.display = "none";
+      medModalImage.style.opacity = "0";
+    }
+    if (medModalVisualSkeleton) {
+      medModalVisualSkeleton.style.display = "flex";
+      medModalVisualSkeleton.style.opacity = "1";
+    }
+
+    // 2. Add shimmer loading to clinical detail cards
+    if (medModalWhatItTreats) {
+      medModalWhatItTreats.textContent = "جاري فحص دواعي الاستعمال من موسوعة الأدوية...";
+      medModalWhatItTreats.classList.add("shimmer-active");
+    }
+    if (medModalLikelyDiagnosis) {
+      medModalLikelyDiagnosis.textContent = "جاري تحليل التشخيص الطبي واستنتاج مشكلة المريض...";
+      medModalLikelyDiagnosis.classList.add("shimmer-active");
+    }
+    if (medModalMechanism) {
+      medModalMechanism.textContent = "جاري التحميل...";
+      medModalMechanism.classList.add("shimmer-active");
+    }
+    if (medModalPrecautions) {
+      medModalPrecautions.textContent = "جاري التحميل...";
+      medModalPrecautions.classList.add("shimmer-active");
+    }
+
+    medModalActive.textContent = "--";
+    medModalStrengthForm.textContent = "--";
+    medModalCategory.textContent = "--";
+    medModalPrice.textContent = "جاري استرجاع السعر الرسمي والنهائي...";
+
+    // 3. Initiate image fetch with onload/onerror handlers
+    if (medModalImage) {
+      const fallbackUrl = `/api/drugs/${encodeURIComponent(drugId)}/image?type=svg`;
+      medModalImage.onload = function() {
+        if (medModalVisualSkeleton) medModalVisualSkeleton.style.display = "none";
+        medModalImage.classList.remove("hidden");
+        medModalImage.style.display = "block";
+        medModalImage.style.opacity = "1";
+      };
+      medModalImage.onerror = function() {
+        this.onerror = null;
+        this.src = fallbackUrl;
+      };
+      medModalImage.src = `/api/drugs/${encodeURIComponent(drugId)}/image`;
+    }
+
+    if (med) {
+      medModalDose.textContent = (med.dose && med.dose.trim()) || "حسب إرشادات الطبيب";
+      medModalFrequency.textContent = (med.frequency && med.frequency.trim()) || "حسب المواعيد المقررة";
+      medModalDuration.textContent = (med.duration && med.duration.trim()) || "طوال فترة الكورس العلاجي";
+      medModalInstructions.textContent = (med.instructions && med.instructions.trim()) || "لا توجد تعليمات كتابية إضافية.";
+      medModalRawText.textContent = (med.raw_text && med.raw_text.trim()) || "غير محدد";
+    }
+
+    try {
+      const res = await fetch(`/api/drugs/${encodeURIComponent(drugId)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const drug = data.drug || {};
+      const pricing = data.pricing || {};
+      const details = drug.indication_details || {};
+
+      medModalCommercialEn.textContent = drug.full_commercial_name_en || drug.commercial_name_en;
+      medModalCommercialAr.textContent = drug.commercial_name_ar ? `(${drug.commercial_name_ar})` : "";
+      medModalEdaId.textContent = drug.id;
+      medModalStatusBadge.textContent = "صنف معتمد بهيئة الدواء ✓";
+      medModalDosageBadge.textContent = drug.dosage_form || "مستحضر صيدلاني";
+
+      // Active ingredient & specs
+      medModalActive.textContent = drug.generic_name || "مادة فعالة صيدلانية مسجلة";
+      medModalStrengthForm.textContent = `${drug.strength || "تركيز قياسي"} • ${drug.dosage_form || "مستحضر"}`;
+      medModalCategory.textContent = drug.drug_class || "مستحضر صيدلاني مصري";
+
+      // Pricing
+      if (pricing.expected_price_current_egp != null) {
+        medModalPrice.textContent = `${pricing.expected_price_current_egp.toFixed(2)} EGP (سعر الصيدليات حالياً)`;
+        if (pricing.expected_strip_price_egp != null) {
+          medModalPrice.textContent += ` • سعر الشريط: ${pricing.expected_strip_price_egp.toFixed(2)} EGP`;
+        }
+      } else if (drug.price_egp != null) {
+        medModalPrice.textContent = `${drug.price_egp.toFixed(2)} EGP (تسعيرة رسمية)`;
+      } else {
+        medModalPrice.textContent = "خاضع للتسعيرة الرسمية بهيئة الدواء المصرية";
+      }
+
+      // Clinical details (remove shimmer)
+      if (medModalWhatItTreats) {
+        medModalWhatItTreats.classList.remove("shimmer-active");
+        const richUses = details.what_it_treats_detailed || details.what_it_treats || drug.clinical_indication;
+        medModalWhatItTreats.textContent = richUses || "علاج ومكافحة الحالة المرضية المقررة بالروشتة الطبية.";
+      }
+      if (medModalLikelyDiagnosis) {
+        medModalLikelyDiagnosis.classList.remove("shimmer-active");
+        medModalLikelyDiagnosis.textContent = details.likely_diagnosis || drug.likely_diagnosis || "حالة مرضية مشخصة ومحددة من قبل الطبيب المعالج.";
+      }
+      if (medModalMechanism) {
+        medModalMechanism.classList.remove("shimmer-active");
+        medModalMechanism.textContent = details.mechanism || "يعمل وفقاً للخصائص الحيوية للمادة الفعالة المسجلة بهيئة الدواء المصرية.";
+      }
+      if (medModalPrecautions) {
+        medModalPrecautions.classList.remove("shimmer-active");
+        medModalPrecautions.textContent = details.precautions || "يؤخذ بالجرعة المقررة في الروشتة وتحت إشراف الطبيب أو الصيدلي.";
+      }
+
+      // Altibbi Medical Reference Link
+      if (medModalAltibbiLink) {
+        if (details.source_url) {
+          medModalAltibbiLink.href = details.source_url;
+          medModalAltibbiLink.style.display = "inline-flex";
+          medModalAltibbiLink.textContent = `🌐 عرض صفحة ${drug.commercial_name_ar || drug.commercial_name_en} على موسوعة الطبي ↗`;
+        } else {
+          medModalAltibbiLink.href = `https://altibbi.com/search?q=${encodeURIComponent(drug.commercial_name_ar || drug.commercial_name_en)}`;
+          medModalAltibbiLink.style.display = "inline-flex";
+          medModalAltibbiLink.textContent = "🌐 البحث عن المستحضر في موسوعة الطبي ↗";
+        }
+      }
+
+      // Alternatives explore link
+      medModalExploreAlternativesBtn.href = `/drugs?q=${encodeURIComponent(drug.commercial_name_en)}&id=${encodeURIComponent(drug.id)}`;
+    } catch (err) {
+      console.error("Failed to load candidate drug details:", err);
+      medModalCommercialEn.textContent = "تعذر تحميل تفاصيل الصنف";
+      medModalCommercialAr.textContent = "";
+      if (medModalWhatItTreats) {
+        medModalWhatItTreats.classList.remove("shimmer-active");
+        medModalWhatItTreats.textContent = "يرجى التحقق من الاتصال بالخادم والمحاولة مرة أخرى.";
+      }
+      if (medModalLikelyDiagnosis) medModalLikelyDiagnosis.classList.remove("shimmer-active");
+      if (medModalMechanism) medModalMechanism.classList.remove("shimmer-active");
+      if (medModalPrecautions) medModalPrecautions.classList.remove("shimmer-active");
+    }
+  }
+
+  function closeMedModal() {
+    if (medicationDetailModal) {
+      medicationDetailModal.classList.add("hidden");
+      document.body.style.overflow = "";
+      if (medModalImage) {
+        medModalImage.src = "";
+        medModalImage.classList.add("hidden");
+        medModalImage.style.display = "none";
+      }
+      if (medModalVisualSkeleton) {
+        medModalVisualSkeleton.style.display = "flex";
+      }
+    }
+  }
+
+  window.openMedicationModal = openMedicationModal;
+  window.openCandidateModal = openCandidateModal;
+  window.closeMedModal = closeMedModal;
 
   function showError(msg) {
     errorAlert.textContent = msg;
@@ -552,8 +1035,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================================================
   const tabLabBtn = document.getElementById("tabLabBtn");
   const tabBenchmarkBtn = document.getElementById("tabBenchmarkBtn");
+  const tabBilingualBtn = document.getElementById("tabBilingualBtn");
   const labView = document.getElementById("labView");
   const benchmarkView = document.getElementById("benchmarkView");
+  const bilingualView = document.getElementById("bilingualView");
   const phaseBadge = document.getElementById("phaseBadge");
 
   const runBenchmarkBtn = document.getElementById("runBenchmarkBtn");
@@ -565,22 +1050,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   tabLabBtn.addEventListener("click", () => switchTab("lab"));
   tabBenchmarkBtn.addEventListener("click", () => switchTab("benchmark"));
+  if (tabBilingualBtn) tabBilingualBtn.addEventListener("click", () => switchTab("bilingual"));
 
   function switchTab(tab) {
+    tabLabBtn.classList.remove("active");
+    tabBenchmarkBtn.classList.remove("active");
+    if (tabBilingualBtn) tabBilingualBtn.classList.remove("active");
+    labView.classList.add("hidden");
+    benchmarkView.classList.add("hidden");
+    if (bilingualView) bilingualView.classList.add("hidden");
+
     if (tab === "lab") {
       tabLabBtn.classList.add("active");
-      tabBenchmarkBtn.classList.remove("active");
       labView.classList.remove("hidden");
-      benchmarkView.classList.add("hidden");
-      phaseBadge.textContent = "PHASE 1 — LOCAL RESEARCH LAB";
-    } else {
+      phaseBadge.textContent = "PHASE 1 & 5 — RESEARCH LAB & EDA DATABASE";
+    } else if (tab === "benchmark") {
       tabBenchmarkBtn.classList.add("active");
-      tabLabBtn.classList.remove("active");
       benchmarkView.classList.remove("hidden");
-      labView.classList.add("hidden");
       phaseBadge.textContent = "PHASE 2 — MULTI-MODEL BENCHMARK";
       loadBenchmarkCases();
       loadBenchmarkResults();
+    } else if (tab === "bilingual") {
+      if (tabBilingualBtn) tabBilingualBtn.classList.add("active");
+      if (bilingualView) bilingualView.classList.remove("hidden");
+      phaseBadge.textContent = "PHASE 3 & 5 — BILINGUAL ARABIC DATASET & TRAINING";
+      loadBilingualStats();
+      loadBilingualCases();
     }
   }
 
@@ -689,45 +1184,335 @@ document.addEventListener("DOMContentLoaded", () => {
     const keys = Object.keys(summaries);
 
     if (keys.length === 0) {
-      benchmarkTableBody.innerHTML = `<tr><td colspan="9" class="text-center">No benchmark runs recorded. Click "Run Multi-Model Benchmark".</td></tr>`;
+      benchmarkTableBody.innerHTML = `<tr><td colspan="10" class="text-center">No benchmark runs recorded. Click "Run Multi-Model Benchmark".</td></tr>`;
       return;
     }
 
-    // Sort by critical error rate ascending (safest first), then by name accuracy descending
+    // Sort by critical error rate ascending (safest first), then by F1 score descending
     const sorted = Object.entries(summaries).sort((a, b) => {
       const critDiff = a[1].critical_medication_error_rate - b[1].critical_medication_error_rate;
       if (critDiff !== 0) return critDiff;
-      return b[1].medication_name_accuracy - a[1].medication_name_accuracy;
+      const f1Diff = (b[1].f1_score || 0) - (a[1].f1_score || 0);
+      if (f1Diff !== 0) return f1Diff;
+      return (b[1].accuracy || b[1].medication_name_accuracy) - (a[1].accuracy || a[1].medication_name_accuracy);
     });
 
     sorted.forEach(([modelKey, s]) => {
       const row = document.createElement("tr");
 
-      const nameAcc = `${Math.round(s.medication_name_accuracy * 100)}%`;
+      const accVal = Math.round((s.accuracy !== undefined ? s.accuracy : s.medication_name_accuracy) * 100);
+      const precVal = Math.round((s.precision || s.medication_name_accuracy || 0) * 100);
+      const recVal = Math.round((s.recall || s.medication_name_accuracy || 0) * 100);
+      const f1Val = Math.round((s.f1_score || s.medication_name_accuracy || 0) * 100);
+      const cerVal = Math.round((s.cer || 0) * 100);
+      const werVal = Math.round((s.wer || 0) * 100);
+      const exactVal = Math.round((s.exact_match_rate || 0) * 100);
+
       const critErr = Math.round(s.critical_medication_error_rate * 100);
       const critBadge = critErr === 0 
         ? `<span class="critical-safe">0.0% (Safe)</span>` 
         : `<span class="critical-danger">⚠️ ${critErr}% (Critical)</span>`;
 
-      const uncAcc = `${Math.round(s.uncertainty_detection_accuracy * 100)}%`;
-      const strAcc = `${Math.round(s.strength_accuracy * 100)}%`;
-      const doseAcc = `${Math.round(s.dose_accuracy * 100)}%`;
-      const freqAcc = `${Math.round(s.frequency_accuracy * 100)}%`;
       const lat = `${Math.round(s.mean_latency_ms)} ms`;
-      const cost = `$${s.mean_cost_per_rx_usd.toFixed(4)}`;
 
       row.innerHTML = `
         <td><strong>${escapeHtml(modelKey)}</strong></td>
-        <td>${nameAcc}</td>
+        <td><span class="badge ${accVal >= 75 ? 'badge-success' : 'badge-neutral'}">${accVal}%</span></td>
+        <td>${precVal}%</td>
+        <td>${recVal}%</td>
+        <td><strong><span style="color: var(--primary); font-weight: 700;">${f1Val}%</span></strong></td>
+        <td><span style="color: ${cerVal > 25 ? 'var(--danger-solid, #ef4444)' : 'inherit'};">${cerVal}%</span></td>
+        <td><span style="color: ${werVal > 30 ? 'var(--danger-solid, #ef4444)' : 'inherit'};">${werVal}%</span></td>
+        <td>${exactVal}%</td>
         <td>${critBadge}</td>
-        <td>${uncAcc}</td>
-        <td>${strAcc}</td>
-        <td>${doseAcc}</td>
-        <td>${freqAcc}</td>
-        <td>${lat}</td>
-        <td>${cost}</td>
+        <td><span style="color: var(--text-muted); font-size: 0.85rem;">${lat}</span></td>
       `;
       benchmarkTableBody.appendChild(row);
+    });
+  }
+
+  // =========================================================================
+  // Phase 3 & 5: Bilingual Arabic Dataset & Model Training Studio
+  // =========================================================================
+  const bilingualStatCases = document.getElementById("bilingualStatCases");
+  const bilingualStatMeds = document.getElementById("bilingualStatMeds");
+  const bilingualStatArabic = document.getElementById("bilingualStatArabic");
+  const bilingualStatEda = document.getElementById("bilingualStatEda");
+
+  const exportTrainingBtn = document.getElementById("exportTrainingBtn");
+  const exportSpinner = document.getElementById("exportSpinner");
+  const exportBtnText = document.getElementById("exportBtnText");
+  const exportStatusAlert = document.getElementById("exportStatusAlert");
+
+  const bilingualEvalProvider = document.getElementById("bilingualEvalProvider");
+  const bilingualEvalPipeline = document.getElementById("bilingualEvalPipeline");
+  const runBilingualEvalBtn = document.getElementById("runBilingualEvalBtn");
+  const bilingualEvalSpinner = document.getElementById("bilingualEvalSpinner");
+  const bilingualEvalBtnText = document.getElementById("bilingualEvalBtnText");
+  const bilingualEvalResults = document.getElementById("bilingualEvalResults");
+
+  const bilingualDisplayCount = document.getElementById("bilingualDisplayCount");
+  const bilingualSearchInput = document.getElementById("bilingualSearchInput");
+  const bilingualCasesGrid = document.getElementById("bilingualCasesGrid");
+
+  let currentBilingualSplit = "all";
+  let bilingualSearchQuery = "";
+  let bilingualSearchTimer = null;
+
+  async function loadBilingualStats() {
+    try {
+      const res = await fetch("/api/bilingual/stats");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (bilingualStatCases) bilingualStatCases.textContent = (data.total_verified_cases || 0).toLocaleString();
+      if (bilingualStatMeds) bilingualStatMeds.textContent = (data.total_medications || 0).toLocaleString();
+      if (bilingualStatArabic) bilingualStatArabic.textContent = (data.medications_with_arabic_instructions || 0).toLocaleString();
+      if (bilingualStatEda) bilingualStatEda.textContent = (data.total_registered_drugs_available || 0).toLocaleString();
+    } catch (err) {
+      console.warn("Failed to load bilingual stats:", err);
+    }
+  }
+
+  async function loadBilingualCases() {
+    if (!bilingualCasesGrid) return;
+    try {
+      bilingualCasesGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 2rem; text-align: center;">
+          <div class="spinner" style="margin: 0 auto;"></div>
+          <p style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted);">Loading prescription cases...</p>
+        </div>
+      `;
+
+      let url = `/api/bilingual/cases?limit=36`;
+      if (currentBilingualSplit && currentBilingualSplit !== "all") {
+        url += `&split=${encodeURIComponent(currentBilingualSplit)}`;
+      }
+      if (bilingualSearchQuery) {
+        url += `&search=${encodeURIComponent(bilingualSearchQuery)}`;
+      }
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const cases = data.cases || [];
+
+      if (bilingualDisplayCount) {
+        bilingualDisplayCount.textContent = data.total !== undefined ? data.total : cases.length;
+      }
+      bilingualCasesGrid.innerHTML = "";
+
+      if (cases.length === 0) {
+        bilingualCasesGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: var(--text-muted);">
+            <p>No prescriptions match the selected filter or search term.</p>
+          </div>
+        `;
+        return;
+      }
+
+      cases.forEach((c) => {
+        const card = document.createElement("div");
+        card.className = "case-card";
+
+        const meds = c.medications || [];
+        const medTagsHtml = meds.slice(0, 4).map((m) => {
+          const name = escapeHtml(m.Medication_name || m.Medication_name_raw || "Prescription item");
+          const dose = m.Dosage ? `<span style="color:var(--text-muted); font-size:0.7rem;">${escapeHtml(m.Dosage)}</span>` : "";
+          const ar = m.Instructions ? `<span class="ar-instr">(${escapeHtml(m.Instructions)})</span>` : "";
+          return `<span class="bilingual-med-tag"><strong>${name}</strong> ${dose} ${ar}</span>`;
+        }).join("");
+
+        const moreMedsCount = meds.length > 4 ? meds.length - 4 : 0;
+        const moreMedsHtml = moreMedsCount > 0 ? `<span class="bilingual-med-tag" style="background:var(--border);">+${moreMedsCount} more</span>` : "";
+
+        card.innerHTML = `
+          <div class="case-img-box">
+            <img src="/api/bilingual/case/${c.case_id}/image" alt="${escapeHtml(c.filename)}" loading="lazy">
+          </div>
+          <div class="case-content">
+            <div class="case-header-row">
+              <span class="case-tag">${escapeHtml(c.case_id)}</span>
+              <span class="case-med-count">${c.medication_count} meds</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom: 0.35rem; font-family: monospace;">${escapeHtml(c.filename)}</div>
+            <div style="margin-top: 0.25rem;">
+              ${medTagsHtml}
+              ${moreMedsHtml}
+            </div>
+            <div class="case-btn-row">
+              <button type="button" class="btn btn-secondary btn-sm test-in-lab-btn" style="width: 100%; font-size: 0.775rem; padding: 0.35rem 0.5rem;">
+                🧪 Test in Lab
+              </button>
+            </div>
+          </div>
+        `;
+
+        const loadCaseIntoLab = () => {
+          fetch(`/api/bilingual/case/${c.case_id}/image`)
+            .then((res) => {
+              if (!res.ok) throw new Error("Image not found");
+              return res.blob();
+            })
+            .then((blob) => {
+              const file = new File([blob], c.filename || `${c.case_id}.jpg`, { type: "image/jpeg" });
+              switchTab("lab");
+              handleFileSelection(file);
+            })
+            .catch((err) => {
+              alert(`Could not load prescription image: ${err.message}`);
+            });
+        };
+
+        const labBtn = card.querySelector(".test-in-lab-btn");
+        if (labBtn) {
+          labBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            loadCaseIntoLab();
+          });
+        }
+
+        const imgBox = card.querySelector(".case-img-box");
+        if (imgBox) {
+          imgBox.addEventListener("click", loadCaseIntoLab);
+        }
+
+        bilingualCasesGrid.appendChild(card);
+      });
+    } catch (err) {
+      console.warn("Failed to load bilingual cases:", err);
+      if (bilingualCasesGrid) {
+        bilingualCasesGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--danger);">
+            Failed to load dataset cases: ${escapeHtml(err.message)}
+          </div>
+        `;
+      }
+    }
+  }
+
+  // Split Filter Pills
+  document.querySelectorAll(".split-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      document.querySelectorAll(".split-pill").forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentBilingualSplit = pill.dataset.split || "all";
+      loadBilingualCases();
+    });
+  });
+
+  // Search input debounce
+  if (bilingualSearchInput) {
+    bilingualSearchInput.addEventListener("input", (e) => {
+      clearTimeout(bilingualSearchTimer);
+      bilingualSearchTimer = setTimeout(() => {
+        bilingualSearchQuery = e.target.value.trim();
+        loadBilingualCases();
+      }, 300);
+    });
+  }
+
+  // Export Fine-Tuning Training Datasets
+  if (exportTrainingBtn) {
+    exportTrainingBtn.addEventListener("click", async () => {
+      exportSpinner.classList.remove("hidden");
+      exportBtnText.textContent = "Exporting Datasets...";
+      exportTrainingBtn.disabled = true;
+      if (exportStatusAlert) exportStatusAlert.classList.add("hidden");
+
+      try {
+        const res = await fetch("/api/bilingual/export-training", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ max_cases: null }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const m = data.manifest || {};
+
+        if (exportStatusAlert) {
+          exportStatusAlert.className = "alert alert-success";
+          exportStatusAlert.innerHTML = `
+            <strong>✅ Training Export Ready!</strong><br>
+            • Train Split: <strong>${m.train_cases_count || 0}</strong> cases<br>
+            • Val Split: <strong>${m.val_cases_count || 0}</strong> cases<br>
+            • Formats: <code>openai_vision_train.jsonl</code> &amp; <code>vlm_lora_train.json</code><br>
+            Saved to <code>dataset/training_exports/</code>
+          `;
+          exportStatusAlert.classList.remove("hidden");
+        }
+      } catch (err) {
+        if (exportStatusAlert) {
+          exportStatusAlert.className = "alert alert-danger";
+          exportStatusAlert.textContent = `Export failed: ${err.message}`;
+          exportStatusAlert.classList.remove("hidden");
+        }
+      } finally {
+        exportSpinner.classList.add("hidden");
+        exportBtnText.textContent = "📦 Export JSONL Training Sets";
+        exportTrainingBtn.disabled = false;
+      }
+    });
+  }
+
+  // Evaluate on Test Split
+  if (runBilingualEvalBtn) {
+    runBilingualEvalBtn.addEventListener("click", async () => {
+      const provider = bilingualEvalProvider ? bilingualEvalProvider.value : "mock";
+      const pipeline = bilingualEvalPipeline ? bilingualEvalPipeline.value : "v2";
+
+      bilingualEvalSpinner.classList.remove("hidden");
+      bilingualEvalBtnText.textContent = "Evaluating...";
+      runBilingualEvalBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/bilingual/benchmark/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider: provider,
+            pipeline_version: pipeline,
+            max_cases: 15,
+          }),
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        const results = data.results || {};
+        const m = results.metrics || {};
+
+        if (bilingualEvalResults) {
+          bilingualEvalResults.innerHTML = `
+            <div style="font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+              <span>🎯 Test Split Evaluation: ${escapeHtml(results.model_key || provider)} (${results.evaluated_cases || 0} cases)</span>
+              <span class="badge badge-success">Evaluated</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 0.5rem; background: var(--bg-card); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">Accuracy:</span><br><strong>${((m.accuracy !== undefined ? m.accuracy : m.medication_name_accuracy) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">Precision:</span><br><strong>${((m.precision || 0) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">Recall:</span><br><strong>${((m.recall || 0) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">F1 Score:</span><br><strong style="color: var(--primary);">${((m.f1_score || 0) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">CER (OCR):</span><br><strong style="color: ${(m.cer || 0) > 0.25 ? 'var(--danger-solid, #ef4444)' : 'inherit'};">${((m.cer || 0) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">WER:</span><br><strong style="color: ${(m.wer || 0) > 0.30 ? 'var(--danger-solid, #ef4444)' : 'inherit'};">${((m.wer || 0) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">Exact Match:</span><br><strong>${((m.exact_match_rate || 0) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">Arabic Instructions:</span><br><strong>${((m.arabic_instructions_accuracy || 0) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">EDA Grounding:</span><br><strong>${((m.eda_database_grounding_rate || 0) * 100).toFixed(1)}%</strong></div>
+              <div><span style="font-size: 0.75rem; color: var(--text-muted);">Avg Latency:</span><br><strong>${Math.round(m.mean_latency_ms || 0)} ms</strong></div>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">
+              Cost: $${(m.mean_cost_per_rx_usd || 0).toFixed(4)} / prescription • Evaluated strictly on the unseen test partition.
+            </div>
+          `;
+          bilingualEvalResults.classList.remove("hidden");
+        }
+      } catch (err) {
+        alert(`Bilingual test evaluation failed: ${err.message}`);
+      } finally {
+        bilingualEvalSpinner.classList.add("hidden");
+        bilingualEvalBtnText.textContent = "▶ Run Test Split Eval";
+        runBilingualEvalBtn.disabled = false;
+      }
     });
   }
 });

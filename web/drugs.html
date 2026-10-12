@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDA Drug Database — 25,098 Official Egyptian Medicines & Live Pricing</title>
+  <link rel="stylesheet" href="/static/styles.css?v=2.6">
+  <link rel="stylesheet" href="/static/drugs.css?v=2.6">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="eda-body">
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon eda-icon">💊</div>
+        <div class="brand-text">
+          <h1>Egyptian Drug Authority (EDA) Database</h1>
+          <span class="badge phase-badge">25,098 OFFICIAL REGISTERED MEDICINES • دليل الأدوية المصرية</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <a href="/" class="tab-btn tab-link">🔬 Prescription AI Lab</a>
+        <a href="/#benchmark" class="tab-btn tab-link">📊 Model Benchmark</a>
+        <a href="/#bilingual" class="tab-btn tab-link">📚 Bilingual Dataset</a>
+        <a href="/drugs" class="tab-btn tab-link active">💊 EDA Drug Database (25,098)</a>
+      </nav>
+
+      <div class="safety-indicator">
+        <span class="safety-dot" style="background-color: var(--success-solid);"></span>
+        <span>EDA Official Registry & Live Egyptian Market Pricing</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Market Pricing Advisory Banner -->
+  <div class="eda-advisory-banner">
+    <div class="eda-advisory-container">
+      <span class="advisory-pill">تسعيرة جبرية موحدة</span>
+      <p class="advisory-text">
+        <strong>قاعدة بيانات هيئة الدواء المصرية الرسمية (25,098 مستحضر):</strong> تعرض السعر المسجل الرسمي والسعر المتوقع حالياً في الصيدليات المصرية (2024–2026) بعد قرارات لجنة تسعير الأدوية وتحريك أسعار الخامات الفعالة المستوردة، مع حساب سعر الشريط والبدائل المتطابقة.
+      </p>
+    </div>
+  </div>
+
+  <main class="eda-main-container">
+
+    <!-- Overview Stats Bar -->
+    <section class="eda-stats-bar">
+      <div class="eda-stat-item">
+        <span class="eda-stat-label">Total Registered Medicines</span>
+        <span class="eda-stat-val" id="statTotalDrugs">25,098</span>
+        <span class="eda-stat-sub">دواء رسمي مسجل بهيئة الدواء</span>
+      </div>
+      <div class="eda-stat-item">
+        <span class="eda-stat-label">Priced Egyptian Formulations</span>
+        <span class="eda-stat-val" id="statPricedDrugs">25,070</span>
+        <span class="eda-stat-sub">خاضع للتسعيرة الجبرية الرسمية</span>
+      </div>
+      <div class="eda-stat-item">
+        <span class="eda-stat-label">Dosage Forms & Routes</span>
+        <span class="eda-stat-val" id="statDosageForms">14+ Forms</span>
+        <span class="eda-stat-sub">أقراص، كبسولات، شراب، حقن، مراهم</span>
+      </div>
+      <div class="eda-stat-item">
+        <span class="eda-stat-label">Live Market Pricing (2024–2026)</span>
+        <span class="eda-stat-val" id="statPricingStatus" style="color: var(--primary);">Active Model</span>
+        <span class="eda-stat-sub">تحديثات لجان التسعير وحساب سعر الشريط</span>
+      </div>
+    </section>
+
+    <!-- Search Hero & Filter Controls -->
+    <section class="eda-search-hero card">
+      <div class="search-input-wrapper">
+        <div class="search-icon-box">🔍</div>
+        <input 
+          type="text" 
+          id="drugSearchInput" 
+          class="drug-search-input" 
+          placeholder="Search by Brand Name (e.g. Panadol, سيتال), Generic / Scientific Name, Active Substance, or Manufacturer..."
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button type="button" id="clearSearchBtn" class="clear-search-btn hidden" title="Clear Search">✕</button>
+        <button type="button" id="searchSubmitBtn" class="btn btn-primary search-submit-btn">Search Database</button>
+      </div>
+
+      <!-- Quick Search Suggested Chips -->
+      <div class="quick-chips-wrapper">
+        <span class="chips-label">Popular Egyptian Medicines:</span>
+        <div class="chips-list" id="quickChipsList">
+          <button type="button" class="quick-chip" data-query="Panadol">Panadol (بنادول)</button>
+          <button type="button" class="quick-chip" data-query="Congestal">Congestal (كونجستال)</button>
+          <button type="button" class="quick-chip" data-query="Augmentin">Augmentin (أوجمنتين)</button>
+          <button type="button" class="quick-chip" data-query="Curam">Curam (كيورام)</button>
+          <button type="button" class="quick-chip" data-query="Cataflam">Cataflam (كتافلام)</button>
+          <button type="button" class="quick-chip" data-query="Antinal">Antinal (أنتينال)</button>
+          <button type="button" class="quick-chip" data-query="Flagyl">Flagyl (فلاجيل)</button>
+          <button type="button" class="quick-chip" data-query="Cetal">Cetal (سيتال)</button>
+          <button type="button" class="quick-chip" data-query="Brufen">Brufen (بروفين)</button>
+          <button type="button" class="quick-chip" data-query="Losec">Losec (لوسك)</button>
+          <button type="button" class="quick-chip" data-query="Controloc">Controloc (كنترولوك)</button>
+          <button type="button" class="quick-chip" data-query="Lasix">Lasix (لازيكس)</button>
+          <button type="button" class="quick-chip" data-query="Paracetamol">Paracetamol</button>
+          <button type="button" class="quick-chip" data-query="Amoxicillin">Amoxicillin</button>
+        </div>
+      </div>
+
+      <!-- Advanced Filter Controls -->
+      <div class="filter-controls-row">
+        
+        <!-- Dosage Form -->
+        <div class="filter-item">
+          <label for="filterForm">Dosage Form (الشكل الدوائي):</label>
+          <select id="filterForm" class="form-control form-control-sm">
+            <option value="">All Dosage Forms (جميع الأشكال)</option>
+            <option value="Tablet">Tablet (أقراص)</option>
+            <option value="Capsule">Capsule (كبسولات)</option>
+            <option value="Suspension">Suspension / Syrup (شراب ومعلق)</option>
+            <option value="Drops">Oral / Eye Drops (نقط)</option>
+            <option value="Injection">Injection / Ampoules (حقن وأمبولات)</option>
+            <option value="Topical">Topical / Cream / Ointment (كريم ومرهم)</option>
+            <option value="Inhalation">Inhalation / Spray (بخاخ واستنشاق)</option>
+            <option value="Other">Other / Sachets (أكياس ومستحضرات أخرى)</option>
+          </select>
+        </div>
+
+        <!-- Route -->
+        <div class="filter-item">
+          <label for="filterRoute">Route (طريقة الاستعمال):</label>
+          <select id="filterRoute" class="form-control form-control-sm">
+            <option value="">All Administration Routes</option>
+            <option value="ORAL.SOLID">Oral Solid (عن طريق الفم - صلب)</option>
+            <option value="ORAL.LIQUID">Oral Liquid (عن طريق الفم - سائل)</option>
+            <option value="TOPICAL">Topical (استعمال موضعي)</option>
+            <option value="INJECTION">Injection / Parenteral (حقن)</option>
+            <option value="OPHTHALMIC">Ophthalmic (للعين)</option>
+            <option value="OTIC">Otic (للأذن)</option>
+            <option value="NASAL">Nasal (للأنف)</option>
+            <option value="INHALATION">Inhalation (استنشاق)</option>
+          </select>
+        </div>
+
+        <!-- Price Range -->
+        <div class="filter-item">
+          <label for="filterPrice">Price Bracket (نطاق السعر):</label>
+          <select id="filterPrice" class="form-control form-control-sm">
+            <option value="">All Prices (كافة الأسعار)</option>
+            <option value="0-25">Under 25 EGP (أقل من ٢٥ جنيه - اقتصادي)</option>
+            <option value="25-60">25 to 60 EGP (٢٥ - ٦٠ جنيه)</option>
+            <option value="60-150">60 to 150 EGP (٦٠ - ١٥٠ جنيه)</option>
+            <option value="150-300">150 to 300 EGP (١٥٠ - ٣٠٠ جنيه)</option>
+            <option value="300-999999">Above 300 EGP (أكثر من ٣٠٠ جنيه - مستورد/تخصصي)</option>
+          </select>
+        </div>
+
+        <!-- Sort Order -->
+        <div class="filter-item">
+          <label for="sortBy">Sort By (الترتيب):</label>
+          <select id="sortBy" class="form-control form-control-sm">
+            <option value="relevance">Relevance (الأكثر مطابقة)</option>
+            <option value="price_asc">Price: Low to High (السعر: من الأقل للأعلى)</option>
+            <option value="price_desc">Price: High to Low (السعر: من الأعلى للأقل)</option>
+            <option value="name_asc">Brand Name: A → Z (الاسم أبجدياً)</option>
+            <option value="name_desc">Brand Name: Z → A</option>
+          </select>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="filter-item filter-action-item">
+          <button type="button" id="resetFiltersBtn" class="btn btn-secondary btn-sm">↺ Reset Filters</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="eda-results-section">
+      
+      <!-- Results Meta Header -->
+      <div class="results-header-bar">
+        <div class="results-count-wrapper">
+          <h2 id="resultsHeading">Official Egyptian Medicines</h2>
+          <span class="results-counter-pill" id="resultsCountBadge">Loading...</span>
+        </div>
+        <div class="results-view-controls">
+          <label for="pageSizeSelect">Show:</label>
+          <select id="pageSizeSelect" class="form-control form-control-xs">
+            <option value="12">12 per page</option>
+            <option value="24" selected>24 per page</option>
+            <option value="48">48 per page</option>
+            <option value="96">96 per page</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="drugsLoadingState" class="card loading-state hidden">
+        <div class="spinner-large"></div>
+        <h3>Searching 25,098 Egyptian Pharmaceutical Records...</h3>
+        <p>Retrieving authentic EDA registration data, calculating 2024–2026 pharmacy retail prices and strip breakdown.</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="drugsEmptyState" class="card empty-state hidden">
+        <div class="empty-icon">🔍</div>
+        <h3>No Medicines Found</h3>
+        <p id="emptyStateMsg">We couldn't find any registered Egyptian medications matching your search criteria.</p>
+        <div class="sample-hint">
+          <strong>Search Tips:</strong>
+          <ul>
+            <li>Try searching for the active substance (e.g. <code>Paracetamol</code> instead of brand name).</li>
+            <li>Try partial spelling in English or Arabic (e.g. <code>Curam</code> or <code>كيورام</code>).</li>
+            <li>Clear dosage form or price filters to expand results across all 25,098 records.</li>
+          </ul>
+        </div>
+        <button type="button" id="emptyResetBtn" class="btn btn-primary" style="margin-top: 1rem;">View All 25,098 Medicines</button>
+      </div>
+
+      <!-- Drug Cards Grid -->
+      <div id="drugsGrid" class="drugs-grid">
+        <!-- Injected dynamically via drugs.js -->
+      </div>
+
+      <!-- Pagination Controls -->
+      <nav id="paginationContainer" class="pagination-wrapper hidden" aria-label="Drug Database Pagination">
+        <button type="button" id="firstPageBtn" class="btn btn-secondary btn-sm" title="First Page">« First</button>
+        <button type="button" id="prevPageBtn" class="btn btn-secondary btn-sm" title="Previous Page">‹ Prev</button>
+        
+        <div class="page-numbers-list" id="pageNumbersList">
+          <!-- Page buttons injected dynamically -->
+        </div>
+
+        <button type="button" id="nextPageBtn" class="btn btn-secondary btn-sm" title="Next Page">Next ›</button>
+        <button type="button" id="lastPageBtn" class="btn btn-secondary btn-sm" title="Last Page">Last »</button>
+        <span class="page-indicator" id="pageIndicator">Page 1 of 1</span>
+      </nav>
+
+    </section>
+
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- Drug Details & Egyptian Pricing Modal                                  -->
+  <!-- ======================================================================= -->
+  <div id="drugDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-badge-row">
+            <span class="badge" id="modalEdaId">EDA-DB-00000</span>
+            <span class="badge badge-success" id="modalStatusBadge">Official Marketed EDA Drug</span>
+            <span class="badge badge-neutral" id="modalDosageBadge">Tablet</span>
+          </div>
+          <h2 class="modal-commercial-en" id="modalCommercialEn">Commercial Name</h2>
+          <h3 class="modal-commercial-ar" id="modalCommercialAr">الاسم التجاري بالعربية</h3>
+        </div>
+        <button type="button" id="closeModalBtn" class="modal-close-btn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+
+        <!-- Drug Packaging Visual & Clinical Indication Showcase -->
+        <div class="card drug-modal-hero-card">
+          <div class="drug-modal-hero-grid">
+            
+            <!-- Left: Visual Column -->
+            <div class="drug-modal-visual-col">
+              <div id="modalVisualBox" class="drug-modal-visual-frame">
+                <!-- Shimmer Loading Placeholder -->
+                <div id="modalVisualSkeleton" class="shimmer-image-placeholder">
+                  <div class="shimmer-spinner-icon"></div>
+                  <span>جاري استدعاء صورة المستحضر...</span>
+                </div>
+                <img id="modalDrugVisual" alt="صورة المستحضر" class="hidden">
+              </div>
+              <div class="drug-modal-visual-caption">
+                <span>🇪🇬 الشكل الصيدلي وغلاف المستحضر المعتمد</span>
+              </div>
+            </div>
+
+            <!-- Right: Clinical Information Column -->
+            <div class="drug-modal-clinical-col">
+              <div class="clinical-indication-block">
+                <div class="clinical-sec-title">
+                  <span>🩺</span> ماذا يعالج هذا الدواء ومؤشر التشخيص:
+                </div>
+                <p id="modalClinicalIndication" class="clinical-sec-text">جاري استرجاع البيانات الإكلينيكية...</p>
+              </div>
+
+              <div id="modalLikelyDiagnosisBox" class="likely-diagnosis-badge-row">
+                <span>🎯</span> <span><strong>تشخيص الطبيب المتوقع:</strong> <span id="modalLikelyDiagnosis">جاري التحديد...</span></span>
+              </div>
+
+              <!-- Detailed Condition Description (دواعي الاستعمال التفصيلية من موسوعة الطبي) -->
+              <div id="modalDetailedUsesWrap" class="detailed-uses-box">
+                <div class="detailed-uses-title">
+                  <span>📖</span> دواعي الاستعمال والتفاصيل العلاجية (موسوعة الطبي):
+                </div>
+                <div id="modalDetailedUsesContent" class="detailed-uses-content">جاري استرجاع التفاصيل العلاجية من موسوعة الطبي...</div>
+              </div>
+
+              <!-- Altibbi Medical Reference Link -->
+              <div id="modalSourceLinkWrap" class="source-link-wrap">
+                <a id="modalSourceLink" href="#" target="_blank" rel="noopener noreferrer" class="altibbi-portal-link">
+                  🌐 عرض صفحة الدواء المعتمدة على موسوعة الطبي (Altibbi) ↗
+                </a>
+                <span id="modalPrecautionsBrief" class="precautions-brief"></span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Pricing Highlight Card -->
+        <div class="card pricing-highlight-card">
+          <div class="pricing-card-header">
+            <h4>
+              <span>💵</span> Egyptian Pharmacy Pricing & Current Expected Price
+              <span class="ar-title">السعر الجبري والسعر المتوقع حالياً في مصر</span>
+            </h4>
+            <span class="eda-law-badge">تسعيرة جبرية موحدة</span>
+          </div>
+
+          <div class="pricing-metrics-grid">
+            
+            <!-- Registered Base Price -->
+            <div class="pricing-metric-box">
+              <span class="metric-title">Official Registered Price</span>
+              <span class="metric-ar-title">السعر الرسمي المسجل</span>
+              <div class="metric-value" id="modalBasePrice">-- EGP</div>
+              <span class="metric-note">قاعدة البيانات المرجعية بهيئة الدواء</span>
+            </div>
+
+            <!-- Expected Current Price Range -->
+            <div class="pricing-metric-box highlight-box">
+              <span class="metric-title">Expected Current Pharmacy Price</span>
+              <span class="metric-ar-title">السعر المتوقع حالياً في الصيدليات</span>
+              <div class="metric-value current-price-val" id="modalCurrentPrice">-- EGP</div>
+              <div class="metric-range" id="modalPriceRange">Range: -- to -- EGP</div>
+              <span class="metric-note" id="modalTierBadge">وفقاً لقرارات لجان التسعير 2024-2026</span>
+            </div>
+
+            <!-- Strip / Unit Pricing -->
+            <div class="pricing-metric-box">
+              <span class="metric-title">Price Per Strip / Unit</span>
+              <span class="metric-ar-title">سعر الشريط أو الوحدة بالصيدلية</span>
+              <div class="metric-value strip-price-val" id="modalStripPrice">-- EGP</div>
+              <span class="metric-sub" id="modalPackageDesc">عبوة -- شريط</span>
+              <span class="metric-note">شراء مجزأ بالصيدليات المصرية</span>
+            </div>
+
+          </div>
+
+          <!-- Official Pricing Advisory Note -->
+          <div class="pricing-regulatory-note">
+            <div class="note-icon">⚖️</div>
+            <div class="note-text">
+              <p id="modalMarketNoteAr">خاضع للتسعيرة الجبرية الرسمية الصادرة عن هيئة الدواء المصرية (EDA). كافة الصيدليات ملزمة بالسعر المطبوع على العبوة أو أحدث إخطارات لجنة التسعير.</p>
+              <p class="en-note" id="modalMarketNoteEn">Subject to mandatory uniform pricing across Egyptian pharmacies under Egyptian Drug Authority (EDA) regulatory circulars.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clinical & Pharmaceutical Specs Grid -->
+        <div class="modal-specs-grid">
+          
+          <!-- Scientific & Active Ingredients -->
+          <div class="card spec-card">
+            <h4 class="spec-card-title">
+              <span>🧬</span> Scientific Name & Active Ingredients
+            </h4>
+            <div class="spec-row">
+              <span class="spec-label">Generic Name (INN):</span>
+              <span class="spec-value code-font" id="modalGenericName">--</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Active Chemical Ingredients:</span>
+              <div class="active-ingredients-chips" id="modalActiveIngredients">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Concentration / Strength:</span>
+              <span class="spec-value" id="modalStrength">--</span>
+            </div>
+          </div>
+
+          <!-- Classification & Manufacturing -->
+          <div class="card spec-card">
+            <h4 class="spec-card-title">
+              <span>🏭</span> Classification & Manufacturer
+            </h4>
+            <div class="spec-row">
+              <span class="spec-label">Manufacturer / MA Holder:</span>
+              <span class="spec-value font-semibold" id="modalManufacturer">--</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Therapeutic Pharmacological Class:</span>
+              <span class="spec-value" id="modalDrugClass">--</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Route of Administration:</span>
+              <span class="spec-value" id="modalRoute">--</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Dosage Form:</span>
+              <span class="spec-value" id="modalDosageForm">--</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Official Registry Provenance:</span>
+              <span class="spec-value text-muted" id="modalProvenance">Egyptian Drug Authority (EDA) / karem505 dataset</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Egyptian Market Alternatives & Substitutes Section -->
+        <div class="card alternatives-section" id="alternativesSection">
+          <div class="alternatives-header">
+            <h4>
+              <span>🔄</span> Egyptian Market Substitutes & Generic Equivalents
+              <span class="ar-title">المثائل والبدائل المسجلة في مصر مع مقارنة الأسعار</span>
+            </h4>
+            <p class="alternatives-sub">
+              أدوية بديلة مسجلة رسمياً تحتوي على نفس المادة الفعالة (المثائل) أو تنتمي لنفس المجموعة العلاجية لمساعدة المرضى والصيادلة عند وجود نقص أو للبحث عن سعر مناسب.
+            </p>
+          </div>
+
+          <!-- Generics Sub-tab: Exact Active Ingredients -->
+          <div class="alts-group">
+            <div class="alts-group-header">
+              <span class="alts-group-badge">المثائل المتطابقة (نفس المادة الفعالة)</span>
+              <span class="alts-group-count" id="genericsCount">0 بدائل متاحة</span>
+            </div>
+            <div class="alts-cards-grid" id="genericsGrid">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Therapeutic Class Alternatives -->
+          <div class="alts-group" style="margin-top: 1.25rem;">
+            <div class="alts-group-header">
+              <span class="alts-group-badge" style="background: var(--bg-subtle); color: var(--text-main);">بدائل نفس المجموعة العلاجية (Drug Class)</span>
+              <span class="alts-group-count" id="therapeuticCount">0 بدائل</span>
+            </div>
+            <div class="alts-cards-grid" id="therapeuticGrid">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Modal Footer Actions -->
+      <div class="modal-footer">
+        <button type="button" id="copyDrugDetailsBtn" class="btn btn-secondary btn-sm">📋 Copy Drug Details</button>
+        <button type="button" id="shareDrugLinkBtn" class="btn btn-secondary btn-sm">🔗 Share Link</button>
+        <button type="button" id="closeModalBottomBtn" class="btn btn-primary btn-sm">Done / Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="edaToast" class="eda-toast hidden">Copied to clipboard!</div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>Prescription AI Lab & Egyptian Drug Authority (EDA) Database • 25,098 Official Registered Egyptian Medicines.</p>
+      <p class="disclaimer">
+        Regulatory & Clinical Disclaimer: Drug pricing estimates reflect official EDA approved adjustments (2024–2026). In Egypt, the mandatory price printed on the pack or latest EDA circular by law governs retail sale. Always consult a licensed Egyptian physician or pharmacist before changing or substituting medications.
+      </p>
+    </div>
+  </footer>
+
+  <script src="/static/drugs.js?v=2.6"></script>
+</body>
+</html>

@@ -19,6 +19,43 @@ def test_string_similarity():
     assert string_similarity("Flagyl", "Cetal") < 0.4
 
 
+def test_cer_wer_metrics():
+    from backend.app.utils.text import calculate_cer, calculate_wer
+
+    # Exact match: CER and WER should be 0.0
+    assert calculate_cer("Flagyl 125mg", "Flagyl 125mg") == 0.0
+    assert calculate_wer("Flagyl 125mg tid", "Flagyl 125mg tid") == 0.0
+
+    # Minor typo (1 char diff in 6 chars)
+    cer = calculate_cer("Flagyl", "Flajyl")
+    assert 0.0 < cer < 0.3
+
+    # Word substitution
+    wer = calculate_wer("Flagyl 125mg tid", "Flagyl 250mg tid")
+    assert 0.2 < wer < 0.4
+
+    # Empty edge cases
+    assert calculate_cer("", "") == 0.0
+    assert calculate_cer("Flagyl", "") == 1.0
+    assert calculate_wer("", "") == 0.0
+    assert calculate_wer("Flagyl", "") == 1.0
+
+
+def test_precision_recall_f1():
+    from backend.app.utils.text import calculate_precision_recall_f1
+
+    # Perfect detection: 3 TP, 0 FP, 0 FN
+    p, r, f1 = calculate_precision_recall_f1(3, 0, 0)
+    assert p == 1.0 and r == 1.0 and f1 == 1.0
+
+    # 2 TP, 1 FP, 1 FN
+    p, r, f1 = calculate_precision_recall_f1(2, 1, 1)
+    assert round(p, 2) == 0.67
+    assert round(r, 2) == 0.67
+    assert round(f1, 2) == 0.67
+
+
+
 def test_critical_lasa_error_detection():
     # Losec vs Lasix is a high-risk LASA pair
     assert is_critical_medication_error("Losec", "Lasix") is True

@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
@@ -47,9 +48,10 @@ app.add_middleware(
 # Include API Router
 app.include_router(api_router, prefix="/api")
 
-# Serve Web UI static files
+# Serve Web UI static files (only if not running under Gradio / Hugging Face Spaces)
 WEB_DIR = PROJECT_ROOT / "web"
-if WEB_DIR.exists():
+is_hf_space = bool(os.environ.get("SPACE_ID") or os.environ.get("IS_GRADIO"))
+if WEB_DIR.exists() and not is_hf_space:
     app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
 
     @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
@@ -58,6 +60,15 @@ if WEB_DIR.exists():
         if index_file.exists():
             return FileResponse(index_file)
         return {"message": "Prescription AI API is running. UI files not found in web/."}
+
+    @app.api_route("/drugs", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/eda", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/database", methods=["GET", "HEAD"], include_in_schema=False)
+    async def serve_drugs_page():
+        drugs_file = WEB_DIR / "drugs.html"
+        if drugs_file.exists():
+            return FileResponse(drugs_file)
+        return {"message": "EDA Drug Database web page not found in web/drugs.html."}
 
 
 if __name__ == "__main__":

@@ -124,3 +124,20 @@ def test_cost_estimation():
     openai_cost = estimate_cost("gpt-4o", 1000, 500)
     assert openai_cost is not None
     assert openai_cost.total_cost_usd > gemini_cost.total_cost_usd
+
+
+@pytest.mark.asyncio
+async def test_local_vlm_provider_config_and_error():
+    from backend.app.providers.local_vlm import LocalVLMProvider
+    provider = LocalVLMProvider(base_url="http://127.0.0.1:54321/v1")
+    assert provider.name == "local_vlm"
+    assert "qwen2.5-vl:7b" in provider.supported_models
+    assert provider.is_configured()
+
+    with pytest.raises(RuntimeError, match="Could not connect to local VLM server"):
+        await provider.analyze(
+            image_bytes=create_dummy_image_bytes(),
+            mime_type="image/jpeg",
+            prompt="Analyze",
+            model="qwen2.5-vl:7b",
+        )

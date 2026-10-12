@@ -32,7 +32,7 @@ def validate_and_inspect_image(
     except (UnidentifiedImageError, Exception) as exc:
         raise ValueError(f"Invalid or corrupted image format: {str(exc)}") from exc
 
-    # Re-open for dimension inspection (verify() closes/invalidates the image object)
+    # Re-open for dimension inspection and handwriting clarity enhancement
     with Image.open(io.BytesIO(image_bytes)) as img:
         width, height = img.size
         img_format = img.format or "JPEG"
@@ -44,12 +44,40 @@ def validate_and_inspect_image(
         elif img_format.upper() in ("WEBP",):
             normalized_mime = "image/webp"
 
+        orig_width, orig_height, orig_size = width, height, len(image_bytes)
+        processed_bytes = image_bytes
+
+        # Preserve prescription handwriting resolution:
+        # Only downscale very large camera scans (> 2048px) to prevent memory issues.
+        # Preserve native resolution for standard photos (800px - 2048px) to protect fine Arabic strokes.
+        max_dim = max(width, height)
+        target_max_dim = 1920
+        rgb_img = img.convert("RGB") if img.mode != "RGB" else img
+        needs_resize = False
+        scale = 1.0
+
+        if max_dim > 2048:
+            scale = target_max_dim / max_dim
+            needs_resize = True
+        elif max_dim < 600:
+            scale = min(2.5, 1000 / max_dim)
+            needs_resize = True
+
+        if needs_resize and scale != 1.0:
+            new_w, new_h = max(1, int(width * scale)), max(1, int(height * scale))
+            img_resized = rgb_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            img_resized.save(buf, format="JPEG", quality=95)
+            processed_bytes = buf.getvalue()
+            normalized_mime = "image/jpeg"
+
+
         info = ImageInfo(
             filename=filename,
-            width=width,
-            height=height,
+            width=orig_width,
+            height=orig_height,
             format=img_format,
-            size_bytes=len(image_bytes)
+            size_bytes=orig_size,
         )
 
-        return info, image_bytes, normalized_mime
+        return info, processed_bytes, normalized_mime

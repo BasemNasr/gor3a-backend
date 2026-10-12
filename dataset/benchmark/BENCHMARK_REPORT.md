@@ -1,15 +1,13 @@
-# 📊 Egyptian Prescription AI — Model Benchmark Report (Phase 2)
+# 📊 Egyptian Prescription AI — Model Benchmark Report
 
-**Total Prescriptions Evaluated:** 5 test cases  
+**Total Prescriptions Evaluated:** 15 test cases  
 **Primary Safety Principle:** Critical Error Rate (0.0% is required for clinical safety)
 
-## 🏆 Benchmark Comparison Matrix
+## 🏆 Benchmark Comparison Matrix — Clinical OCR & Safety
 
-| Model | Med Name Acc. | Critical Error Rate 🛡️ | Uncertainty Acc. | Strength Acc. | Dose Acc. | Freq. Acc. | Latency (ms) | Cost / Rx |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **mock:mock-conservative-v1 [V2]** | 100.0% | **0.0%** | 100.0% | 100.0% | 83.3% | 83.3% | 153 ms | $0.0000 |
-| **mock:mock-conservative-v1 [V1]** | 100.0% | **0.0%** | 100.0% | 100.0% | 83.3% | 83.3% | 152 ms | $0.0000 |
-| **mock:mock-aggressive-v1 [V1]** | 83.3% | **8.3%** | 50.0% | 91.7% | 75.0% | 75.0% | 152 ms | $0.0000 |
+| Model | Accuracy | Precision | Recall | F1 Score | CER | WER | Exact Match | Critical Error Rate 🛡️ | Latency (ms) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **mock:mock-conservative-v1 [V1]** | 11.4% | 12.2% | 14.3% | 12.4% | 85.2% | 93.1% | 3.2% | **0.0%** | 151 ms |
 
 ## 🔍 Safety & Performance Analysis
 

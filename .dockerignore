@@ -1,0 +1,17 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+Gor3a App
+Gor3a.zip
+*.jpg
+*.png
+*.mp4
+.DS_Store
+models/
+newdataset arabic , english/
+notebooks/

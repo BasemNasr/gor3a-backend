@@ -206,3 +206,134 @@ def test_api_analyze_v1_vs_v2():
     v1_data = resp_v1.json()
     med_v1 = v1_data["analysis"]["medications"][0]
     assert med_v1["pipeline_version"] == "v1"
+
+
+def test_synthesize_clinical_instruction():
+    from backend.app.services.pipeline_v2 import synthesize_clinical_instruction
+
+    # Full combination: dose + freq + duration + Arabic instruction
+    res = synthesize_clinical_instruction(
+        dose="1 drop",
+        frequency="3 times daily",
+        duration="2 weeks",
+        raw_instructions="قطرة ٣ مرات يومياً لمدة أسبوعين"
+    )
+    assert "1 drop 3 times daily for 2 weeks" in res
+    assert "قطرة ٣ مرات يومياً لمدة أسبوعين" in res
+
+    # Dose + Freq only
+    res2 = synthesize_clinical_instruction(
+        dose="1 tablet",
+        frequency="twice daily",
+        duration=None,
+        raw_instructions="بعد الأكل"
+    )
+    assert res2 == "1 tablet twice daily (بعد الأكل)"
+
+    # Empty inputs
+    assert synthesize_clinical_instruction(None, None, None, None) is None
+
+    # Literal "null" string prevention
+    assert synthesize_clinical_instruction("null", "null", "null", "null") is None
+    assert synthesize_clinical_instruction("null", "3 times daily", "null", None) == "3 times daily"
+
+
+def test_clean_clinical_field_and_stem_extraction():
+    from backend.app.utils.text import clean_clinical_field, extract_drug_brand_stem
+
+    assert clean_clinical_field("null") is None
+    assert clean_clinical_field("NULL") is None
+    assert clean_clinical_field("None") is None
+    assert clean_clinical_field("unknown") is None
+    assert clean_clinical_field("N/A") is None
+    assert clean_clinical_field("null null for null") is None
+    assert clean_clinical_field("  ") is None
+    assert clean_clinical_field("Efemyo") == "Efemyo"
+
+    # Stem extraction
+    assert extract_drug_brand_stem("Efemyo Eye Drop") == "Efemyo"
+    assert extract_drug_brand_stem("Lubrivic Eye Drop") == "Lubrivic"
+    assert extract_drug_brand_stem("R/ Cataflam 50mg Tab") == "Cataflam"
+    assert extract_drug_brand_stem("Augmentin 1g") == "Augmentin"
+
+
+def test_ophthalmology_prescription_normalization():
+    """Verifies that Dr. Moaz Ateto's prescription items normalize correctly."""
+    from backend.app.services.normalizer import drug_normalizer
+
+    # Efemyo Eye Drop
+    res1 = drug_normalizer.normalize(
+        raw_text="Efemyo Eye Drop",
+        predicted_name="Efemyo",
+        initial_confidence=0.85
+    )
+    assert res1.status == "identified"
+    assert res1.confirmed_drug is not None
+    assert res1.confirmed_drug.name == "Efemyo"
+    assert res1.confirmed_drug.dosage_form == "Suspension"
+
+    # Lubrivic Eye Drop (fuzzy matches Lubrivisc in EDA)
+    res2 = drug_normalizer.normalize(
+        raw_text="Lubrivic Eye Drop",
+        predicted_name="Lubrivic",
+        initial_confidence=0.85
+    )
+    assert res2.status == "identified"
+    assert res2.confirmed_drug is not None
+    assert res2.confirmed_drug.name == "Lubrivisc"
+    assert res2.confirmed_drug.score >= 0.85
+
+
+def test_reconcile_dosage_form_and_multiplication_shorthand():
+    """Verifies that doctor 1x3 shorthand and tablet vs drop contradictions are reconciled."""
+    from backend.app.services.pipeline_v2 import reconcile_dosage_form_and_instructions
+
+    # Case 1: Augmentin tablet was misread with 'قطرة' -> reconciled to 'قرص'
+    dose1, freq1, instr1 = reconcile_dosage_form_and_instructions(
+        raw_text="Augmentin 625 mg tab 1x3",
+        dose="1 tab",
+        frequency="3 times daily",
+        raw_instructions="قطرة ٣ مرات يومياً",
+        dosage_form="Tablet"
+    )
+    assert dose1 == "1 tab"
+    assert freq1 == "3 times daily"
+    assert "قرص ٣ مرات يومياً" in instr1
+    assert "قطرة" not in instr1
+
+    # Case 2: Metronidazole tablet with 1x3 notation and 'قطرة ٢ مرات' -> reconciled to 3 times and 'قرص ٣ مرات'
+    dose2, freq2, instr2 = reconcile_dosage_form_and_instructions(
+        raw_text="Metronidazole 500 mg tab 1x3",
+        dose="1 tab",
+        frequency="2 times daily",
+        raw_instructions="قطرة ٢ مرات يومياً",
+        dosage_form="Tablet"
+    )
+    assert dose2 == "1 tab"
+    assert freq2 == "3 times daily"
+    assert "قرص ٣ مرات يومياً" in instr2
+    assert "قطرة" not in instr2
+
+    # Case 3: Eye drops must keep 'قطرة'
+    dose3, freq3, instr3 = reconcile_dosage_form_and_instructions(
+        raw_text="Efemyo Eye Drop",
+        dose="1 drop",
+        frequency="3 times daily",
+        raw_instructions="قطرة ٣ مرات يومياً لمدة أسبوع",
+        dosage_form="Drops"
+    )
+    assert "قطرة" in instr3
+
+
+def test_generic_name_matching_in_eda_repository():
+    """Verifies that generic chemical names (Diclofenac Potassium, Metronidazole) match registered drugs."""
+    from backend.app.drugs.repository import drug_repository
+
+    matches = drug_repository.search_candidates("Diclofenac Potassium", limit=5)
+    assert len(matches) > 0
+    top_drug, score = matches[0]
+    assert score >= 0.90
+    assert "DICLOFENAC POTASSIUM" in (top_drug.generic_name or "").upper()
+
+
+

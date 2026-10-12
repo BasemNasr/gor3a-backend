@@ -51,3 +51,19 @@ dataset/raw/*
 !dataset/raw/.gitkeep
 uploads/
 temp/
+
+# Large local files, models & mobile app folder
+Gor3a App/
+Gor3a.zip
+App Design .png
+Logo.png
+models/
+newdataset arabic , english /
+notebooks/
+dataset/training_exports/
+dataset/new Prescriptions images /
+dataset/egyptian_100_prescriptions/
+dataset/last/
+dataset/bilingual_prescriptions/
+dataset/benchmark/rx_test_*
+

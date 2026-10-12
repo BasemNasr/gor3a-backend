@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prescription AI — Egyptian Medical Prescriptions</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css?v=2.5">
+  <link rel="stylesheet" href="/static/drugs.css?v=2.5">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -26,6 +27,8 @@
       <nav class="nav-tabs">
         <button type="button" class="tab-btn active" id="tabLabBtn">🔬 Single Prescription Lab</button>
         <button type="button" class="tab-btn" id="tabBenchmarkBtn">📊 Model Benchmark Suite</button>
+        <button type="button" class="tab-btn" id="tabBilingualBtn">📚 Bilingual Arabic Dataset & Training</button>
+        <a href="/drugs" class="tab-btn tab-link" id="tabDrugsLink" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">💊 EDA Drug Database (25,098)</a>
       </nav>
 
       <div class="safety-indicator">
@@ -207,6 +210,23 @@
           </div>
         </div>
 
+        <!-- Overall Prescription Diagnosis Insight Card -->
+        <div class="card overall-diagnosis-card hidden" id="overallDiagnosisCard">
+          <div class="overall-diag-header">
+            <div class="diag-header-title">
+              <span class="diag-icon-large">🩺</span>
+              <div>
+                <h3 class="diag-title">تحليل تشخيص الطبيب واستنتاج الحالة الإجمالية للروشتة</h3>
+                <span class="diag-subtitle">بناءً على التوافق العلاجي للأدوية المكتوبة في هذه الروشتة</span>
+              </div>
+            </div>
+            <span class="badge badge-success">تشخيص استدلالي ذكي</span>
+          </div>
+          <div class="overall-diag-body" id="overallDiagnosisBody">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
         <!-- Extracted Medications List -->
         <div class="card medications-card">
           <h3 class="section-title">
@@ -214,6 +234,24 @@
           </h3>
           <div class="medications-list" id="medicationsList">
             <!-- Dynamic Medication Cards injected here -->
+          </div>
+        </div>
+
+        <!-- Dietary & Herbal Advice Card -->
+        <div class="card dietary-advice-card hidden" id="dietaryAdviceCard" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.03)); border: 1px solid rgba(16, 185, 129, 0.35);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.4rem;">🌿</span>
+              <h3 class="section-title" style="margin: 0; color: #10b981;">
+                Dietary & Herbal Instructions / تعليمات الأعشاب والنظام الغذائي
+              </h3>
+            </div>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #059669; font-weight: 600;">نصائح طبيعية</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
+            Non-pharmacological directions, natural remedies, and lifestyle guidance prescribed by the physician:
+          </p>
+          <div id="dietaryAdviceContent" style="padding: 12px 16px; border-radius: 8px; background: rgba(16, 185, 129, 0.12); font-size: 1.05rem; font-weight: 600; color: #047857; direction: rtl; text-align: right; line-height: 1.6; border-right: 4px solid #10b981;">
           </div>
         </div>
 
@@ -252,19 +290,47 @@
           </button>
         </div>
 
+        <!-- 100-Prescription Dataset Distribution (70 Train / 15 Val / 15 Test) -->
+        <div class="stats-grid" style="margin-top: 1rem; margin-bottom: 1rem;">
+          <div class="stat-card">
+            <div class="stat-label">Training Set (70%)</div>
+            <div class="stat-value" style="color: var(--primary);">70</div>
+            <div class="stat-sub">روشتات تدريب النماذج (70%)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Validation Set (15%)</div>
+            <div class="stat-value" style="color: var(--warning-solid);">15</div>
+            <div class="stat-sub">روشتات التحقق وضبط المعايير (15%)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Test Benchmark Set (15%)</div>
+            <div class="stat-value" style="color: var(--success-solid);">15</div>
+            <div class="stat-sub">روشتات الاختبار والتقييم النهائي (15%)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Curated Dataset</div>
+            <div class="stat-value">100</div>
+            <div class="stat-sub">روشتة علاج مصرية معتمدة</div>
+          </div>
+        </div>
+
         <div class="benchmark-model-selector">
           <span class="selector-lbl">Models Included in Evaluation:</span>
+            <label class="checkbox-label">
+              <input type="checkbox" name="benchModel" value="local_vlm:qwen2.5vl:3b:v2" checked>
+              <span>Local VLM Qwen2.5-VL:3B [Pipeline V2 + EDA] (Mac GPU)</span>
+            </label>
             <label class="checkbox-label">
               <input type="checkbox" name="benchModel" value="mock:mock-conservative-v1:v2" checked>
               <span>Mock Conservative [Pipeline V2 + EDA]</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="mock:mock-conservative-v1:v1" checked>
-              <span>Mock Conservative [Pipeline V1 Vision Only]</span>
+              <input type="checkbox" name="benchModel" value="mock:mock-conservative-v1:v1">
+              <span>Mock Conservative [Pipeline V1 Raw]</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="mock:mock-aggressive-v1:v1" checked>
-              <span>Mock Aggressive [Pipeline V1 Baseline]</span>
+              <input type="checkbox" name="benchModel" value="mock:mock-aggressive-v1:v1">
+              <span>Mock Aggressive Baseline</span>
             </label>
             <label class="checkbox-label">
               <input type="checkbox" name="benchModel" value="gemini:gemini-2.5-flash:v2">
@@ -280,34 +346,63 @@
             </label>
           </div>
         </div>
-      </div>
 
       <!-- Comparative Results Matrix -->
       <div class="card benchmark-matrix-card" id="benchMatrixCard">
         <h3 class="section-title">
-          <span>🏆</span> Comparative Model Ranking & Safety Matrix
+          <span>🏆</span> Comparative Model Ranking & Clinical OCR Matrix
         </h3>
+        <p class="text-muted" style="margin-bottom: 0.75rem; font-size: 0.85rem;">Evaluation across the 15 unseen Egyptian test prescriptions measuring entity extraction, OCR error rates, and safety:</p>
         <div class="table-responsive">
           <table class="benchmark-table" id="benchmarkTable">
             <thead>
               <tr>
                 <th>Model</th>
-                <th>Med Name Acc.</th>
-                <th>Critical Error Rate 🛡️</th>
-                <th>Uncertainty Acc.</th>
-                <th>Strength Acc.</th>
-                <th>Dose Acc.</th>
-                <th>Freq. Acc.</th>
-                <th>Latency (ms)</th>
-                <th>Cost / Rx</th>
+                <th title="Accuracy: نسبة النتائج الصحيحة لكافة الحقول">Accuracy</th>
+                <th title="Precision: من كل الأدوية اللي الموديل قال إنها موجودة، كام واحد فعلاً صحيح">Precision</th>
+                <th title="Recall: من كل الأدوية الموجودة فعلاً في الروشتة، كام واحد الموديل قدر يكتشفه">Recall</th>
+                <th title="F1 Score: توازن بين Precision و Recall">F1 Score</th>
+                <th title="Character Error Rate: قياس أخطاء الحروف للـ OCR (أقل أفضل)">CER</th>
+                <th title="Word Error Rate: نسبة أخطاء الكلمات (أقل أفضل)">WER</th>
+                <th title="Exact Match / Field Accuracy: هل الموديل استخرج البيانات كاملة وصحيحة">Exact Match</th>
+                <th title="Critical Error Rate: نسبة الأخطاء الدوائية الحرجة">Critical Err 🛡️</th>
+                <th>Latency</th>
               </tr>
             </thead>
             <tbody id="benchmarkTableBody">
               <tr>
-                <td colspan="9" class="text-center">Click <strong>Run Multi-Model Benchmark</strong> to evaluate models.</td>
+                <td colspan="10" class="text-center">Click <strong>Run Multi-Model Benchmark</strong> to evaluate models.</td>
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Metrics Clinical Legend -->
+        <div class="metrics-legend-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem;">
+          <div class="legend-item">
+            <strong>🎯 Accuracy (الدقة الكلية):</strong> نسبة الحقول المستخرجة بشكل صحيح (الاسم، الجرعة، التكرار، المدة، والتعليمات).
+          </div>
+          <div class="legend-item">
+            <strong>🔍 Precision (الدقة التنبؤية):</strong> من بين الأدوية التي توقعها الموديل، كام دواء فعلاً موجود وصحيح.
+          </div>
+          <div class="legend-item">
+            <strong>📡 Recall (الاسترجاع):</strong> من بين الأدوية الفعلية في الروشتة، كم دواء استطاع الموديل اكتشافه.
+          </div>
+          <div class="legend-item">
+            <strong>⚖️ F1 Score:</strong> المعامل التوافقي بين الدقة والاسترجاع للمقارنة العادلة والشاملة.
+          </div>
+          <div class="legend-item">
+            <strong>🔤 CER (Character Error Rate):</strong> معدل أخطاء الحروف لقياس جودة الـ OCR المباشر.
+          </div>
+          <div class="legend-item">
+            <strong>📝 WER (Word Error Rate):</strong> معدل أخطاء الكلمات الكاملة مقارنة بالنص المرجعي.
+          </div>
+          <div class="legend-item">
+            <strong>✨ Exact Match:</strong> نسبة الأدوية التي استخرجت ببيانات كاملة وصحيحة 100% دون أي خطأ.
+          </div>
+          <div class="legend-item">
+            <strong>🛡️ Critical Error Rate:</strong> رصد أخطاء التبديل الدوائي الخطرة (مثل Losec vs Lasix) - يجب أن تكون 0%.
+          </div>
         </div>
       </div>
 
@@ -325,6 +420,113 @@
     </div>
   </section>
 
+  <!-- ======================================================================= -->
+  <!-- TAB 3: Bilingual Arabic Dataset & Training (Noor Alzoghby)             -->
+  <!-- ======================================================================= -->
+  <section class="benchmark-layout hidden" id="bilingualView">
+    <div class="benchmark-container">
+      
+      <!-- Bilingual Dataset Header Card -->
+      <div class="card benchmark-header-card">
+        <div class="bench-title-row">
+          <div>
+            <h2>Bilingual Medical Prescriptions Dataset [Arabic & English]</h2>
+            <p class="text-muted">Noor Alzoghby dataset: 561 authentic clinical prescription images with English brand handwriting and Egyptian Arabic dosing instructions, cross-referenced with the 25,098 Egyptian Drug Authority database.</p>
+          </div>
+        </div>
+
+        <!-- Dataset Summary Stats Ribbon -->
+        <div class="stats-grid" style="margin-top: 1rem;">
+          <div class="stat-card">
+            <div class="stat-label">Verified Prescriptions</div>
+            <div class="stat-value" id="bilingualStatCases">454</div>
+            <div class="stat-sub">Paired Image + Ground Truth</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Annotated Medications</div>
+            <div class="stat-value" id="bilingualStatMeds">1,573</div>
+            <div class="stat-sub">Handwritten brand & generic</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Arabic Instructions</div>
+            <div class="stat-value" id="bilingualStatArabic">1,050</div>
+            <div class="stat-sub">بعد الأكل, قبل النوم, 1x3, etc.</div>
+          </div>
+          <a href="/drugs" class="stat-card" style="text-decoration: none; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.15s, border-color 0.15s;" title="Open EDA Drug Database Search">
+            <div class="stat-label">EDA Drug Database ↗</div>
+            <div class="stat-value" id="bilingualStatEda" style="color: var(--primary);">25,098</div>
+            <div class="stat-sub">Official Egyptian medicines (Search →)</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Training & Fine-Tuning Studio Card -->
+      <div class="card">
+        <h3 class="section-title">
+          <span>🚀</span> Model Training & Fine-Tuning Studio
+        </h3>
+        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.85rem;">Export structured fine-tuning datasets for multimodal Vision-Language Models (OpenAI GPT-4o, Google Gemini, and open-source VLMs like Qwen2-VL / LLaVA-Med), or evaluate models on the 85-case test split.</p>
+
+        <div class="training-actions-grid">
+          <div class="training-action-box">
+            <h4>Export Fine-Tuning Datasets</h4>
+            <p>Generates <code>openai_vision_train.jsonl</code> and <code>vlm_lora_train.json</code> formatted with base64 images and structured target JSON schemas.</p>
+            <button type="button" class="btn btn-secondary btn-sm" id="exportTrainingBtn">
+              <span class="btn-spinner hidden" id="exportSpinner"></span>
+              <span id="exportBtnText">📦 Export JSONL Training Sets</span>
+            </button>
+            <div id="exportStatusAlert" class="alert alert-success hidden" style="margin-top: 0.75rem; font-size: 0.8rem;"></div>
+          </div>
+
+          <div class="training-action-box">
+            <h4>Evaluate Model on Test Split</h4>
+            <p>Benchmark model transcription accuracy (Medication Name, Dose, Frequency, and Arabic Instructions) on the unseen bilingual test split.</p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+              <select id="bilingualEvalProvider" class="form-control" style="flex: 1; min-width: 140px;">
+                <option value="local_vlm">Local VLM (Ollama / Qwen2.5-VL)</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="openai">OpenAI GPT-4o</option>
+                <option value="mock">Offline Mock Provider</option>
+              </select>
+              <select id="bilingualEvalPipeline" class="form-control" style="flex: 1; min-width: 140px;">
+                <option value="v2">Pipeline V2 (Vision + EDA)</option>
+                <option value="v1">Pipeline V1 (Vision Only)</option>
+              </select>
+              <button type="button" class="btn btn-primary btn-sm" id="runBilingualEvalBtn">
+                <span class="btn-spinner hidden" id="bilingualEvalSpinner"></span>
+                <span id="bilingualEvalBtnText">▶ Run Test Split Eval</span>
+              </button>
+            </div>
+            <div id="bilingualEvalResults" class="hidden" style="background: var(--bg-subtle); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.825rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bilingual Cases Explorer -->
+      <div class="card">
+        <div class="bench-title-row" style="margin-bottom: 0.75rem;">
+          <h3 class="section-title" style="margin-bottom: 0;">
+            <span>📋</span> Explore Bilingual Prescriptions (<span id="bilingualDisplayCount">0</span>)
+          </h3>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+            <input type="text" id="bilingualSearchInput" class="form-control" placeholder="Search medication or Arabic instruction..." style="font-size: 0.85rem; padding: 0.35rem 0.65rem; width: 260px;">
+            <div class="split-filter-group">
+              <button type="button" class="split-pill active" data-split="all">All</button>
+              <button type="button" class="split-pill" data-split="train">Train</button>
+              <button type="button" class="split-pill" data-split="val">Val</button>
+              <button type="button" class="split-pill" data-split="test">Test</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cases-grid" id="bilingualCasesGrid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <footer class="app-footer">
     <div class="footer-container">
       <p>Prescription AI — Egyptian Medical Prescriptions. Phase 1 Lab & Phase 2 Model Benchmark.</p>
@@ -332,6 +534,170 @@
     </div>
   </footer>
 
-  <script src="/static/app.js"></script>
+  <!-- ======================================================================= -->
+  <!-- Prescription Medication Detail & Clinical Diagnosis Modal               -->
+  <!-- ======================================================================= -->
+  <div id="medicationDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card medication-modal-card">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-badge-row">
+            <span class="badge badge-primary" id="medModalEdaId">EDA-REG</span>
+            <span class="badge badge-success" id="medModalStatusBadge">مستحضر معتمد</span>
+            <span class="badge badge-neutral" id="medModalDosageBadge">Tablet</span>
+          </div>
+          <h2 class="modal-commercial-en" id="medModalCommercialEn">Augmentin</h2>
+          <h3 class="modal-commercial-ar" id="medModalCommercialAr">أوجمنتين</h3>
+        </div>
+        <button type="button" id="closeMedModalBtn" class="modal-close-btn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        
+        <!-- Top Row: Full Drug Package Visual + Quick Stats -->
+        <div class="med-modal-hero-grid">
+          <!-- Drug Image Container -->
+          <div class="med-modal-image-box">
+            <div class="med-image-frame">
+              <!-- Shimmer Loading Placeholder -->
+              <div id="medModalVisualSkeleton" class="shimmer-image-placeholder">
+                <div class="shimmer-spinner-icon"></div>
+                <span>جاري استدعاء صورة المستحضر...</span>
+              </div>
+              <img id="medModalImage" alt="صورة الدواء الرسمية" class="med-modal-main-img hidden">
+            </div>
+            <div class="med-image-caption">
+              <span>🇪🇬 صورة المستحضر والشكل الصيدلي المعتمد بهيئة الدواء المصرية</span>
+            </div>
+          </div>
+
+          <!-- Quick Drug Profile Highlights -->
+          <div class="med-modal-quick-info">
+            <div class="quick-info-card">
+              <span class="quick-info-label">المادة الفعالة (Active Substance):</span>
+              <span class="quick-info-val active-highlight" id="medModalActive">--</span>
+            </div>
+            <div class="quick-info-card">
+              <span class="quick-info-label">التركيز والشكل الصيدلي:</span>
+              <span class="quick-info-val" id="medModalStrengthForm">--</span>
+            </div>
+            <div class="quick-info-card">
+              <span class="quick-info-label">التصنيف الدوائي (Drug Class):</span>
+              <span class="quick-info-val" id="medModalCategory">--</span>
+            </div>
+            <div class="quick-info-card" id="medModalPricingCard">
+              <span class="quick-info-label">السعر في الصيدليات المصرية:</span>
+              <span class="quick-info-val price-highlight" id="medModalPrice">-- EGP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clinical Diagnosis & What It Treats -->
+        <div class="clinical-deep-dive-card">
+          <div class="deep-dive-header">
+            <h4>
+              <span>🩺</span> دواعي الاستعمال وتشخيص الطبيب المتوقع
+              <span class="en-sub">Clinical Indications & Probable Physician Diagnosis</span>
+            </h4>
+          </div>
+
+          <div class="deep-dive-grid">
+            <!-- Box 1: What It Treats / دواعي الاستعمال -->
+            <div class="deep-dive-box indication-highlight-box">
+              <div class="deep-dive-box-title">
+                <span class="box-icon">🎯</span>
+                <strong>ماذا يعالج هذا الدواء بالتفصيل؟</strong>
+              </div>
+              <p id="medModalWhatItTreats" class="deep-dive-text" style="white-space: pre-line;">--</p>
+            </div>
+
+            <!-- Box 2: Likely Diagnosis / تشخيص الطبيب واستنتاج مشكلة المريض -->
+            <div class="deep-dive-box diagnosis-highlight-box">
+              <div class="deep-dive-box-title">
+                <span class="box-icon">🔍</span>
+                <strong>تحليل تشخيص الطبيب (مشكلة المريض المتوقعة):</strong>
+              </div>
+              <p id="medModalLikelyDiagnosis" class="deep-dive-text">--</p>
+            </div>
+
+            <!-- Box 3: Mechanism / آلية العمل -->
+            <div class="deep-dive-box">
+              <div class="deep-dive-box-title">
+                <span class="box-icon">🔬</span>
+                <strong>كيف يعمل الدواء في الجسم؟ (آلية العمل)</strong>
+              </div>
+              <p id="medModalMechanism" class="deep-dive-text">--</p>
+            </div>
+
+            <!-- Box 4: Precautions / تنبيهات الأمان والاستخدام -->
+            <div class="deep-dive-box precautions-box">
+              <div class="deep-dive-box-title">
+                <span class="box-icon">⚠️</span>
+                <strong>إرشادات الاستخدام وتنبيهات هامة للمريض:</strong>
+              </div>
+              <p id="medModalPrecautions" class="deep-dive-text">--</p>
+            </div>
+          </div>
+
+          <!-- Altibbi Reference Link -->
+          <div style="margin-top: 10px; padding: 6px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <a id="medModalAltibbiLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none; align-items: center; gap: 4px; font-size: 0.8rem; color: #0284c7; font-weight: 700; text-decoration: none;">
+              🌐 عرض صفحة الدواء المعتمدة على موسوعة الطبي (Altibbi) ↗
+            </a>
+            <span style="font-size: 0.72rem; color: #64748b;">بيانات سريرية وصور معتمدة من الموسوعات الطبية وهيئة الدواء</span>
+          </div>
+        </div>
+
+        <!-- Prescription Context / تعليمات الروشتة المحددة -->
+        <div class="card rx-instructions-card">
+          <h4 class="spec-card-title">
+            <span>📋</span> الجرعة والتعليمات المقررة في الروشتة الحالية
+          </h4>
+          <div class="rx-instructions-grid">
+            <div class="rx-spec-item">
+              <span class="rx-spec-lbl">الجرعة المقررة:</span>
+              <span class="rx-spec-val" id="medModalDose">--</span>
+            </div>
+            <div class="rx-spec-item">
+              <span class="rx-spec-lbl">التكرار ومواعيد التناول:</span>
+              <span class="rx-spec-val" id="medModalFrequency">--</span>
+            </div>
+            <div class="rx-spec-item">
+              <span class="rx-spec-lbl">مدة العلاج (Duration):</span>
+              <span class="rx-spec-val" id="medModalDuration">--</span>
+            </div>
+            <div class="rx-spec-item full-width">
+              <span class="rx-spec-lbl">تعليمات الطبيب الكاملة:</span>
+              <span class="rx-spec-val highlight" id="medModalInstructions">--</span>
+            </div>
+            <div class="rx-spec-item full-width">
+              <span class="rx-spec-lbl">النص المكتوب بخط يد الطبيب (Verbatim):</span>
+              <span class="rx-spec-val code-font" id="medModalRawText">--</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <a href="#" id="medModalExploreAlternativesBtn" target="_blank" class="btn btn-secondary">
+          💊 فحص البدائل المتطابقة في دليل الأدوية (25,098)
+        </a>
+        <button type="button" id="copyMedModalInfoBtn" class="btn btn-secondary">
+          📋 نسخ تفاصيل الدواء
+        </button>
+        <button type="button" id="closeMedModalBottomBtn" class="btn btn-primary">
+          إغلاق
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=2.6"></script>
 </body>
 </html>

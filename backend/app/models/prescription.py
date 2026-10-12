@@ -74,6 +74,22 @@ class MedicationItem(BaseModel):
         default="v1",
         description="Pipeline version used: 'v1' (vision only) or 'v2' (vision + EDA normalizer)"
     )
+    clinical_indication: Optional[str] = Field(
+        default=None,
+        description="Concise Arabic summary of what the drug does, what it treats, and clinical indication"
+    )
+    likely_diagnosis: Optional[str] = Field(
+        default=None,
+        description="Probable clinical diagnosis or condition inferred from this medication"
+    )
+    indication_details: Optional[dict] = Field(
+        default=None,
+        description="Detailed clinical profile: what_it_does, what_it_treats, likely_diagnosis, mechanism, precautions"
+    )
+    image_url: Optional[str] = Field(
+        default=None,
+        description="URL or endpoint to fetch visual packaging representation of the medicine"
+    )
 
 
 class PrescriptionAnalysis(BaseModel):
@@ -83,6 +99,14 @@ class PrescriptionAnalysis(BaseModel):
     uncertain_items: List[str] = Field(
         default_factory=list,
         description="Explicit list of ambiguous, unreadable, or missing fields needing pharmacist attention"
+    )
+    dietary_and_herbal_advice: Optional[str] = Field(
+        default=None,
+        description="Non-pharmacological directions, herbal remedies (الأعشاب), dietary advice, or lifestyle instructions"
+    )
+    overall_likely_diagnosis: Optional[str] = Field(
+        default=None,
+        description="Synthesized probable physician diagnosis for the entire prescription based on co-prescribed medicines"
     )
     overall_confidence: float = Field(
         ...,

@@ -1,3 +1,14 @@
+---
+title: Gor3a Backend Api
+emoji: 💊
+colorFrom: teal
+colorTo: green
+sdk: gradio
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # ℞ Prescription AI — Egyptian Medical Prescriptions
 
 > **AI-Powered Handwritten Prescription Recognition & Clinical Information Extraction**  

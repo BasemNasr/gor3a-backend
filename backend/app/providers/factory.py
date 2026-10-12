@@ -1,6 +1,9 @@
+from typing import Dict, List, Optional
+from ..config import settings
 from .base import VisionProvider
 from .claude import ClaudeProvider
 from .gemini import GeminiProvider
+from .local_vlm import LocalVLMProvider
 from .mock_provider import MockProvider
 from .openai_provider import OpenAIProvider
 
@@ -15,6 +18,7 @@ def init_providers() -> Dict[str, VisionProvider]:
         "gemini": GeminiProvider(),
         "openai": OpenAIProvider(),
         "claude": ClaudeProvider(),
+        "local_vlm": LocalVLMProvider(),
         "mock": MockProvider(),
     }
     return _PROVIDER_REGISTRY
@@ -23,13 +27,24 @@ def init_providers() -> Dict[str, VisionProvider]:
 def get_provider(name: Optional[str] = None) -> VisionProvider:
     """
     Retrieve a vision provider instance by identifier.
-    Falls back to 'gemini' if name is omitted or empty.
+    If name is omitted, smartly selects the configured default provider,
+    or falls back to the first active configured provider.
     """
     global _PROVIDER_REGISTRY
     if not _PROVIDER_REGISTRY:
         init_providers()
 
-    provider_key = (name or "gemini").lower().strip()
+    if not name:
+        def_name = (settings.default_provider or "").lower().strip()
+        if def_name in _PROVIDER_REGISTRY and _PROVIDER_REGISTRY[def_name].is_configured():
+            return _PROVIDER_REGISTRY[def_name]
+        # Auto-fallback to the first configured non-mock provider (e.g. local_vlm or gemini)
+        for key, prov in _PROVIDER_REGISTRY.items():
+            if prov.is_configured() and key != "mock":
+                return prov
+        return _PROVIDER_REGISTRY.get("mock", _PROVIDER_REGISTRY["local_vlm"])
+
+    provider_key = name.lower().strip()
     if provider_key not in _PROVIDER_REGISTRY:
         available = ", ".join(_PROVIDER_REGISTRY.keys())
         raise ValueError(

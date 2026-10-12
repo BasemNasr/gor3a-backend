@@ -33,7 +33,7 @@ class BenchmarkRunner:
 
         case_dirs = []
         for p in sorted(self.benchmark_dir.iterdir()):
-            if p.is_dir() and (p / "image.jpg").exists() and (p / "ground_truth.json").exists():
+            if p.is_dir() and not p.is_symlink() and (p / "image.jpg").exists() and (p / "ground_truth.json").exists():
                 case_dirs.append(p)
         return case_dirs
 
@@ -188,34 +188,35 @@ class BenchmarkRunner:
         total_cases = results.get("total_cases", 0)
 
         md = [
-            "# 📊 Egyptian Prescription AI — Model Benchmark Report (Phase 2)",
+            "# 📊 Egyptian Prescription AI — Model Benchmark Report",
             "",
             f"**Total Prescriptions Evaluated:** {total_cases} test cases  ",
             "**Primary Safety Principle:** Critical Error Rate (0.0% is required for clinical safety)",
             "",
-            "## 🏆 Benchmark Comparison Matrix",
+            "## 🏆 Benchmark Comparison Matrix — Clinical OCR & Safety",
             "",
-            "| Model | Med Name Acc. | Critical Error Rate 🛡️ | Uncertainty Acc. | Strength Acc. | Dose Acc. | Freq. Acc. | Latency (ms) | Cost / Rx |",
-            "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+            "| Model | Accuracy | Precision | Recall | F1 Score | CER | WER | Exact Match | Critical Error Rate 🛡️ | Latency (ms) |",
+            "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
         ]
 
-        # Sort models by critical error rate ascending (safest first), then by name accuracy descending
+        # Sort models by critical error rate ascending (safest first), then by F1 score descending
         sorted_models = sorted(
             summaries.items(),
-            key=lambda item: (item[1]["critical_medication_error_rate"], -item[1]["medication_name_accuracy"])
+            key=lambda item: (item[1]["critical_medication_error_rate"], -item[1].get("f1_score", 0.0), -item[1]["medication_name_accuracy"])
         )
 
         for model_key, s in sorted_models:
-            name_acc = f"{s['medication_name_accuracy'] * 100:.1f}%"
+            acc = f"{s.get('accuracy', s['medication_name_accuracy']) * 100:.1f}%"
+            prec = f"{s.get('precision', 0.0) * 100:.1f}%"
+            rec = f"{s.get('recall', 0.0) * 100:.1f}%"
+            f1 = f"{s.get('f1_score', 0.0) * 100:.1f}%"
+            cer = f"{s.get('cer', 0.0) * 100:.1f}%"
+            wer = f"{s.get('wer', 0.0) * 100:.1f}%"
+            exact = f"{s.get('exact_match_rate', 0.0) * 100:.1f}%"
             crit_rate = f"**{s['critical_medication_error_rate'] * 100:.1f}%**"
-            unc_acc = f"{s['uncertainty_detection_accuracy'] * 100:.1f}%"
-            str_acc = f"{s['strength_accuracy'] * 100:.1f}%"
-            dose_acc = f"{s['dose_accuracy'] * 100:.1f}%"
-            freq_acc = f"{s['frequency_accuracy'] * 100:.1f}%"
             lat = f"{s['mean_latency_ms']:.0f} ms"
-            cost = f"${s['mean_cost_per_rx_usd']:.4f}"
 
-            md.append(f"| **{model_key}** | {name_acc} | {crit_rate} | {unc_acc} | {str_acc} | {dose_acc} | {freq_acc} | {lat} | {cost} |")
+            md.append(f"| **{model_key}** | {acc} | {prec} | {rec} | {f1} | {cer} | {wer} | {exact} | {crit_rate} | {lat} |")
 
         md.extend([
             "",
