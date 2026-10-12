@@ -3,7 +3,6 @@ os.environ["IS_GRADIO"] = "1"
 
 import gradio as gr
 import uvicorn
-import spaces
 from backend.app.main import app as fastapi_app
 
 # -----------------------------------------------------------------------------
@@ -31,19 +30,17 @@ with gr.Blocks(
         with gr.Column(scale=1):
             json_output = gr.JSON(label="Structured Extraction & Diagnosis (النتيجة الطبية المستخرجة)")
 
-    @spaces.GPU
-    def run_gradio_analysis(img_path):
+    async def run_gradio_analysis(img_path):
         if not img_path or not os.path.exists(img_path):
             return {"error": "Please upload a prescription image."}
-        import asyncio
         from backend.app.services.pipeline_v2 import pipeline_v2
         with open(img_path, "rb") as f:
             content = f.read()
-        res = asyncio.run(pipeline_v2.process_prescription(
+        res = await pipeline_v2.process_prescription(
             image_bytes=content,
             filename=os.path.basename(img_path),
             mime_type="image/jpeg",
-        ))
+        )
         return res.model_dump()
 
     analyze_btn.click(
