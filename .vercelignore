@@ -11,22 +11,22 @@ __pycache__
 .env
 .env.example
 
-# Heavy Datasets & Training files (Keep only dataset/drugs/ for EDA database)
-dataset/training_exports
-dataset/bilingual_prescriptions
-dataset/egyptian_100_prescriptions
-dataset/new Prescriptions images
-dataset/last
-dataset/benchmark
-dataset/raw
-dataset/ground_truth
-backend/tests
-tests
-notebooks
-models
+# Root-level heavy training, models, and benchmark directories (Leading slashes prevent matching inside backend/)
+/models
+/notebooks
+/tests
+/dataset/training_exports
+/dataset/bilingual_prescriptions
+/dataset/egyptian_100_prescriptions
+/dataset/new Prescriptions images
+/dataset/last
+/dataset/benchmark
+/dataset/raw
+/dataset/ground_truth
+/backend/tests
 
 # Mobile application directory & raw media
-Gor3a App
+/Gor3a App
 Gor3a.zip
 *.png
 *.jpg
@@ -39,3 +39,6 @@ Dockerfile
 .dockerignore
 render.yaml
 pytest.ini
+
+# Ensure backend package is NEVER ignored
+!backend/**
