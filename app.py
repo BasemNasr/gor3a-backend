@@ -3,15 +3,8 @@ os.environ["IS_GRADIO"] = "1"
 
 import gradio as gr
 import uvicorn
+import spaces
 from backend.app.main import app as fastapi_app
-
-# Support ZeroGPU dynamically if assigned
-try:
-    import spaces
-    gpu_decorator = spaces.GPU
-except Exception:
-    def gpu_decorator(fn):
-        return fn
 
 # -----------------------------------------------------------------------------
 # Gradio UI for quick interactive prescription analysis in the browser
@@ -38,7 +31,7 @@ with gr.Blocks(
         with gr.Column(scale=1):
             json_output = gr.JSON(label="Structured Extraction & Diagnosis (النتيجة الطبية المستخرجة)")
 
-    @gpu_decorator
+    @spaces.GPU
     def run_gradio_analysis(img_path):
         if not img_path or not os.path.exists(img_path):
             return {"error": "Please upload a prescription image."}
