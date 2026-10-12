@@ -33,7 +33,15 @@ class FineTuneDatasetExporter:
         self.loader = loader or bilingual_dataset_loader
         self.exports_dir = exports_dir or EXPORTS_DIR
         self.analyzer = PrescriptionAnalyzer()
-        self.exports_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.exports_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            import tempfile
+            self.exports_dir = Path(tempfile.gettempdir()) / "training_exports"
+            try:
+                self.exports_dir.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                pass
 
     def export_openai_vision_jsonl(self, max_cases: Optional[int] = None) -> Dict[str, str]:
         """

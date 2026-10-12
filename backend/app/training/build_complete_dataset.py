@@ -24,7 +24,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 EXPORTS_DIR = PROJECT_ROOT / "dataset" / "training_exports"
-EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
 
 def clean_str(val: Any) -> Optional[str]:
