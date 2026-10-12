@@ -45,6 +45,7 @@ class GeminiProvider(VisionProvider):
     @property
     def supported_models(self) -> List[str]:
         return [
+            "gemini-3.5-flash",
             "gemini-2.5-flash",
             "gemini-1.5-flash",
             "gemini-1.5-pro",
@@ -53,7 +54,7 @@ class GeminiProvider(VisionProvider):
 
     @property
     def default_model(self) -> str:
-        return "gemini-2.5-flash"
+        return "gemini-3.5-flash"
 
     def is_configured(self) -> bool:
         return bool(self._api_key and self._api_key.strip())
@@ -76,29 +77,78 @@ class GeminiProvider(VisionProvider):
         if not self._client:
             self._client = genai.Client(api_key=self._api_key)
 
+        import base64
+        import httpx
+
         start_time = time.perf_counter()
+        b64_image = base64.b64encode(image_bytes).decode("utf-8")
 
-        image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-        contents = [image_part, prompt]
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+        headers = {
+            "Content-Type": "application/json",
+            "X-goog-api-key": self._api_key,
+        }
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": b64_image,
+                            }
+                        },
+                        {"text": prompt},
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "response_mime_type": "application/json",
+                "temperature": 0.1,
+            },
+        }
 
-        config = types.GenerateContentConfig(
-            response_mime_type="application/json",
-            temperature=0.1,  # Low temperature to minimize hallucination
-        )
+        models_to_try = [model_name]
+        for fallback in ["gemini-3.5-flash-lite", "gemini-3.5-flash"]:
+            if fallback not in models_to_try:
+                models_to_try.append(fallback)
 
-        try:
-            response = await self._client.aio.models.generate_content(
-                model=model_name,
-                contents=contents,
-                config=config,
-            )
-        except Exception as exc:
-            logger.error(f"Gemini API error ({model_name}): {exc}")
-            raise RuntimeError(f"Gemini API call failed: {str(exc)}") from exc
+        resp_data = None
+        last_error = None
+        used_model = model_name
+
+        async with httpx.AsyncClient(timeout=60.0) as http_client:
+            for current_model in models_to_try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent"
+                try:
+                    resp = await http_client.post(url, headers=headers, json=payload)
+                    if resp.status_code == 200:
+                        resp_data = resp.json()
+                        used_model = current_model
+                        break
+                    elif resp.status_code in (503, 429, 404):
+                        logger.warning(f"Gemini {current_model} returned {resp.status_code}, trying fallback...")
+                        last_error = f"HTTP {resp.status_code}: {resp.text}"
+                        continue
+                    else:
+                        raise RuntimeError(f"HTTP {resp.status_code}: {resp.text}")
+                except Exception as exc:
+                    logger.warning(f"Gemini error with {current_model}: {exc}")
+                    last_error = str(exc)
+
+        if not resp_data:
+            raise RuntimeError(f"All Gemini models failed: {last_error}")
+
+        candidates = resp_data.get("candidates", [])
+        if not candidates:
+            raise RuntimeError(f"No candidates returned: {resp_data}")
+        parts = candidates[0].get("content", {}).get("parts", [])
+        raw_text = parts[0].get("text", "") if parts else ""
+        usage_meta = resp_data.get("usageMetadata", {})
+        model_name = used_model
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
-        raw_text = response.text or ""
         cleaned_json_text = clean_json_response(raw_text)
 
         try:
@@ -110,11 +160,10 @@ class GeminiProvider(VisionProvider):
             ) from exc
 
         usage = TokenUsage()
-        if hasattr(response, "usage_metadata") and response.usage_metadata:
-            meta = response.usage_metadata
-            usage.prompt_tokens = getattr(meta, "prompt_token_count", 0) or 0
-            usage.completion_tokens = getattr(meta, "candidates_token_count", 0) or 0
-            usage.total_tokens = getattr(meta, "total_token_count", 0) or (
+        if usage_meta:
+            usage.prompt_tokens = usage_meta.get("promptTokenCount", 0) or 0
+            usage.completion_tokens = usage_meta.get("candidatesTokenCount", 0) or 0
+            usage.total_tokens = usage_meta.get("totalTokenCount", 0) or (
                 usage.prompt_tokens + usage.completion_tokens
             )
 
