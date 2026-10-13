@@ -23,6 +23,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 ADMIN_DEFAULT_EMAIL = "basemads20@gmail.com"
 ADMIN_ALLOWED_PASSWORDS = [
+    "G0r3a@Admin#2026$Rx!",
     "basemads20@gmail.com",
     "basemads20@2026",
     "Gor3a2026!",
