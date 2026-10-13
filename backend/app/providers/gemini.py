@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import re
@@ -50,16 +51,16 @@ class GeminiProvider(VisionProvider):
     @property
     def supported_models(self) -> List[str]:
         return [
-            "gemini-3.5-flash",
-            "gemini-2.5-flash",
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
             "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-2.5-flash",
+            "gemini-1.5-pro",
+            "gemini-2.0-flash-lite",
         ]
 
     @property
     def default_model(self) -> str:
-        return "gemini-3.5-flash"
+        return "gemini-2.0-flash"
 
     def is_configured(self) -> bool:
         return bool(self._api_key and self._api_key.strip())
@@ -117,7 +118,13 @@ class GeminiProvider(VisionProvider):
         }
 
         models_to_try = [model_name]
-        for fallback in ["gemini-3.5-flash-lite", "gemini-3.5-flash"]:
+        for fallback in [
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-2.5-flash",
+            "gemini-1.5-pro",
+            "gemini-2.0-flash-lite",
+        ]:
             if fallback not in models_to_try:
                 models_to_try.append(fallback)
 
@@ -135,8 +142,9 @@ class GeminiProvider(VisionProvider):
                         used_model = current_model
                         break
                     elif resp.status_code in (503, 429, 404):
-                        logger.warning(f"Gemini {current_model} returned {resp.status_code}, trying fallback...")
+                        logger.warning(f"Gemini {current_model} returned {resp.status_code}, trying fallback in 1s...")
                         last_error = f"HTTP {resp.status_code}: {resp.text}"
+                        await asyncio.sleep(1.0)
                         continue
                     else:
                         raise RuntimeError(f"HTTP {resp.status_code}: {resp.text}")
@@ -161,6 +169,11 @@ class GeminiProvider(VisionProvider):
 
         try:
             parsed_data = json.loads(cleaned_json_text)
+            if isinstance(parsed_data, list):
+                if len(parsed_data) > 0 and isinstance(parsed_data[0], dict):
+                    parsed_data = parsed_data[0]
+                else:
+                    parsed_data = {"items": parsed_data}
         except json.JSONDecodeError as exc:
             logger.error(f"Failed to parse JSON from Gemini output: {raw_text}")
             raise ValueError(

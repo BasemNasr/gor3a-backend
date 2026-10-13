@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # Defaults
     default_provider: str = Field(default="gemini", alias="DEFAULT_PROVIDER")
-    default_model: str = Field(default="gemini-3.5-flash", alias="DEFAULT_MODEL")
+    default_model: str = Field(default="gemini-2.0-flash", alias="DEFAULT_MODEL")
 
     # Server config
     app_host: str = Field(default="0.0.0.0", alias="APP_HOST")
