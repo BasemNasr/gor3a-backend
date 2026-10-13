@@ -35,6 +35,30 @@ async def get_providers():
     return {"providers": list_available_providers()}
 
 
+@router.get("/gemini/models", summary="List live Gemini models from Google API")
+async def list_google_gemini_models():
+    """Fetches real-time available models directly from Google Generative Language API."""
+    import httpx
+    from ..config import settings
+    if not settings.gemini_api_key:
+        return {"error": "No GEMINI_API_KEY configured"}
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={settings.gemini_api_key}"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                data = resp.json()
+                models = [
+                    m.get("name", "").replace("models/", "")
+                    for m in data.get("models", [])
+                    if "generateContent" in m.get("supportedGenerationMethods", [])
+                ]
+                return {"status": "ok", "models": models}
+            return {"status": "error", "code": resp.status_code, "text": resp.text}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+
 from ..drugs.pricing import calculate_drug_pricing
 from ..drugs.repository import drug_repository
 from ..services.pipeline_v2 import pipeline_v2

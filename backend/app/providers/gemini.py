@@ -129,7 +129,7 @@ class GeminiProvider(VisionProvider):
                 models_to_try.append(fallback)
 
         resp_data = None
-        last_error = None
+        attempted_errors: Dict[str, str] = {}
         used_model = model_name
 
         async with httpx.AsyncClient(timeout=60.0) as http_client:
@@ -141,19 +141,22 @@ class GeminiProvider(VisionProvider):
                         resp_data = resp.json()
                         used_model = current_model
                         break
-                    elif resp.status_code in (503, 429, 404):
-                        logger.warning(f"Gemini {current_model} returned {resp.status_code}, trying fallback in 1s...")
-                        last_error = f"HTTP {resp.status_code}: {resp.text}"
-                        await asyncio.sleep(1.0)
-                        continue
                     else:
-                        raise RuntimeError(f"HTTP {resp.status_code}: {resp.text}")
+                        err_msg = f"HTTP {resp.status_code}: {resp.text}"
+                        attempted_errors[current_model] = err_msg
+                        if resp.status_code in (503, 429, 404):
+                            logger.warning(f"Gemini {current_model} returned {resp.status_code}, trying fallback in 1s...")
+                            await asyncio.sleep(1.0)
+                            continue
+                        else:
+                            raise RuntimeError(f"Gemini {current_model} error: {err_msg}")
                 except Exception as exc:
                     logger.warning(f"Gemini error with {current_model}: {exc}")
-                    last_error = str(exc)
+                    attempted_errors[current_model] = str(exc)
 
         if not resp_data:
-            raise RuntimeError(f"All Gemini models failed: {last_error}")
+            err_summary = "; ".join(f"{k}: {v[:100]}" for k, v in attempted_errors.items())
+            raise RuntimeError(f"All Gemini models failed: {err_summary}")
 
         candidates = resp_data.get("candidates", [])
         if not candidates:
