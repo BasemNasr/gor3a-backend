@@ -28,11 +28,12 @@ __pycache__
 # Mobile application directory & raw media
 /Gor3a App
 Gor3a.zip
-*.png
-*.jpg
-*.jpeg
-*.webp
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
 !web/**
+!web/logo.png
 
 # Container & alternate deploy configs
 Dockerfile

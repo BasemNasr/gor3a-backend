@@ -55,8 +55,9 @@ temp/
 # Large local files, models & mobile app folder
 Gor3a App/
 Gor3a.zip
-App Design .png
-Logo.png
+/App Design .png
+/Logo.png
+!web/logo.png
 models/
 newdataset arabic , english /
 notebooks/

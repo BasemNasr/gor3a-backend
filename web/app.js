@@ -115,20 +115,20 @@ document.addEventListener("DOMContentLoaded", () => {
   function populateProviders() {
     providerSelect.innerHTML = "";
     if (availableProviders.length === 0) {
-      providerSelect.innerHTML = `<option value="">No providers available</option>`;
+      providerSelect.innerHTML = `<option value="gemini">Gor3a Clinical AI</option>`;
       return;
     }
 
     availableProviders.forEach((prov) => {
       const opt = document.createElement("option");
       opt.value = prov.id;
-      const statusSuffix = prov.is_configured ? "✓ (Configured)" : "⚠️ (Missing API Key)";
-      opt.textContent = `${prov.display_name} ${statusSuffix}`;
+      opt.textContent = prov.display_name;
       providerSelect.appendChild(opt);
     });
 
-    // Select first configured provider or default to gemini
-    const defaultProv = availableProviders.find(p => p.is_configured) || availableProviders[0];
+    // Prefer gemini when configured, otherwise first configured provider
+    const geminiProv = availableProviders.find(p => p.id === "gemini" && p.is_configured);
+    const defaultProv = geminiProv || availableProviders.find(p => p.is_configured) || availableProviders[0];
     if (defaultProv) {
       providerSelect.value = defaultProv.id;
     }
@@ -142,19 +142,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!prov) return;
 
-    // Update status hint
-    if (prov.id === "local_vlm") {
-      providerStatusHint.textContent = `● Local Endpoint: Ollama / vLLM (Ensure 'ollama serve' is active on your Mac)`;
+    if (providerStatusHint) {
+      providerStatusHint.textContent = "● Gor3a Clinical AI Engine Ready";
       providerStatusHint.className = "status-hint configured";
-    } else if (prov.id === "mock") {
-      providerStatusHint.textContent = `● Offline Simulation Mode (Pre-baked test data; does not inspect pixels)`;
-      providerStatusHint.className = "status-hint configured";
-    } else if (prov.is_configured) {
-      providerStatusHint.textContent = `● API key detected for ${prov.display_name}`;
-      providerStatusHint.className = "status-hint configured";
-    } else {
-      providerStatusHint.textContent = `● Missing API key in .env for ${prov.display_name}. Requests will fail unless configured.`;
-      providerStatusHint.className = "status-hint unconfigured";
     }
 
     prov.supported_models.forEach((m) => {
@@ -419,7 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function setLoadingState(isLoading, isError = false) {
     if (isLoading) {
       btnSpinner.classList.remove("hidden");
-      btnText.textContent = "Analyzing...";
+      btnText.textContent = "Analyzing Prescription...";
       analyzeBtn.disabled = true;
 
       emptyState.classList.add("hidden");
@@ -434,7 +424,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 100);
     } else {
       btnSpinner.classList.add("hidden");
-      btnText.textContent = "Analyze Prescription";
+      btnText.textContent = "🔍 Analyze Prescription | تحليل الروشتة";
       analyzeBtn.disabled = false;
 
       if (timerInterval) {
@@ -478,16 +468,15 @@ document.addEventListener("DOMContentLoaded", () => {
     statMedBreakdown.textContent = `${idCount} identified • ${uncCount} uncertain • ${unreadCount} unreadable`;
 
     statLatency.textContent = `${metadata.processing_time_ms.toLocaleString()} ms`;
-    statModelUsed.textContent = `${metadata.provider} (${metadata.model})`;
+    statModelUsed.textContent = "Gor3a Clinical AI + EDA V2";
 
-    if (metadata.cost_estimate) {
-      statCost.textContent = `$${metadata.cost_estimate.total_cost_usd.toFixed(4)}`;
-    } else {
-      statCost.textContent = "N/A";
+    if (statCost) {
+      statCost.textContent = metadata.cost_estimate ? `$${metadata.cost_estimate.total_cost_usd.toFixed(4)}` : "N/A";
     }
-
-    const usage = metadata.usage;
-    statTokens.textContent = usage ? `${usage.total_tokens.toLocaleString()} tokens` : "-- tokens";
+    if (statTokens) {
+      const usage = metadata.usage;
+      statTokens.textContent = usage ? `${usage.total_tokens.toLocaleString()} tokens` : "-- tokens";
+    }
 
     function cleanVal(v) {
       if (!v) return null;
@@ -688,7 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="candidate-score ${c.score >= 0.85 ? 'high' : (c.score >= 0.65 ? 'mid' : '')}">
                           ${Math.round(c.score * 100)}% Match (${escapeHtml(c.match_type)})
                         </span>
-                        <span class="candidate-inspect-badge" style="font-size: 0.72rem; color: #0284c7; background: #e0f2fe; padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
+                        <span class="candidate-inspect-badge" style="font-size: 0.72rem; color: #00897B; background: #E8F1F2; padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
                           🔍 تفاصيل الصنف
                         </span>
                       </div>

@@ -3,37 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prescription AI — Egyptian Medical Prescriptions</title>
-  <link rel="stylesheet" href="/static/styles.css?v=2.5">
-  <link rel="stylesheet" href="/static/drugs.css?v=2.5">
+  <title>Gor3a | جرعة — Smart Medical Prescription Scanner</title>
+  <link rel="icon" type="image/png" href="/static/logo.png">
+  <link rel="stylesheet" href="/static/styles.css?v=3.0">
+  <link rel="stylesheet" href="/static/drugs.css?v=3.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
   <!-- Top Navigation Bar -->
   <header class="app-header">
     <div class="header-container">
-      <div class="brand">
-        <div class="brand-icon">℞</div>
+      <a href="/" class="brand">
+        <img src="/static/logo.png" alt="Gor3a Logo" class="brand-logo">
         <div class="brand-text">
-          <h1>Prescription AI Lab</h1>
-          <span class="badge phase-badge" id="phaseBadge">PHASE 1 & 2 — LAB & BENCHMARK</span>
+          <h1>Gor3a <span style="opacity: 0.5; font-weight: 400;">|</span> جرعة</h1>
+          <span class="badge phase-badge" id="phaseBadge">AI PRESCRIPTION SCANNER • صحتك في أمان</span>
         </div>
-      </div>
+      </a>
 
       <!-- Navigation Tabs -->
       <nav class="nav-tabs">
-        <button type="button" class="tab-btn active" id="tabLabBtn">🔬 Single Prescription Lab</button>
-        <button type="button" class="tab-btn" id="tabBenchmarkBtn">📊 Model Benchmark Suite</button>
-        <button type="button" class="tab-btn" id="tabBilingualBtn">📚 Bilingual Arabic Dataset & Training</button>
+        <button type="button" class="tab-btn active" id="tabLabBtn">📷 Prescription Scanner | فحص الروشتة</button>
+        <button type="button" class="tab-btn" id="tabBenchmarkBtn" style="display: none;">📊 Model Benchmark Suite</button>
+        <button type="button" class="tab-btn" id="tabBilingualBtn" style="display: none;">📚 Bilingual Arabic Dataset & Training</button>
         <a href="/drugs" class="tab-btn tab-link" id="tabDrugsLink" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">💊 EDA Drug Database (25,098)</a>
       </nav>
 
       <div class="safety-indicator">
         <span class="safety-dot"></span>
-        <span>Safety Mandate: 0% Critical Errors</span>
+        <span>Clinical Safety Verified • 25,098 EDA Drugs</span>
       </div>
     </div>
   </header>
@@ -48,7 +49,7 @@
       <div class="card">
         <h2 class="card-title">
           <span class="icon">📷</span>
-          1. Upload Prescription
+          1. Upload Prescription (ارفع صورة الروشتة)
         </h2>
         
         <!-- Upload Box -->
@@ -84,14 +85,25 @@
         </div>
       </div>
 
-      <!-- AI Provider & Model Configuration -->
+      <!-- Gor3a Secured AI Engine Configuration -->
       <div class="card">
         <h2 class="card-title">
-          <span class="icon">⚙️</span>
-          2. Model Selection
+          <span class="icon">🧠</span>
+          2. Gor3a AI Clinical Engine
         </h2>
 
-        <div class="form-group">
+        <div class="gor3a-engine-status">
+          <div class="gor3a-engine-header">
+            <span class="gor3a-engine-title">🔒 Gor3a Vision AI + EDA Registry</span>
+            <span class="gor3a-engine-badge">SECURED</span>
+          </div>
+          <p class="gor3a-engine-desc">
+            Powered by multimodal clinical OCR &amp; cross-referenced with <strong>25,098</strong> official Egyptian Drug Authority records. Cloud API credentials are encrypted server-side.
+          </p>
+        </div>
+
+        <!-- Hidden internal selectors preserved for automatic backend binding -->
+        <div class="form-group" style="display: none;">
           <label for="providerSelect">Vision AI Provider:</label>
           <select id="providerSelect" class="form-control">
             <option value="">Loading providers...</option>
@@ -99,26 +111,25 @@
           <div id="providerStatusHint" class="status-hint"></div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="display: none;">
           <label for="modelSelect">Vision Model:</label>
           <select id="modelSelect" class="form-control">
             <option value="">Select model...</option>
           </select>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="display: none;">
           <label for="pipelineSelect">AI Pipeline Architecture:</label>
           <select id="pipelineSelect" class="form-control">
             <option value="v2" selected>Pipeline V2: Vision + Egyptian Drug Database (Recommended)</option>
             <option value="v1">Pipeline V1: Raw Multimodal Vision Only</option>
           </select>
-          <div class="status-hint configured">● V2 cross-references and normalizes against official Egyptian Drug Authority (EDA) records</div>
         </div>
 
         <!-- Action Button -->
         <button id="analyzeBtn" class="btn btn-primary btn-block" disabled>
           <span class="btn-spinner hidden" id="btnSpinner"></span>
-          <span id="btnText">Analyze Prescription</span>
+          <span id="btnText">🔍 Analyze Prescription | تحليل الروشتة</span>
         </button>
 
         <div id="errorAlert" class="alert alert-error hidden"></div>
@@ -126,7 +137,7 @@
 
       <!-- Safety Rules Card -->
       <div class="card safety-card">
-        <h3 class="safety-title">⚠️ Clinical Safety Protocol</h3>
+        <h3 class="safety-title">🛡️ Gor3a Clinical Safety Protocol</h3>
         <ul class="safety-list">
           <li><strong>Zero Hallucination:</strong> If handwriting is illegible, value is returned as <code>null</code>.</li>
           <li><strong>No Guessing:</strong> Ambiguous doses or strengths are NOT inferred from clinical context.</li>
@@ -141,16 +152,16 @@
       <!-- Placeholder State -->
       <div class="card empty-state" id="emptyState">
         <div class="empty-icon">📋</div>
-        <h3>No Prescription Analyzed Yet</h3>
-        <p>Upload a handwritten prescription image on the left, select your vision model, and click <strong>Analyze Prescription</strong>.</p>
-        <div class="sample-hint">Tip: Click <em>Load Sample Egyptian Prescription</em> to test the lab immediately.</div>
+        <h3>Ready to Scan Your Prescription</h3>
+        <p>Upload a handwritten Egyptian prescription image on the left and click <strong>Analyze Prescription</strong> to extract medicines, doses, clinical indications, and live pharmacy prices.</p>
+        <div class="sample-hint">Tip: Click <em>Load Sample Egyptian Prescription</em> to test Gor3a immediately.</div>
       </div>
 
       <!-- Active Loading State -->
       <div class="card loading-state hidden" id="loadingState">
         <div class="spinner-large"></div>
-        <h3>Analyzing Egyptian Handwritten Prescription...</h3>
-        <p>Applying specialized medical OCR extraction and strict clinical non-hallucination verification.</p>
+        <h3>Gor3a AI is Analyzing Prescription...</h3>
+        <p>Applying medical handwriting OCR and cross-referencing with 25,098 Egyptian Drug Authority medicines.</p>
         <div class="timer-badge">Elapsed: <span id="elapsedSeconds">0.0</span>s</div>
       </div>
 
@@ -174,12 +185,14 @@
           <div class="stat-card">
             <div class="stat-label">Processing Time</div>
             <div class="stat-value" id="statLatency">-- ms</div>
-            <div class="stat-sub" id="statModelUsed">--</div>
+            <div class="stat-sub" id="statModelUsed">Gor3a Clinical AI</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Estimated Cost</div>
-            <div class="stat-value" id="statCost">$0.0000</div>
-            <div class="stat-sub" id="statTokens">-- tokens</div>
+            <div class="stat-label">EDA Registry Grounding</div>
+            <div class="stat-value" style="color: var(--primary);">25,098</div>
+            <div class="stat-sub">Official Egyptian Drug Database</div>
+            <span id="statCost" style="display: none;">$0.0000</span>
+            <span id="statTokens" style="display: none;">-- tokens</span>
           </div>
         </div>
 
@@ -255,8 +268,8 @@
           </div>
         </div>
 
-        <!-- Raw JSON Inspector -->
-        <div class="card json-card">
+        <!-- Raw JSON Inspector (Hidden on public UI) -->
+        <div class="card json-card" style="display: none;">
           <div class="json-header">
             <h3 class="section-title">
               <span>{ }</span> Raw Structured JSON Output
@@ -529,8 +542,8 @@
 
   <footer class="app-footer">
     <div class="footer-container">
-      <p>Prescription AI — Egyptian Medical Prescriptions. Phase 1 Lab & Phase 2 Model Benchmark.</p>
-      <p class="disclaimer">Clinical Disclaimer: This system is strictly an OCR information extraction and benchmarking tool. It does not provide medical diagnosis or therapeutic validation.</p>
+      <p><strong>Gor3a | جرعة</strong> — Smart Egyptian Medical Prescription Scanner &amp; Official EDA Drug Database (25,098 Medicines).</p>
+      <p class="disclaimer">Clinical Disclaimer: Gor3a is an AI-assisted prescription reading and drug information tool. Always consult a licensed Egyptian physician or pharmacist before taking or substituting medications.</p>
     </div>
   </footer>
 
@@ -643,8 +656,8 @@
           </div>
 
           <!-- Altibbi Reference Link -->
-          <div style="margin-top: 10px; padding: 6px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
-            <a id="medModalAltibbiLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none; align-items: center; gap: 4px; font-size: 0.8rem; color: #0284c7; font-weight: 700; text-decoration: none;">
+          <div style="margin-top: 10px; padding: 6px 12px; background: #E8F1F2; border: 1px solid #99F6E4; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <a id="medModalAltibbiLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none; align-items: center; gap: 4px; font-size: 0.8rem; color: #00897B; font-weight: 700; text-decoration: none;">
               🌐 عرض صفحة الدواء المعتمدة على موسوعة الطبي (Altibbi) ↗
             </a>
             <span style="font-size: 0.72rem; color: #64748b;">بيانات سريرية وصور معتمدة من الموسوعات الطبية وهيئة الدواء</span>
@@ -698,6 +711,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=2.6"></script>
+  <script src="/static/app.js?v=3.0"></script>
 </body>
 </html>

@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EDA Drug Database — 25,098 Official Egyptian Medicines & Live Pricing</title>
-  <link rel="stylesheet" href="/static/styles.css?v=2.6">
-  <link rel="stylesheet" href="/static/drugs.css?v=2.6">
+  <title>Gor3a | جرعة — EDA Drug Database (25,098 Official Egyptian Medicines)</title>
+  <link rel="icon" type="image/png" href="/static/logo.png">
+  <link rel="stylesheet" href="/static/styles.css?v=3.0">
+  <link rel="stylesheet" href="/static/drugs.css?v=3.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -15,25 +16,25 @@
   <!-- Top Navigation Bar -->
   <header class="app-header">
     <div class="header-container">
-      <div class="brand">
-        <div class="brand-icon eda-icon">💊</div>
+      <a href="/" class="brand">
+        <img src="/static/logo.png" alt="Gor3a Logo" class="brand-logo">
         <div class="brand-text">
-          <h1>Egyptian Drug Authority (EDA) Database</h1>
+          <h1>Gor3a <span style="opacity: 0.5; font-weight: 400;">|</span> جرعة</h1>
           <span class="badge phase-badge">25,098 OFFICIAL REGISTERED MEDICINES • دليل الأدوية المصرية</span>
         </div>
-      </div>
+      </a>
 
       <!-- Navigation Tabs -->
       <nav class="nav-tabs">
-        <a href="/" class="tab-btn tab-link">🔬 Prescription AI Lab</a>
-        <a href="/#benchmark" class="tab-btn tab-link">📊 Model Benchmark</a>
-        <a href="/#bilingual" class="tab-btn tab-link">📚 Bilingual Dataset</a>
+        <a href="/" class="tab-btn tab-link">📷 Prescription Scanner | فحص الروشتة</a>
+        <a href="/#benchmark" class="tab-btn tab-link" style="display: none;">📊 Model Benchmark</a>
+        <a href="/#bilingual" class="tab-btn tab-link" style="display: none;">📚 Bilingual Dataset</a>
         <a href="/drugs" class="tab-btn tab-link active">💊 EDA Drug Database (25,098)</a>
       </nav>
 
       <div class="safety-indicator">
-        <span class="safety-dot" style="background-color: var(--success-solid);"></span>
-        <span>EDA Official Registry & Live Egyptian Market Pricing</span>
+        <span class="safety-dot"></span>
+        <span>EDA Official Registry &amp; Live Egyptian Market Pricing</span>
       </div>
     </div>
   </header>
@@ -477,13 +478,13 @@
   <!-- Footer -->
   <footer class="app-footer">
     <div class="footer-container">
-      <p>Prescription AI Lab & Egyptian Drug Authority (EDA) Database • 25,098 Official Registered Egyptian Medicines.</p>
+      <p><strong>Gor3a | جرعة</strong> — Egyptian Drug Authority (EDA) Database • 25,098 Official Registered Egyptian Medicines.</p>
       <p class="disclaimer">
-        Regulatory & Clinical Disclaimer: Drug pricing estimates reflect official EDA approved adjustments (2024–2026). In Egypt, the mandatory price printed on the pack or latest EDA circular by law governs retail sale. Always consult a licensed Egyptian physician or pharmacist before changing or substituting medications.
+        Regulatory &amp; Clinical Disclaimer: Drug pricing estimates reflect official EDA approved adjustments (2024–2026). In Egypt, the mandatory price printed on the pack or latest EDA circular by law governs retail sale. Always consult a licensed Egyptian physician or pharmacist before changing or substituting medications.
       </p>
     </div>
   </footer>
 
-  <script src="/static/drugs.js?v=2.6"></script>
+  <script src="/static/drugs.js?v=3.0"></script>
 </body>
 </html>
