@@ -51,16 +51,16 @@ class GeminiProvider(VisionProvider):
     @property
     def supported_models(self) -> List[str]:
         return [
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-2.5-flash",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash-lite",
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash-lite",
+            "gemini-flash-latest",
+            "gemini-3.5-flash",
+            "gemini-pro-latest",
         ]
 
     @property
     def default_model(self) -> str:
-        return "gemini-2.0-flash"
+        return "gemini-flash-lite-latest"
 
     def is_configured(self) -> bool:
         return bool(self._api_key and self._api_key.strip())
@@ -119,11 +119,11 @@ class GeminiProvider(VisionProvider):
 
         models_to_try = [model_name]
         for fallback in [
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-2.5-flash",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash-lite",
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash-lite",
+            "gemini-flash-latest",
+            "gemini-3.5-flash",
+            "gemini-pro-latest",
         ]:
             if fallback not in models_to_try:
                 models_to_try.append(fallback)
