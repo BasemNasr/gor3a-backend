@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gor3a | جرعة — لوحة تحكم الإدارة (Admin Dashboard)</title>
+  <link rel="icon" type="image/png" href="/static/logo.png">
+  <link rel="stylesheet" href="/static/styles.css?v=3.1">
+  <link rel="stylesheet" href="/static/drugs.css?v=3.1">
+  <link rel="stylesheet" href="/static/admin.css?v=3.1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="/" class="brand">
+        <img src="/static/logo.png" alt="Gor3a Logo" class="brand-logo">
+        <div class="brand-text">
+          <h1>Gor3a <span style="opacity: 0.5; font-weight: 400;">|</span> جرعة</h1>
+          <span class="badge phase-badge">لوحة التحكم الإدارية • ADMIN PORTAL</span>
+        </div>
+      </a>
+
+      <div class="admin-header-actions" id="adminHeaderActions" style="display: none;">
+        <span class="admin-user-pill">
+          <span class="admin-status-dot"></span>
+          <span id="adminUserEmail">basemads20@gmail.com</span>
+        </span>
+        <a href="/" class="btn btn-secondary btn-sm" style="text-decoration: none;">🏠 الموقع الرئيسي</a>
+        <button type="button" id="adminLogoutBtn" class="btn btn-secondary btn-sm">تسجيل الخروج 🚪</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================================= -->
+  <!-- 1. Login View                                                           -->
+  <!-- ======================================================================= -->
+  <main class="admin-login-layout" id="adminLoginView">
+    <div class="admin-login-card">
+      <div class="login-brand-header">
+        <img src="/static/logo.png" alt="Gor3a Logo" class="login-logo">
+        <h2>تسجيل دخول الإدارة</h2>
+        <p>إدارة وتحديث قاعدة أدوية هيئة الدواء المصرية ومفاتيح الذكاء الاصطناعي</p>
+      </div>
+
+      <form id="adminLoginForm" class="admin-login-form">
+        <div class="form-group">
+          <label for="loginEmail">البريد الإلكتروني للآدمن:</label>
+          <input 
+            type="email" 
+            id="loginEmail" 
+            class="form-control" 
+            value="basemads20@gmail.com" 
+            required 
+            autocomplete="username"
+            dir="ltr"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">كلمة المرور:</label>
+          <input 
+            type="password" 
+            id="loginPassword" 
+            class="form-control" 
+            placeholder="أدخل كلمة المرور" 
+            required 
+            autocomplete="current-password"
+            dir="ltr"
+          >
+        </div>
+
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block">
+          <span class="btn-spinner hidden" id="loginSpinner"></span>
+          <span id="loginBtnText">تسجيل الدخول إلى لوحة التحكم 🔒</span>
+        </button>
+
+        <div id="loginErrorAlert" class="alert alert-error hidden" style="margin-top: 1rem;"></div>
+      </form>
+    </div>
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- 2. Main Admin Dashboard View                                            -->
+  <!-- ======================================================================= -->
+  <main class="admin-dashboard-layout hidden" id="adminDashboardView">
+    <div class="admin-container">
+
+      <!-- Navigation Tabs -->
+      <div class="admin-nav-tabs">
+        <button type="button" class="admin-tab-btn active" data-tab="tabDrugs">
+          💊 تحديث وإضافة الأدوية (CSV / JSON)
+        </button>
+        <button type="button" class="admin-tab-btn" data-tab="tabApiKey">
+          🔑 مفتاح Gemini المشفر (API Key)
+        </button>
+        <button type="button" class="admin-tab-btn" data-tab="tabBackup">
+          💾 تصدير وحفظ النسخة الاحتياطية
+        </button>
+      </div>
+
+      <!-- Overview Stats Ribbon -->
+      <section class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <span class="admin-stat-label">إجمالي الأدوية بالقاعدة</span>
+          <span class="admin-stat-val" id="statTotalDrugsCount">25,098</span>
+          <span class="admin-stat-sub">دواء مسجل بهيئة الدواء المصرية</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-label">محرك الذكاء الاصطناعي</span>
+          <span class="admin-stat-val" style="color: var(--primary);">Google Gemini</span>
+          <span class="admin-stat-sub">Multimodal Medical Vision V2</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-label">حالة مفتاح API</span>
+          <span class="admin-stat-val" id="statApiKeyStatus">مشفر ومحمي 🔒</span>
+          <span class="admin-stat-sub" id="statApiKeyMasked">AIzaSy••••••••••••3xZ</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-label">تحديثات الأسعار</span>
+          <span class="admin-stat-val" style="color: #059669;">2024–2026</span>
+          <span class="admin-stat-sub">تسعيرة جبرية موحدة + أسعار السوق</span>
+        </div>
+      </section>
+
+      <!-- TAB 1: Smart Drug Import & Diff -->
+      <section class="admin-tab-content active" id="tabDrugs">
+        <div class="card admin-upload-card">
+          <div class="card-header-row">
+            <div>
+              <h3>📥 رفع ملف الأدوية الجديد (CSV أو JSON)</h3>
+              <p class="text-muted">
+                ارفع قائمة الأدوية المحدثة أو الجديدة لأي سنة. سيقوم النظام آلياً بمقارنتها مع الأدوية المسجلة وفرز ما هو <strong>جديد</strong> وما سيتم <strong>تحديثه (مثل تغير السعر)</strong> وما هو <strong>مكرر</strong> تماماً، لتراجعه وتوافق عليه قبل أي إضافة!
+              </p>
+            </div>
+            <a href="/api/admin/drugs/export?format=csv" id="downloadTemplateBtn" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+              📄 تحميل قالب CSV استرشادي
+            </a>
+          </div>
+
+          <!-- Dropzone -->
+          <div class="admin-dropzone" id="adminDropzone">
+            <input type="file" id="drugFileInput" accept=".csv,application/json,text/csv" class="file-input">
+            <div class="dropzone-content">
+              <span class="dropzone-icon">📁</span>
+              <p class="dropzone-text"><strong>انقر لاختيار الملف</strong> أو اسحبه وأفلته هنا</p>
+              <p class="dropzone-sub">ملفات CSV أو JSON (يدعم كافة صيغ وأسماء الأعمدة باللغة العربية والإنجليزية)</p>
+            </div>
+          </div>
+
+          <div id="fileSelectedBar" class="file-selected-bar hidden">
+            <div class="file-info-col">
+              <span class="file-name" id="selectedFileName">filename.csv</span>
+              <span class="file-size text-muted" id="selectedFileSize">0 KB</span>
+            </div>
+            <button type="button" id="startAnalysisBtn" class="btn btn-primary">
+              <span class="btn-spinner hidden" id="analysisSpinner"></span>
+              <span id="analysisBtnText">🔍 فحص وتحليل الفروقات (Analyze Diff)</span>
+            </button>
+          </div>
+
+          <div id="uploadErrorAlert" class="alert alert-error hidden"></div>
+        </div>
+
+        <!-- Diff Results Stage (Hidden until file is analyzed) -->
+        <div id="stagedDiffContainer" class="card hidden">
+          <div class="diff-header-bar">
+            <div>
+              <h3>📊 نتيجة فحص ومقارنة الملف</h3>
+              <span class="text-muted" id="stagedFileNameSubtitle">ملف: dataset_2026.csv</span>
+            </div>
+            <div class="diff-action-buttons">
+              <button type="button" id="cancelStagingBtn" class="btn btn-secondary btn-sm">إلغاء ✕</button>
+              <button type="button" id="confirmCommitBtn" class="btn btn-primary">
+                <span class="btn-spinner hidden" id="commitSpinner"></span>
+                <span id="commitBtnText">✅ تأكيد وتطبيق التحديث (Confirm Changes)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3 Stats Cards for Diff Categories -->
+          <div class="diff-summary-grid">
+            <div class="diff-stat-card new-card active" data-filter="new" id="cardFilterNew">
+              <div class="diff-stat-count" id="diffNewCount">0</div>
+              <div class="diff-stat-title">🟢 أدوية جديدة للإضافة</div>
+              <div class="diff-stat-desc">أصناف جديدة غير موجودة حالياً بالقاعدة</div>
+            </div>
+
+            <div class="diff-stat-card updated-card" data-filter="updated" id="cardFilterUpdated">
+              <div class="diff-stat-count" id="diffUpdatedCount">0</div>
+              <div class="diff-stat-title">🟡 أدوية سيتم تحديثها</div>
+              <div class="diff-stat-desc">أصناف مسجلة تغيرت أسعارها أو مواصفاتها</div>
+            </div>
+
+            <div class="diff-stat-card duplicate-card" data-filter="duplicate" id="cardFilterDuplicate">
+              <div class="diff-stat-count" id="diffDuplicateCount">0</div>
+              <div class="diff-stat-title">⚪ أدوية متطابقة (مكررة)</div>
+              <div class="diff-stat-desc">لن تتكرر ولن يتم مضاعفتها بالقاعدة</div>
+            </div>
+          </div>
+
+          <!-- Filter & Search Staged Items -->
+          <div class="staged-filter-row">
+            <div class="staged-tabs-list">
+              <button type="button" class="staged-pill active" id="pillViewNew" data-type="new">🟢 الأدوية الجديدة (<span id="pillCountNew">0</span>)</button>
+              <button type="button" class="staged-pill" id="pillViewUpdated" data-type="updated">🟡 الأدوية المحدثة وتفاصيل الفروق (<span id="pillCountUpdated">0</span>)</button>
+              <button type="button" class="staged-pill" id="pillViewDuplicate" data-type="duplicate">⚪ الأصناف المتطابقة (<span id="pillCountDuplicate">0</span>)</button>
+            </div>
+            <div class="staged-search-box">
+              <input type="text" id="stagedSearchInput" class="form-control form-control-sm" placeholder="ابحث في الأصناف المفحوصة...">
+            </div>
+          </div>
+
+          <!-- Staged Items Table -->
+          <div class="table-responsive" style="margin-top: 1rem;">
+            <table class="staged-table" id="stagedTable">
+              <thead>
+                <tr id="stagedTableHead">
+                  <th>#</th>
+                  <th>الكود المقترح</th>
+                  <th>الاسم التجاري (Commercial)</th>
+                  <th>المادة الفعالة (Generic)</th>
+                  <th>الشكل والتركيز</th>
+                  <th>السعر (EGP)</th>
+                  <th>الشركة المصنعة</th>
+                </tr>
+              </thead>
+              <tbody id="stagedTableBody">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="staged-pagination-bar" id="stagedPaginationBar">
+            <span class="pagination-info" id="paginationInfo">عرض 1-50 من إجمالي 0</span>
+            <div class="pagination-btns">
+              <button type="button" id="prevPageBtn" class="btn btn-secondary btn-xs" disabled>السابق</button>
+              <span class="page-indicator" id="pageIndicator">1 / 1</span>
+              <button type="button" id="nextPageBtn" class="btn btn-secondary btn-xs" disabled>التالي</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB 2: Gemini API Key Management -->
+      <section class="admin-tab-content hidden" id="tabApiKey">
+        <div class="card api-key-card">
+          <div class="key-card-header">
+            <div class="key-icon-box">🔐</div>
+            <div>
+              <h3>إدارة مفتاح Google Gemini Vision API</h3>
+              <p class="text-muted">
+                المفتاح مشفر ومحمي تماماً على خوادم السيرفر، ولا يمكن لأي شخص الاطلاع عليه كوداً أو نصاً صريحاً.
+              </p>
+            </div>
+          </div>
+
+          <div class="current-key-box">
+            <div class="current-key-row">
+              <span class="key-lbl">المفتاح الحالي النشط في السيرفر:</span>
+              <span class="badge badge-success">محمي ومشفر بأمان 🔒</span>
+            </div>
+            <div class="masked-key-string" id="currentMaskedKeyDisplay">
+              AIzaSy••••••••••••••••••••••••3xZ
+            </div>
+            <p class="key-security-note">
+              🛡️ تم حجب باقي الأحرف حتى في لوحة التحكم الإدارية لضمان عدم تسريب المفتاح عند مشاركة الشاشة أو فتح لوحة التحكم.
+            </p>
+          </div>
+
+          <form id="updateApiKeyForm" class="update-key-form">
+            <h4>تحديث أو تغيير مفتاح Gemini API:</h4>
+            <div class="form-group">
+              <label for="newApiKeyInput">أدخل المفتاح الجديد:</label>
+              <div class="password-input-wrap">
+                <input 
+                  type="password" 
+                  id="newApiKeyInput" 
+                  class="form-control font-mono" 
+                  placeholder="AIzaSy..." 
+                  required 
+                  autocomplete="new-password"
+                  dir="ltr"
+                >
+                <button type="button" id="toggleKeyVisibilityBtn" class="toggle-eye-btn" title="إظهار / إخفاء">👁️</button>
+              </div>
+              <small class="text-muted">يبدأ عادةً بـ <code>AIzaSy...</code> من Google AI Studio.</small>
+            </div>
+
+            <button type="submit" id="saveApiKeyBtn" class="btn btn-primary">
+              <span class="btn-spinner hidden" id="apiKeySpinner"></span>
+              <span id="saveApiKeyBtnText">💾 حفظ وتشفير المفتاح الجديد</span>
+            </button>
+
+            <div id="apiKeySuccessAlert" class="alert alert-success hidden" style="margin-top: 1rem;"></div>
+            <div id="apiKeyErrorAlert" class="alert alert-error hidden" style="margin-top: 1rem;"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 3: Backup & Export -->
+      <section class="admin-tab-content hidden" id="tabBackup">
+        <div class="card">
+          <div class="card-header-row">
+            <div>
+              <h3>💾 تصدير وحفظ نسخة من قاعدة البيانات المحدثة</h3>
+              <p class="text-muted">
+                يمكنك تحميل النسخة الكاملة الحالية من قاعدة أدوية هيئة الدواء المصرية مع كافة التحديثات التي قمت بها بصيغة JSON أو CSV.
+              </p>
+            </div>
+          </div>
+
+          <div class="backup-actions-grid">
+            <div class="backup-box">
+              <span class="backup-icon">📄</span>
+              <h4>تصدير قاعدة الأدوية بتنسيق CSV</h4>
+              <p>مناسب للفتح عبر Microsoft Excel أو Google Sheets أو قواعد البيانات العلائقية.</p>
+              <a href="#" id="downloadCsvBtn" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                📥 تحميل ملف CSV
+              </a>
+            </div>
+
+            <div class="backup-box">
+              <span class="backup-icon">📦</span>
+              <h4>تصدير قاعدة الأدوية بتنسيق JSON</h4>
+              <p>نسخة برمجية مهيكلة كاملة تشمل كافة البيانات السريرية والبدائل والمثائل.</p>
+              <a href="#" id="downloadJsonBtn" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                📥 تحميل ملف JSON
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Confirmation Modal for Committing Staged Changes -->
+  <div id="commitConfirmModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 style="margin: 0; color: var(--primary);">تأكيد تحديث قاعدة البيانات</h3>
+        <button type="button" id="closeConfirmModalBtn" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem;">
+          أنت على وشك تطبيق التغييرات التالية على قاعدة بيانات <strong>Gor3a</strong>:
+        </p>
+        <ul style="padding-right: 1.2rem; font-size: 0.9rem; line-height: 1.8; margin-bottom: 1.25rem;">
+          <li>🟢 إضافة: <strong id="modalNewCount">0</strong> دواء جديد.</li>
+          <li>🟡 تحديث: <strong id="modalUpdatedCount">0</strong> دواء موجود بالقاعدة.</li>
+          <li>⚪ تجاهل وتخطي: <strong id="modalDuplicateCount">0</strong> صنف مكرر لمنع الازدواجية.</li>
+        </ul>
+        <div class="alert alert-warning" style="margin: 0; font-size: 0.85rem;">
+          ⚠️ سيتم تطبيق هذه التغييرات وحفظها فوراً في السيرفر وتحديث نتائج البحث في الموقع وتطبيق الموبايل.
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem;">
+        <button type="button" id="cancelModalBtn" class="btn btn-secondary btn-sm">تراجع</button>
+        <button type="button" id="executeCommitBtn" class="btn btn-primary btn-sm">نعم، طبق التحديث الآن ✅</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="adminToast" class="eda-toast hidden">تم الحفظ بنجاح!</div>
+
+  <script src="/static/admin.js?v=3.1"></script>
+</body>
+</html>

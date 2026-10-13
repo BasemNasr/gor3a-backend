@@ -24,6 +24,14 @@ def init_providers() -> Dict[str, VisionProvider]:
     return _PROVIDER_REGISTRY
 
 
+def register_provider(name: str, provider: VisionProvider) -> None:
+    """Register or replace a vision provider instance dynamically."""
+    global _PROVIDER_REGISTRY
+    if not _PROVIDER_REGISTRY:
+        init_providers()
+    _PROVIDER_REGISTRY[name.lower().strip()] = provider
+
+
 def get_provider(name: Optional[str] = None) -> VisionProvider:
     """
     Retrieve a vision provider instance by identifier.

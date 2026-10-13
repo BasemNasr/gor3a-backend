@@ -1,8 +1,11 @@
 import collections
 import csv
+import io
+import json
 import logging
 import math
 import re
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -17,6 +20,8 @@ from .web_enricher import web_enricher
 logger = logging.getLogger(__name__)
 
 DEFAULT_CSV_PATH = PROJECT_ROOT / "dataset" / "drugs" / "egyptian-drugs.csv"
+CUSTOM_DRUGS_PATH = PROJECT_ROOT / "dataset" / "drugs" / "custom_updated_drugs.json"
+TMP_CUSTOM_DRUGS_PATH = Path("/tmp/custom_updated_drugs.json")
 
 
 def enrich_drug_with_clinical_info(drug: Drug, allow_live_web_fetch: bool = False) -> Drug:
@@ -160,6 +165,7 @@ class DrugRepository:
         self._class_index: Dict[str, List[Drug]] = {}
         self._token_index: Dict[str, List[int]] = {}
         self._facets_cache: Optional[Dict[str, Any]] = None
+        self._custom_drug_ids: set = set()
 
         # 1. Load curated seeds first to preserve priority & curated IDs
         if drugs is not None:
@@ -171,6 +177,10 @@ class DrugRepository:
         if csv_path and csv_path.exists():
             self._load_from_csv(csv_path)
 
+        # 3. Load persistent custom updated / added drugs if present
+        self._load_custom_updated_drugs()
+
+        self._staged_imports: Dict[str, Dict[str, Any]] = {}
         self._build_indexes()
 
     def _load_from_csv(self, csv_path: Path):
@@ -615,6 +625,551 @@ class DrugRepository:
             "top_drug_classes": [{"name": k, "count": v} for k, v in class_counts.most_common(35)],
         }
         return self._facets_cache
+
+    def _load_custom_updated_drugs(self):
+        """Loads persistently saved custom updated or newly added medicines."""
+        source_path = None
+        if CUSTOM_DRUGS_PATH.exists():
+            source_path = CUSTOM_DRUGS_PATH
+        elif TMP_CUSTOM_DRUGS_PATH.exists():
+            source_path = TMP_CUSTOM_DRUGS_PATH
+
+        if not source_path:
+            return
+
+        try:
+            with open(source_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                custom_list = data.get("drugs", [])
+                existing_map = {d.id: idx for idx, d in enumerate(self._drugs)}
+                applied_count = 0
+                for item in custom_list:
+                    drug_obj = Drug(**item)
+                    self._custom_drug_ids.add(drug_obj.id)
+                    if drug_obj.id in existing_map:
+                        self._drugs[existing_map[drug_obj.id]] = drug_obj
+                    else:
+                        self._drugs.append(drug_obj)
+                        existing_map[drug_obj.id] = len(self._drugs) - 1
+                    applied_count += 1
+                logger.info(f"Loaded {applied_count} custom/updated drugs from {source_path}")
+        except Exception as exc:
+            logger.warning(f"Failed to load custom updated drugs from {source_path}: {exc}")
+
+    def save_custom_drugs(self) -> bool:
+        """Saves only custom updated or newly added drugs into custom_updated_drugs.json."""
+        if not self._custom_drug_ids:
+            return True
+
+        custom_drugs = [self._id_index[did].model_dump() for did in self._custom_drug_ids if did in self._id_index]
+        data = {
+            "version": "2026.1",
+            "count": len(custom_drugs),
+            "drugs": custom_drugs,
+        }
+        saved = False
+        try:
+            CUSTOM_DRUGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(CUSTOM_DRUGS_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            saved = True
+        except Exception as e:
+            logger.warning(f"Could not write to {CUSTOM_DRUGS_PATH} (read-only): {e}")
+
+        try:
+            TMP_CUSTOM_DRUGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(TMP_CUSTOM_DRUGS_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            saved = True
+        except Exception as e:
+            logger.warning(f"Could not write to {TMP_CUSTOM_DRUGS_PATH}: {e}")
+
+        return saved
+
+    def stage_import(self, raw_records: List[Dict[str, Any]], filename: str = "import.csv") -> Dict[str, Any]:
+        """
+        Parses incoming dataset, checks against existing 25k records without altering the database,
+        and categorizes every record into:
+        1. 'new': Brand new drug not found in current database.
+        2. 'updated': Existing drug found, with changes (e.g. updated price, arabic name, active ingredient).
+        3. 'duplicate': Existing drug found with 100% identical data.
+        """
+        staging_id = str(uuid.uuid4())
+        new_items: List[Dict[str, Any]] = []
+        updated_items: List[Dict[str, Any]] = []
+        duplicate_items: List[Dict[str, Any]] = []
+
+        # Build quick normalized lookup map for fast diffing
+        name_map: Dict[str, List[Drug]] = {}
+        full_name_map: Dict[str, List[Drug]] = {}
+        base_name_map: Dict[str, List[Drug]] = {}
+        ar_name_map: Dict[str, List[Drug]] = {}
+        for d in self._drugs:
+            key = normalize_text(d.commercial_name_en)
+            if key:
+                name_map.setdefault(key, []).append(d)
+                base = re.sub(r"\b\d+(\.\d+)?\s*(mg|g|gm|ml|mcg|iu|%)\b", "", key).strip()
+                if base and base != key:
+                    base_name_map.setdefault(base, []).append(d)
+            if d.full_commercial_name_en:
+                fkey = normalize_text(d.full_commercial_name_en)
+                if fkey:
+                    full_name_map.setdefault(fkey, []).append(d)
+            if d.commercial_name_ar:
+                arkey = normalize_text(d.commercial_name_ar)
+                if arkey:
+                    ar_name_map.setdefault(arkey, []).append(d)
+
+        batch_seen: set = set()
+
+        def normalize_form_str(form_str: Optional[str]) -> str:
+            if not form_str:
+                return "Other"
+            fl = form_str.lower()
+            if any(x in fl for x in ["tab", "قرص", "أقراص"]):
+                return "Tablet"
+            if any(x in fl for x in ["cap", "كبسول", "كبسولات"]):
+                return "Capsule"
+            if any(x in fl for x in ["susp", "syr", "شراب", "معلق"]):
+                return "Suspension"
+            if any(x in fl for x in ["drop", "نقط", "قطرة"]):
+                return "Drops"
+            if any(x in fl for x in ["cream", "oint", "مرهم", "كريم", "gel", "جل"]):
+                return "Topical"
+            if any(x in fl for x in ["amp", "vial", "inj", "حقن", "حقنة", "أمبول"]):
+                return "Injection"
+            if any(x in fl for x in ["inh", "spray", "بخاخ", "استنشاق"]):
+                return "Inhalation"
+            return form_str.title()
+
+        def extract_clean_price(val: Any) -> Optional[float]:
+            if val is None or val == "":
+                return None
+            try:
+                s = str(val).strip()
+                cleaned = re.sub(r"[^\d.]", "", s)
+                if cleaned:
+                    return round(float(cleaned), 2)
+            except (ValueError, TypeError):
+                pass
+            return None
+
+        for idx, row in enumerate(raw_records):
+            # 1. Flexible column extraction (English & Arabic aliases)
+            def get_f(aliases: List[str]) -> Optional[str]:
+                for a in aliases:
+                    if a in row and row[a] is not None:
+                        v = str(row[a]).strip()
+                        if v and v.lower() != "nan" and v.lower() != "null":
+                            return v
+                return None
+
+            name_en = get_f([
+                "commercial_name_en", "trade_name", "trade_name_en", "TradeName",
+                "name", "brand_name", "NameEn", "product_name", "commercial_name",
+                "اسم الدواء بالانجليزي", "الاسم بالانجليزية"
+            ]) or ""
+            if not name_en:
+                continue
+
+            name_ar = get_f([
+                "commercial_name_ar", "trade_name_ar", "TradeNameAr", "name_ar",
+                "arabic_name", "commercial_ar", "اسم الدواء بالعربي", "الاسم بالعربية",
+                "اسم الدواء", "الاسم التجاري"
+            ])
+
+            generic = get_f([
+                "generic_name", "scientific_name", "active_ingredient",
+                "active_ingredients", "ActiveIngredient", "GenericName",
+                "ScientificName", "المادة الفعالة", "الاسم العلمي"
+            ]) or "Unspecified"
+
+            dosage_form = normalize_form_str(get_f([
+                "dosage_form", "form", "Form", "dosageForm", "DosageForm",
+                "الشكل الصيدلي", "شكل الدواء"
+            ]))
+
+            strength = get_f([
+                "strength", "concentration", "Strength", "Concentration",
+                "التركيز", "تركيز الدواء"
+            ])
+
+            price_val = extract_clean_price(get_f([
+                "price_egp", "price", "Price", "public_price", "retail_price",
+                "السعر", "سعر الدواء", "سعر الجمهور"
+            ]))
+
+            manufacturer = get_f([
+                "manufacturer", "company", "Company", "Manufacturer",
+                "الشركة المصنعة", "الشركة", "المصنع"
+            ])
+
+            drug_class = get_f([
+                "drug_class", "category", "class", "Class", "Category",
+                "التصنيف الدوائي", "المجموعة العلاجية", "التصنيف"
+            ])
+
+            route = get_f(["route", "Route", "طريقة الاستخدام"])
+            given_id = get_f(["id", "drug_id", "eda_id", "ID", "code", "رقم التسجيل"])
+
+            norm_key = normalize_text(name_en)
+
+            # Check internal duplicate within this upload batch
+            batch_item_key = (norm_key, (strength or "").strip().lower(), (dosage_form or "").lower(), round(price_val, 2) if price_val is not None else None)
+            if batch_item_key in batch_seen:
+                duplicate_items.append({
+                    "existing_id": "BATCH-DUP",
+                    "commercial_name_en": name_en,
+                    "dosage_form": dosage_form,
+                    "strength": strength or "N/A",
+                    "price_egp": price_val,
+                    "reason": "تكرار متطابق داخل نفس الملف المرفوع (Duplicate Row)",
+                })
+                continue
+            batch_seen.add(batch_item_key)
+
+            # 2. Match against current repository
+            matched_drug: Optional[Drug] = None
+
+            # Priority 1: Match by given ID
+            if given_id and given_id in self._id_index:
+                matched_drug = self._id_index[given_id]
+
+            # Priority 2: Match by exact or normalized commercial / full / base name
+            candidates: List[Drug] = []
+            if not matched_drug:
+                if norm_key in name_map:
+                    candidates = name_map[norm_key]
+                elif norm_key in full_name_map:
+                    candidates = full_name_map[norm_key]
+                else:
+                    base_in = re.sub(r"\b\d+(\.\d+)?\s*(mg|g|gm|ml|mcg|iu|%)\b", "", norm_key).strip()
+                    if base_in and base_in in name_map:
+                        candidates = name_map[base_in]
+                    elif base_in and base_in in base_name_map:
+                        candidates = base_name_map[base_in]
+
+            # Match Arabic name if still no candidate
+            if not matched_drug and not candidates and name_ar:
+                ar_k = normalize_text(name_ar)
+                if ar_k in ar_name_map:
+                    candidates = ar_name_map[ar_k]
+
+            if not matched_drug and candidates:
+                norm_str_in = re.sub(r"\s+", "", (strength or "").lower())
+                # First try matching both form and strength
+                for c in candidates:
+                    norm_c_str = re.sub(r"\s+", "", (c.strength or "").lower())
+                    form_match = (not dosage_form or dosage_form == "Other" or not c.dosage_form or c.dosage_form.lower() == dosage_form.lower())
+                    if norm_str_in and norm_c_str and norm_str_in == norm_c_str and form_match:
+                        matched_drug = c
+                        break
+                # Second try matching strength only
+                if not matched_drug and norm_str_in:
+                    for c in candidates:
+                        norm_c_str = re.sub(r"\s+", "", (c.strength or "").lower())
+                        if norm_str_in == norm_c_str:
+                            matched_drug = c
+                            break
+                # Third try matching form only
+                if not matched_drug and dosage_form and dosage_form != "Other":
+                    for c in candidates:
+                        if c.dosage_form and c.dosage_form.lower() == dosage_form.lower():
+                            matched_drug = c
+                            break
+                # Fallback to first candidate if only one exists or no specific filter matched
+                if not matched_drug:
+                    matched_drug = candidates[0]
+
+            # 3. Categorize into (Updated, Duplicate, or New)
+            if matched_drug:
+                diffs: List[Dict[str, Any]] = []
+
+                # Price diff check
+                if price_val is not None:
+                    old_p = round(matched_drug.price_egp, 2) if matched_drug.price_egp is not None else None
+                    if old_p is None or abs(price_val - old_p) > 0.01:
+                        diffs.append({
+                            "field": "price_egp",
+                            "label": "السعر الرسمي (EGP)",
+                            "old": f"{old_p:.2f} EGP" if old_p is not None else "غير مسجل",
+                            "new": f"{price_val:.2f} EGP",
+                        })
+
+                # Arabic name diff check
+                if name_ar and name_ar != matched_drug.commercial_name_ar:
+                    diffs.append({
+                        "field": "commercial_name_ar",
+                        "label": "الاسم التجاري بالعربي",
+                        "old": matched_drug.commercial_name_ar or "غير مسجل",
+                        "new": name_ar,
+                    })
+
+                # Generic / active diff check
+                if generic and generic != "Unspecified" and generic != matched_drug.generic_name:
+                    diffs.append({
+                        "field": "generic_name",
+                        "label": "المادة الفعالة (Generic)",
+                        "old": matched_drug.generic_name,
+                        "new": generic,
+                    })
+
+                # Strength diff check
+                if strength and strength != matched_drug.strength:
+                    diffs.append({
+                        "field": "strength",
+                        "label": "التركيز",
+                        "old": matched_drug.strength or "غير محدد",
+                        "new": strength,
+                    })
+
+                # Manufacturer diff check
+                if manufacturer and manufacturer != matched_drug.manufacturer:
+                    diffs.append({
+                        "field": "manufacturer",
+                        "label": "الشركة المصنعة",
+                        "old": matched_drug.manufacturer or "غير مسجل",
+                        "new": manufacturer,
+                    })
+
+                if diffs:
+                    updated_items.append({
+                        "existing_id": matched_drug.id,
+                        "commercial_name_en": matched_drug.commercial_name_en,
+                        "full_commercial_name_en": matched_drug.full_commercial_name_en or matched_drug.commercial_name_en,
+                        "dosage_form": dosage_form or matched_drug.dosage_form,
+                        "changes": diffs,
+                        "proposed": {
+                            "price_egp": price_val if price_val is not None else matched_drug.price_egp,
+                            "commercial_name_ar": name_ar or matched_drug.commercial_name_ar,
+                            "generic_name": generic if generic != "Unspecified" else matched_drug.generic_name,
+                            "strength": strength or matched_drug.strength,
+                            "dosage_form": dosage_form or matched_drug.dosage_form,
+                            "manufacturer": manufacturer or matched_drug.manufacturer,
+                            "drug_class": drug_class or matched_drug.drug_class,
+                            "route": route or matched_drug.route,
+                        },
+                    })
+                else:
+                    duplicate_items.append({
+                        "existing_id": matched_drug.id,
+                        "commercial_name_en": matched_drug.commercial_name_en,
+                        "dosage_form": matched_drug.dosage_form,
+                        "strength": matched_drug.strength or "N/A",
+                        "price_egp": matched_drug.price_egp,
+                        "reason": "متطابق تماماً مع المستحضر المسجل حالياً (نفس السعر والمواصفات)",
+                    })
+            else:
+                # Brand new medicine to add
+                new_id = given_id or f"EDA-NEW-{len(self._drugs) + len(new_items) + 1:05d}"
+                new_items.append({
+                    "id": new_id,
+                    "commercial_name_en": name_en.title(),
+                    "full_commercial_name_en": name_en,
+                    "commercial_name_ar": name_ar,
+                    "generic_name": generic,
+                    "dosage_form": dosage_form,
+                    "strength": strength,
+                    "price_egp": price_val,
+                    "manufacturer": manufacturer,
+                    "drug_class": drug_class,
+                    "route": route,
+                    "source": "EDA Updated Registry (New Addition)",
+                    "source_last_updated": "2026",
+                })
+
+        staged_data = {
+            "staging_id": staging_id,
+            "filename": filename,
+            "summary": {
+                "total_records": len(raw_records),
+                "new_count": len(new_items),
+                "updated_count": len(updated_items),
+                "duplicate_count": len(duplicate_items),
+            },
+            "new_items": new_items,
+            "updated_items": updated_items,
+            "duplicate_items": duplicate_items,
+        }
+
+        self._staged_imports[staging_id] = staged_data
+        return {
+            "staging_id": staging_id,
+            "filename": filename,
+            "summary": staged_data["summary"],
+            "new_sample": new_items[:50],
+            "updated_sample": updated_items[:50],
+            "duplicate_sample": duplicate_items[:50],
+        }
+
+    def get_staging_items(
+        self,
+        staging_id: str,
+        item_type: str = "new",
+        page: int = 1,
+        limit: int = 50,
+        search: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Returns paginated and searchable lists of staged items for admin review."""
+        staged = self._staged_imports.get(staging_id)
+        if not staged:
+            return {"error": "Staging session expired or not found"}
+
+        if item_type == "updated":
+            items = staged.get("updated_items", [])
+        elif item_type == "duplicate":
+            items = staged.get("duplicate_items", [])
+        else:
+            items = staged.get("new_items", [])
+
+        # Filter by search term
+        if search:
+            q = search.lower().strip()
+            items = [
+                x for x in items
+                if q in str(x.get("commercial_name_en", "")).lower()
+                or q in str(x.get("commercial_name_ar", "")).lower()
+                or q in str(x.get("generic_name", "")).lower()
+                or q in str(x.get("existing_id", "")).lower()
+                or q in str(x.get("id", "")).lower()
+            ]
+
+        total = len(items)
+        start = (page - 1) * limit
+        end = start + limit
+        paginated = items[start:end]
+
+        return {
+            "staging_id": staging_id,
+            "type": item_type,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "total_pages": math.ceil(total / limit) if total > 0 else 1,
+            "items": paginated,
+        }
+
+    def commit_import(
+        self,
+        staging_id: str,
+        import_new: bool = True,
+        apply_updates: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Commits verified staged changes to the active in-memory repository and saves to disk.
+        Does not touch duplicate records.
+        """
+        staged = self._staged_imports.get(staging_id)
+        if not staged:
+            raise ValueError("Staging session expired or not found. Please upload the file again.")
+
+        new_items = staged.get("new_items", []) if import_new else []
+        updated_items = staged.get("updated_items", []) if apply_updates else []
+        duplicates_count = len(staged.get("duplicate_items", []))
+
+        # 1. Apply field updates to existing drugs
+        updated_count = 0
+        for u in updated_items:
+            existing_id = u["existing_id"]
+            if existing_id in self._id_index:
+                drug = self._id_index[existing_id]
+                prop = u.get("proposed", {})
+                if prop.get("price_egp") is not None:
+                    drug.price_egp = prop["price_egp"]
+                if prop.get("commercial_name_ar"):
+                    drug.commercial_name_ar = prop["commercial_name_ar"]
+                if prop.get("generic_name") and prop["generic_name"] != "Unspecified":
+                    drug.generic_name = prop["generic_name"]
+                if prop.get("strength"):
+                    drug.strength = prop["strength"]
+                if prop.get("dosage_form"):
+                    drug.dosage_form = prop["dosage_form"]
+                if prop.get("manufacturer"):
+                    drug.manufacturer = prop["manufacturer"]
+                if prop.get("drug_class"):
+                    drug.drug_class = prop["drug_class"]
+                if prop.get("route"):
+                    drug.route = prop["route"]
+                drug.source_last_updated = "October 2026 (Admin Updated)"
+                self._custom_drug_ids.add(drug.id)
+                updated_count += 1
+
+        # 2. Add brand new medicines
+        added_count = 0
+        for n in new_items:
+            drug = Drug(
+                id=n.get("id") or f"EDA-NEW-{len(self._drugs) + 1:05d}",
+                commercial_name_en=n.get("commercial_name_en", "Unnamed Medicine"),
+                full_commercial_name_en=n.get("full_commercial_name_en") or n.get("commercial_name_en"),
+                commercial_name_ar=n.get("commercial_name_ar"),
+                generic_name=n.get("generic_name") or "Unspecified",
+                active_ingredients=[x.strip() for x in (n.get("generic_name") or "").split("+") if x.strip()],
+                dosage_form=n.get("dosage_form") or "Other",
+                strength=n.get("strength"),
+                manufacturer=n.get("manufacturer"),
+                price_egp=n.get("price_egp"),
+                route=n.get("route"),
+                drug_class=n.get("drug_class"),
+                aliases=[n.get("commercial_name_en", "")],
+                source="Egyptian Drug Authority (EDA) / Admin New Import",
+                source_last_updated="October 2026",
+            )
+            self._drugs.append(drug)
+            self._custom_drug_ids.add(drug.id)
+            added_count += 1
+
+        # 3. Rebuild repository indexes
+        self._build_indexes()
+
+        # 4. Save persistent dataset to disk
+        self.save_custom_drugs()
+
+        # Clean up staging session
+        self._staged_imports.pop(staging_id, None)
+
+        return {
+            "success": True,
+            "message": f"تمت العملية بنجاح: تم إضافة {added_count:,} صنف جديد وتحديث {updated_count:,} صنف موجود، مع تجاهل {duplicates_count:,} صنف مكرر تماماً دون أي ازدواجية.",
+            "added_count": added_count,
+            "updated_count": updated_count,
+            "ignored_duplicates_count": duplicates_count,
+            "total_drugs": len(self._drugs),
+        }
+
+    def export_drugs_json(self) -> str:
+        """Exports all current drugs as clean formatted JSON string."""
+        data = {
+            "export_date": "2026-10-13",
+            "total_count": len(self._drugs),
+            "drugs": [d.model_dump() for d in self._drugs],
+        }
+        return json.dumps(data, ensure_ascii=False, indent=2)
+
+    def export_drugs_csv(self) -> str:
+        """Exports all current drugs as clean CSV string."""
+        output = io.StringIO()
+        fieldnames = [
+            "id", "commercial_name_en", "commercial_name_ar", "generic_name",
+            "dosage_form", "strength", "price_egp", "manufacturer",
+            "drug_class", "route", "source"
+        ]
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        for d in self._drugs:
+            writer.writerow({
+                "id": d.id,
+                "commercial_name_en": d.commercial_name_en,
+                "commercial_name_ar": d.commercial_name_ar or "",
+                "generic_name": d.generic_name,
+                "dosage_form": d.dosage_form,
+                "strength": d.strength or "",
+                "price_egp": d.price_egp if d.price_egp is not None else "",
+                "manufacturer": d.manufacturer or "",
+                "drug_class": d.drug_class or "",
+                "route": d.route or "",
+                "source": d.source,
+            })
+        return output.getvalue()
 
 
 # Global singleton instance loaded once at startup

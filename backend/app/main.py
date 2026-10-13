@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from .api.admin_routes import router as admin_router
 from .api.routes import router as api_router
 from .config import PROJECT_ROOT, settings
 from .providers.factory import init_providers
@@ -45,8 +46,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API Router
+# Include API Routers
 app.include_router(api_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 # Serve Web UI static files (only if not running under Gradio / Hugging Face Spaces)
 WEB_DIR = PROJECT_ROOT / "web"
@@ -69,6 +71,14 @@ if WEB_DIR.exists() and not is_hf_space:
         if drugs_file.exists():
             return FileResponse(drugs_file)
         return {"message": "EDA Drug Database web page not found in web/drugs.html."}
+
+    @app.api_route("/admin", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/dashboard", methods=["GET", "HEAD"], include_in_schema=False)
+    async def serve_admin_page():
+        admin_file = WEB_DIR / "admin.html"
+        if admin_file.exists():
+            return FileResponse(admin_file)
+        return {"message": "Admin dashboard page not found in web/admin.html."}
 
 
 if __name__ == "__main__":
