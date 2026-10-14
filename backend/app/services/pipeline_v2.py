@@ -108,14 +108,38 @@ def reconcile_dosage_form_and_instructions(
 
         if h_num == 8:
             clean_freq = "3 times daily (كل ٨ ساعات)"
+            f_num = 3
         elif h_num == 12:
             clean_freq = "twice daily (كل ١٢ ساعة)"
+            f_num = 2
         elif h_num == 24:
             clean_freq = "once daily (كل ٢٤ ساعة)"
+            f_num = 1
         elif h_num == 6:
             clean_freq = "4 times daily (كل ٦ ساعات)"
+            f_num = 4
         elif h_num == 4:
             clean_freq = "every 4 hours (كل ٤ ساعات)"
+
+    # Check Arabic number of times daily: e.g. '٣ مرات', '3 مرات', 'ثلاث مرات', 'مرتين', 'مرتان', '٢ مرات', '٤ مرات', 'أربع مرات'
+    text_for_freq = f"{clean_raw} {clean_instr}"
+    m_ar_3 = re.search(r"\b(?:[٣3]\s*مرات|ثلاث\s*مرات|تلات\s*مرات|tid)\b", text_for_freq, re.IGNORECASE)
+    m_ar_2 = re.search(r"\b(?:[٢2]\s*مرات|مرتين|مرتان|bid)\b", text_for_freq, re.IGNORECASE)
+    m_ar_4 = re.search(r"\b(?:[٤4]\s*مرات|أربع\s*مرات|qid)\b", text_for_freq, re.IGNORECASE)
+    m_ar_1 = re.search(r"\b(?:مرة\s*واحدة|مرة\s*يومياً|مرة\s*يوميا|qd)\b", text_for_freq, re.IGNORECASE)
+
+    if m_ar_3:
+        clean_freq = "3 times daily (٣ مرات يومياً)"
+        f_num = 3
+    elif m_ar_2:
+        clean_freq = "twice daily (مرتين يومياً)"
+        f_num = 2
+    elif m_ar_4:
+        clean_freq = "4 times daily (٤ مرات يومياً)"
+        f_num = 4
+    elif m_ar_1:
+        clean_freq = "once daily (مرة واحدة يومياً)"
+        f_num = 1
 
     # Check alternate days interval (يوم بعد يوم): standard for pediatric iron/vitamin drops
     m_alt_day = re.search(r"\b(?:يوم\s*بعد\s*يوم|every\s*other\s*day|alternate\s*days?)\b", f"{clean_raw} {clean_instr}", re.IGNORECASE)
@@ -125,7 +149,7 @@ def reconcile_dosage_form_and_instructions(
     has_hours_in_raw = bool(re.search(r"(?:ساعات?|ساع[ةه]|س|h|hrs?|hours?)\b", f"{clean_raw} {clean_instr}", re.IGNORECASE))
     if m_alt_day:
         clean_freq = "every other day (يوم بعد يوم)"
-    elif m_daily and not has_hours_in_raw and (not f_num or f_num == 1):
+    elif not clean_freq and m_daily and not has_hours_in_raw and (not f_num or f_num == 1):
         clean_freq = "once daily (يومياً)"
 
     # Extract cm3 / ml dose for syrups/suspensions (e.g. ١.٥ سم, 1.5 سم, 2 سم, ٢ سم, 3 سم, ٣ سم)
@@ -135,29 +159,28 @@ def reconcile_dosage_form_and_instructions(
         val_en = m_ml.group(1).translate(ar_to_en)
         clean_dose = f"{val_en} ml ({m_ml.group(0)})"
 
-    # PRN check: e.g. 'عند اللزوم' / 'عند الحاجة' (common for fever / pain / Cetal drops)
+    # PRN check: e.g. 'عند اللزوم' / 'عند الحاجة'
     prn_regex = r"\b(?:عند\s*الحاج[ةه]|عند\s*اللزوم|as\s*needed|prn)\b"
     m_prn = re.search(prn_regex, f"{clean_raw} {clean_instr}", re.IGNORECASE)
     is_antipyretic = bool(re.search(r"\b(cetal|cetul|setal|setul|paracetamol|acetaminophen|brufen|ibuprofen|cataflam|سيتال|سيتول|بروفين|كتافلام)\b", f"{raw_lower} {form_str}"))
 
     if m_prn and not m_alt_day:
-        if m_hours and clean_freq:
-            clean_freq = f"{clean_freq} as needed (عند اللزوم)"
+        if clean_freq:
+            if "عند اللزوم" not in clean_freq:
+                clean_freq = f"{clean_freq} - وتكرر عند اللزوم"
         else:
-            clean_freq = "as needed (عند اللزوم)"
+            clean_freq = "عند اللزوم (as needed)"
 
-    # Strict ban on PRN when contradictory on scheduled non-antipyretics
-    is_scheduled_freq = bool(clean_freq and any(w in clean_freq.lower() for w in [
-        "times", "twice", "once", "daily", "every", "ساعات", "ساعة", "يومياً", "مرات", "مرتين", "٣", "٢"
-    ]))
-    if not is_antipyretic and (is_scheduled_freq or is_syrup or is_injection):
+    # Strict ban on PRN when contradictory on scheduled non-antipyretic oral antibiotics
+    is_antibiotic = bool(re.search(r"\b(augmentin|curam|hibiotic|klacid|zithromax|ceftriaxone|amikacin|مضاد)\b", f"{raw_lower} {form_str}"))
+    if is_antibiotic and (is_syrup or is_injection or is_tablet):
         if clean_instr and re.search(prn_regex, clean_instr, re.IGNORECASE):
             clean_instr = re.sub(prn_regex, "", clean_instr, flags=re.IGNORECASE).strip()
             clean_instr = re.sub(r"\s+", " ", clean_instr).strip(" ,.-()")
             if not clean_instr:
                 clean_instr = None
-        if clean_freq and re.search(prn_regex, clean_freq, re.IGNORECASE):
-            clean_freq = None
+        if clean_freq and "- وتكرر عند اللزوم" in clean_freq:
+            clean_freq = clean_freq.replace("- وتكرر عند اللزوم", "").strip()
 
     is_capsule = bool(re.search(r"\b(caps?|capsules?|كبسول|كبسولة|كبسولات)\b", text_combined))
     if is_tablet:
@@ -261,9 +284,13 @@ def reconcile_dosage_form_and_instructions(
                 clean_dose = "1 dropper (قطارة كاملة)"
             else:
                 clean_dose = "1/2 dropper (نصف قطارة)"
+        elif not clean_dose:
+            m_single_drop = re.search(r"\b(?:قطرة|قطره|نقطة|نقطه|drop)\b", f"{clean_raw} {clean_instr or ''}", re.IGNORECASE)
+            if m_single_drop:
+                clean_dose = "1 drop (قطرة واحدة)"
         elif clean_dose and any(w in clean_dose.lower() for w in ["سم", "ml", "tablet", "tab", "unit", "ampoule", "500"]):
             # Clear hallucinated syrup/tablet dose for drops
-            clean_dose = None
+            clean_dose = "1 drop (قطرة واحدة)"
 
         if re.search(r"\b(حكة|هرش|الحكة|الهرش)\b", f"{clean_raw} {clean_instr or ''}"):
             clean_instr = f"{clean_dose or 'نقط بالفم'} عند الحكة والهرش (عند اللزوم)"
@@ -301,7 +328,7 @@ def reconcile_dosage_form_and_instructions(
 
     # 3. PRN fallback when not scheduled
     has_explicit_prn = bool(re.search(r"\b(prn|عند\s+الحاجة|عند\s+اللزوم)\b", clean_raw.lower()))
-    if has_explicit_prn and not is_scheduled_freq and not is_syrup and not is_injection and not clean_freq and not m:
+    if has_explicit_prn and not is_syrup and not is_injection and not clean_freq and not m:
         clean_freq = "as needed (عند الحاجة)"
 
     return clean_dose, clean_freq, clean_instr or None
@@ -367,45 +394,60 @@ def synthesize_clinical_instruction(
     raw_instructions: Optional[str],
 ) -> Optional[str]:
     """
-    Synthesizes the complete clinical administration instructions sentence:
-    e.g., '1 drop 3 times daily for 2 weeks (قطرة ٣ مرات يومياً لمدة أسبوعين)'.
-    Eliminates fragmented or cross-contaminated fields and creates a unified clinical direction.
-    Never outputs literal 'null' placeholders.
+    Synthesizes the complete clinical administration instructions sentence in natural Arabic:
+    e.g., 'قطرة ٣ مرات يومياً لمدة أسبوعين (وتكرر عند اللزوم)'.
+    Eliminates fragmented or broken English like 'for {dur}' and creates a unified clinical direction.
     """
     d = clean_clinical_field(dose)
     f = clean_clinical_field(frequency)
     dur = clean_clinical_field(duration)
     clean_raw = clean_clinical_field(raw_instructions) or ""
 
-    prn_regex = r"\b(?:عند\s*الحاج[ةه]|عند\s*اللزوم|as\s*needed|prn)\b"
-    has_sched = bool(f and any(w in f.lower() for w in ["times", "twice", "once", "daily", "every", "ساعات", "ساعة", "يومياً", "مرات"]))
-    if has_sched and clean_raw:
-        clean_raw = re.sub(prn_regex, "", clean_raw, flags=re.IGNORECASE).strip(" ,.-()")
+    # Helper to extract Arabic representation of a field
+    def extract_ar(text: Optional[str]) -> Optional[str]:
+        if not text:
+            return None
+        if re.search(r"[\u0600-\u06FF]", text):
+            clean = re.sub(r"\b[a-zA-Z\d\s/]+\(([^)]+)\)", r"\1", text)
+            clean = re.sub(r"\b[a-zA-Z]+\b", "", clean)
+            clean = clean.replace("()", "").strip(" -()")
+            clean = re.sub(r"\s+", " ", clean)
+            if clean:
+                return clean
+        return text
 
-    components = []
-    if d:
-        components.append(d)
-    if f:
-        components.append(f)
-    if dur:
-        if not dur.lower().startswith("for") and not dur.startswith("لمدة"):
-            components.append(f"for {dur}")
-        else:
-            components.append(dur)
+    ar_d = extract_ar(d)
+    ar_f = extract_ar(f)
+    ar_dur = extract_ar(dur)
 
-    base_sentence = " ".join(components).strip()
-
-    if base_sentence and clean_raw:
-        if base_sentence.lower() in clean_raw.lower():
+    # If raw_instructions already has a clear, comprehensive Arabic direction, preserve it!
+    if clean_raw and re.search(r"[\u0600-\u06FF]", clean_raw):
+        has_freq_in_raw = bool(re.search(r"(?:يومياً|يوميا|مرات|مرتين|ساعة|ساعات|أسبوع|شهر)", clean_raw))
+        if has_freq_in_raw and len(clean_raw.split()) >= 3:
             return clean_raw
-        if clean_raw.lower() in base_sentence.lower():
-            return base_sentence
-        return f"{base_sentence} ({clean_raw})"
-    elif base_sentence:
-        return base_sentence
-    elif clean_raw:
-        return clean_raw
-    return None
+
+    # Assemble natural Arabic clinical instruction
+    prn_suffix = ""
+    if ar_f and "عند اللزوم" in ar_f:
+        ar_f = re.sub(r"-?\s*(?:وتكرر\s*)?عند\s*اللزوم", "", ar_f).strip(" -()")
+        prn_suffix = " (وتكرر عند اللزوم)"
+
+    parts = []
+    if ar_d:
+        parts.append(ar_d)
+    if ar_f:
+        parts.append(ar_f)
+    if ar_dur:
+        if not ar_dur.startswith("لمدة") and not ar_dur.startswith("خلال"):
+            parts.append(f"لمدة {ar_dur}")
+        else:
+            parts.append(ar_dur)
+
+    sentence = " ".join(parts).strip() + prn_suffix
+    sentence = re.sub(r"\s+", " ", sentence).strip()
+    if sentence:
+        return sentence
+    return clean_raw or None
 
 
 class PrescriptionPipelineV2:
@@ -559,6 +601,12 @@ class PrescriptionPipelineV2:
                 )
                 med_image_url = clinical_profile.get("image_url")
 
+            v2_dosage_form = (matched_drug.dosage_form if matched_drug else None) or form_hint
+            v2_commercial_name_ar = (matched_drug.commercial_name_ar if matched_drug else None) or clinical_profile.get("commercial_name_ar")
+            v2_price_egp = (matched_drug.price_egp if matched_drug else None) or clinical_profile.get("price_egp")
+            if med_image_url and med_image_url.startswith("/"):
+                med_image_url = f"https://gor3a-backend.vercel.app{med_image_url}"
+
             # Sanitize strength: if model hallucinated "500mg" or "1 tab" on non-tablet drugs,
             # purge the hallucination and use the EDA registered strength!
             form_hint_lower = str(form_hint or "").lower()
@@ -588,6 +636,9 @@ class PrescriptionPipelineV2:
                 clinical_indication=clinical_profile.get("indication_short"),
                 likely_diagnosis=clinical_profile.get("likely_diagnosis"),
                 indication_details=clinical_profile,
+                dosage_form=clean_clinical_field(v2_dosage_form),
+                commercial_name_ar=clean_clinical_field(v2_commercial_name_ar),
+                price_egp=v2_price_egp,
                 image_url=med_image_url,
             )
             v2_medications.append(v2_med)

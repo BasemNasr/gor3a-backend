@@ -86,6 +86,18 @@ class MedicationItem(BaseModel):
         default=None,
         description="Detailed clinical profile: what_it_does, what_it_treats, likely_diagnosis, mechanism, precautions"
     )
+    dosage_form: Optional[str] = Field(
+        default=None,
+        description="Pharmaceutical dosage formulation (e.g. 'Tablet', 'Eye Drops', 'Syrup', 'Suspension')"
+    )
+    commercial_name_ar: Optional[str] = Field(
+        default=None,
+        description="Official Egyptian commercial brand name in Arabic"
+    )
+    price_egp: Optional[float] = Field(
+        default=None,
+        description="Official registered price in Egyptian Pounds (EGP)"
+    )
     image_url: Optional[str] = Field(
         default=None,
         description="URL or endpoint to fetch visual packaging representation of the medicine"
