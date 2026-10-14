@@ -116,6 +116,8 @@ def parse_csv_drug_row(i: int, row: Dict[str, str]) -> Drug:
         form = "Injection"
     elif re.search(r"\b(?:INH|INHALER|SPRAY)\b", en_raw, re.IGNORECASE):
         form = "Inhalation"
+    elif re.search(r"\b(?:SUPP|SUPPOSITORY|SUPPOSITORIES)\b", en_raw, re.IGNORECASE) or (row.get("route", "").upper() in ("RECTAL", "VAGINAL")):
+        form = "Suppository"
 
     price = None
     try:
@@ -143,6 +145,97 @@ def parse_csv_drug_row(i: int, row: Dict[str, str]) -> Drug:
         source="Egyptian Drug Authority (EDA) / karem505 dataset",
         source_last_updated="June 2026",
     )
+
+
+def normalize_dosage_form_filter(form_input: Optional[str]) -> Optional[set]:
+    """
+    Normalizes any Arabic or English dosage form string (singular, plural, informal)
+    to a set of canonical dosage forms present in the EDA dataset.
+    Returns None if no filter should be applied (e.g. 'All' / 'الكل').
+    """
+    if not form_input:
+        return None
+    raw = form_input.strip()
+    if not raw:
+        return None
+
+    # Normalize Arabic diacritics and letters
+    norm = raw.lower()
+    norm = re.sub(r"[\u064B-\u065F\u0670]", "", norm)
+    norm = (
+        norm.replace("أ", "ا")
+        .replace("إ", "ا")
+        .replace("آ", "ا")
+        .replace("ة", "ه")
+        .replace("ى", "ي")
+        .strip()
+    )
+
+    if norm in ("الكل", "all", "*", "any", "none"):
+        return None
+
+    # Tablets / أقراص
+    if norm in ("اقراص", "قرص", "قرصين", "tablets", "tablet", "tab", "tabs", "f.c.tab", "f.c.tabs"):
+        return {"Tablet"}
+
+    # Capsules / كبسولات
+    if norm in ("كبسولات", "كبسوله", "capsules", "capsule", "cap", "caps"):
+        return {"Capsule"}
+
+    # Syrup & Suspension / شراب / معلق
+    if norm in (
+        "شراب",
+        "اشربه",
+        "معلق",
+        "معلقات",
+        "syrup",
+        "syrups",
+        "suspension",
+        "suspensions",
+        "susp",
+        "syr",
+        "liquid",
+        "oral liquid",
+    ):
+        return {"Suspension", "Syrup"}
+
+    # Drops / نقط / قطرة
+    if norm in ("نقط", "نقطه", "قطره", "قطرات", "drops", "drop", "oral drops"):
+        return {"Drops", "Oral Drops"}
+
+    # Topical / دهان موضعي / كريم / مرهم / جل
+    if (
+        "دهان" in norm
+        or "موضعي" in norm
+        or "كريم" in norm
+        or "مرهم" in norm
+        or "جل" in norm
+        or norm in ("topical", "cream", "ointment", "gel", "lotion")
+    ):
+        return {"Topical"}
+
+    # Injection / حقن / أمبولات / فيال
+    if (
+        "حقن" in norm
+        or "حقنه" in norm
+        or "امبول" in norm
+        or "امبولات" in norm
+        or "فيال" in norm
+        or "فايل" in norm
+        or norm in ("injection", "injections", "inj", "amp", "ampoule", "ampoules", "vial", "vials")
+    ):
+        return {"Injection"}
+
+    # Suppository / لبوس
+    if "لبوس" in norm or norm in ("suppository", "suppositories", "supp", "supps"):
+        return {"Suppository"}
+
+    # Inhalation / بخاخ / استنشاق
+    if "بخاخ" in norm or "استنشاق" in norm or norm in ("inhalation", "inhaler", "spray"):
+        return {"Inhalation", "Spray"}
+
+    # Direct match fallback
+    return {raw.capitalize(), raw.title(), raw.upper(), raw.lower(), raw}
 
 
 class DrugRepository:
@@ -393,6 +486,7 @@ class DrugRepository:
         """
         q = (query or "").strip().lower()
         candidates_with_score: List[Tuple[Drug, float]] = []
+        target_forms = normalize_dosage_form_filter(form)
 
         # 1. Candidate selection
         if q:
@@ -415,8 +509,10 @@ class DrugRepository:
         # 2. Filter & score
         for drug in target_pool:
             # Attribute filters
-            if form and form.lower() != (drug.dosage_form or "").lower():
-                continue
+            if target_forms is not None:
+                d_form = (drug.dosage_form or "").strip().lower()
+                if not any(tf.lower() == d_form for tf in target_forms):
+                    continue
             if route and route.lower() not in (drug.route or "").lower():
                 continue
             if manufacturer and manufacturer.lower() not in (drug.manufacturer or "").lower():

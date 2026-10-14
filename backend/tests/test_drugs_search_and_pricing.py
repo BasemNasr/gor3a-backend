@@ -186,3 +186,26 @@ def test_serve_drugs_html_page():
     assert "EDA Drug Database" in resp.text
     assert "25,098" in resp.text
     assert "drugs.js" in resp.text
+
+
+def test_api_drugs_search_form_filters():
+    """Tests GET /api/drugs/search with Arabic and English dosage form filters."""
+    # Arabic 'أقراص'
+    resp_ar = client.get("/api/drugs/search?mode=catalog&form=%D8%A3%D9%82%D8%B1%D8%A7%D8%B5&page=1&page_size=10")
+    assert resp_ar.status_code == 200
+    data_ar = resp_ar.json()
+    assert data_ar["total"] >= 7000
+    assert len(data_ar["results"]) == 10
+    assert all(r["drug"]["dosage_form"] == "Tablet" for r in data_ar["results"])
+
+    # Arabic 'كبسولات'
+    resp_cap = client.get("/api/drugs/search?mode=catalog&form=كبسولات&page=1&page_size=5")
+    assert resp_cap.status_code == 200
+    data_cap = resp_cap.json()
+    assert data_cap["total"] >= 2000
+    assert all(r["drug"]["dosage_form"] == "Capsule" for r in data_cap["results"])
+
+    # English plural 'Tablets'
+    resp_en = client.get("/api/drugs/search?mode=catalog&form=Tablets&page=1&page_size=5")
+    assert resp_en.status_code == 200
+    assert resp_en.json()["total"] >= 7000
