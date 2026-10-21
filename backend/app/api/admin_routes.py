@@ -446,3 +446,17 @@ async def admin_delete_banner(
         "success": True,
         "message": "تم حذف الإعلان بنجاح 🗑️",
     }
+
+
+@router.post("/banners/sync")
+async def admin_sync_banners(
+    payload: List[Dict[str, Any]],
+    admin_email: str = Depends(get_current_admin),
+):
+    """Synchronizes full banner list from admin panel to prevent serverless state drift."""
+    synced = banner_service.sync_banners(payload)
+    return {
+        "success": True,
+        "message": "تمت مزامنة الإعلانات بنجاح ✓",
+        "banners": synced,
+    }

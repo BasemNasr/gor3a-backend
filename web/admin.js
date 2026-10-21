@@ -759,6 +759,76 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${year}-${month}-${day}`;
   }
 
+  // Local Storage & Serverless Sync Helpers
+  function getDeletedBannerIds() {
+    try {
+      return JSON.parse(localStorage.getItem("gor3a_deleted_banner_ids") || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function addDeletedBannerId(id) {
+    const ids = getDeletedBannerIds();
+    if (!ids.includes(id)) {
+      ids.push(id);
+      localStorage.setItem("gor3a_deleted_banner_ids", JSON.stringify(ids));
+    }
+  }
+
+  function getLocalBanners() {
+    try {
+      const data = localStorage.getItem("gor3a_local_banners");
+      return data ? JSON.parse(data) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveLocalBanners(list) {
+    try {
+      localStorage.setItem("gor3a_local_banners", JSON.stringify(list));
+    } catch (_) {}
+  }
+
+  async function syncBannersToServer(list) {
+    if (!adminToken) return;
+    try {
+      await fetch("/api/admin/banners/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(list),
+      });
+    } catch (err) {
+      console.warn("Sync banners failed:", err);
+    }
+  }
+
+  function updateBannerStats() {
+    const today = getTodayIso();
+    let active = 0, inactive = 0, expired = 0;
+    bannersList.forEach((b) => {
+      if (!b.is_active) {
+        inactive++;
+      } else if (b.end_date && b.end_date.trim() && today > b.end_date.trim()) {
+        expired++;
+      } else {
+        active++;
+      }
+    });
+
+    const total = bannersList.length;
+    if (statActiveBannersCount) statActiveBannersCount.textContent = active;
+    if (statBannersSummary) statBannersSummary.textContent = `${active} إعلانات نشطة من إجمالي ${total}`;
+    if (statBannerTotal) statBannerTotal.textContent = total;
+    if (statBannerActive) statBannerActive.textContent = active;
+    if (statBannerInactive) statBannerInactive.textContent = inactive;
+    if (statBannerExpired) statBannerExpired.textContent = expired;
+  }
+
   // Load Banners from Server
   async function loadBannersData() {
     if (!adminToken) return;
@@ -768,18 +838,27 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (!res.ok) return;
       const data = await res.json();
-      bannersList = data.banners || [];
-      const stats = data.stats || { total: 0, active: 0, inactive: 0, expired: 0 };
+      const serverBanners = data.banners || [];
+      const deletedIds = new Set(getDeletedBannerIds());
 
-      // Update Ribbon Stats
-      if (statActiveBannersCount) statActiveBannersCount.textContent = stats.active;
-      if (statBannersSummary) statBannersSummary.textContent = `${stats.active} إعلانات نشطة من إجمالي ${stats.total}`;
+      // Filter out any banner explicitly deleted in this browser
+      const validServerBanners = serverBanners.filter((b) => !deletedIds.has(b.id));
 
-      // Update Mini Stats
-      if (statBannerTotal) statBannerTotal.textContent = stats.total;
-      if (statBannerActive) statBannerActive.textContent = stats.active;
-      if (statBannerInactive) statBannerInactive.textContent = stats.inactive;
-      if (statBannerExpired) statBannerExpired.textContent = stats.expired;
+      const localBanners = getLocalBanners();
+      if (Array.isArray(localBanners)) {
+        const localMap = new Map(localBanners.map((b) => [b.id, b]));
+        bannersList = localBanners.filter((b) => !deletedIds.has(b.id));
+        validServerBanners.forEach((sb) => {
+          if (!localMap.has(sb.id) && !deletedIds.has(sb.id)) {
+            bannersList.push(sb);
+          }
+        });
+      } else {
+        bannersList = validServerBanners;
+      }
+
+      saveLocalBanners(bannersList);
+      updateBannerStats();
 
       // Populate Governorates
       if (data.governorates && data.governorates.length) {
@@ -787,6 +866,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       renderBannersTable();
+      syncBannersToServer(bannersList);
     } catch (err) {
       console.warn("Failed to load banners data:", err);
     }
@@ -1196,9 +1276,29 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const data = await res.json();
-        showToast(data.message || "تم حفظ الإعلان في السلايدر بنجاح ✓");
+        const savedBanner = data.banner;
+
+        if (isEdit) {
+          const idx = bannersList.findIndex((b) => b.id === bannerId);
+          if (idx >= 0) {
+            bannersList[idx] = savedBanner || { ...bannersList[idx], ...payload, id: bannerId };
+          }
+        } else {
+          if (savedBanner) {
+            bannersList.push(savedBanner);
+          } else {
+            bannersList.push({ id: `banner-${Date.now()}`, ...payload });
+          }
+        }
+
+        saveLocalBanners(bannersList);
+        updateBannerStats();
+        renderBannersTable();
         closeBannerModal();
-        await loadBannersData();
+        showToast(data.message || "تم حفظ الإعلان في السلايدر بنجاح ✓");
+
+        // Sync with serverless backend
+        await syncBannersToServer(bannersList);
       } catch (err) {
         bannerFormError.textContent = err.message || "حدث خطأ أثناء الحفظ";
         bannerFormError.classList.remove("hidden");
@@ -1213,21 +1313,27 @@ document.addEventListener("DOMContentLoaded", () => {
   // Toggle Banner Active
   window.toggleBannerActive = async function(bannerId) {
     if (!adminToken) return;
+    const banner = bannersList.find((b) => b.id === bannerId);
+    if (!banner) return;
+
+    // Toggle optimistically in local state
+    banner.is_active = !banner.is_active;
+    banner.status_label = banner.is_active ? "نشط" : "معطل";
+    banner.status_color = banner.is_active ? "green" : "gray";
+
+    saveLocalBanners(bannersList);
+    updateBannerStats();
+    renderBannersTable();
+    showToast(banner.is_active ? "تم تفعيل الإعلان في السلايدر ✓" : "تم تعطيل الإعلان من السلايدر ✓");
+
     try {
-      const res = await fetch(`/api/admin/banners/${bannerId}/toggle`, {
+      await fetch(`/api/admin/banners/${bannerId}/toggle`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${adminToken}` },
       });
-      if (res.ok) {
-        const data = await res.json();
-        showToast(data.message || "تم تغيير حالة الإعلان ✓");
-        await loadBannersData();
-      } else {
-        const err = await res.json().catch(() => ({}));
-        alert(err.detail || "فشل تغيير حالة الإعلان");
-      }
-    } catch (_) {
-      alert("تعذر الاتصال بالسيرفر لتغيير حالة الإعلان");
+      await syncBannersToServer(bannersList);
+    } catch (err) {
+      console.warn("Toggle sync warning:", err);
     }
   };
 
@@ -1246,11 +1352,17 @@ document.addEventListener("DOMContentLoaded", () => {
     itemA.display_order = itemB.display_order;
     itemB.display_order = tempOrder;
 
+    sorted.sort((a, b) => (a.display_order || 999) - (b.display_order || 999));
+    sorted.forEach((item, i) => { item.display_order = i + 1; });
+    bannersList = sorted;
+
+    saveLocalBanners(bannersList);
     renderBannersTable();
+    showToast("تم تحديث ترتيب الإعلانات في السلايدر ✓");
 
     const orders = sorted.map((b, i) => ({ id: b.id, display_order: i + 1 }));
     try {
-      const res = await fetch("/api/admin/banners/reorder", {
+      await fetch("/api/admin/banners/reorder", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1258,14 +1370,9 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify({ orders }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        bannersList = data.banners || bannersList;
-        renderBannersTable();
-        showToast("تم تحديث ترتيب الإعلانات في السلايدر ✓");
-      }
+      await syncBannersToServer(bannersList);
     } catch (err) {
-      console.error("Failed to reorder banners:", err);
+      console.warn("Reorder warning:", err);
     }
   };
 
@@ -1289,22 +1396,30 @@ document.addEventListener("DOMContentLoaded", () => {
   if (confirmDeleteBannerBtn) {
     confirmDeleteBannerBtn.addEventListener("click", async () => {
       if (!deletingBannerId) return;
+      const targetId = deletingBannerId;
+
+      // 1. Permanently record deletion in localStorage so it never reappears on reload
+      addDeletedBannerId(targetId);
+
+      // 2. Remove from bannersList in-memory
+      bannersList = bannersList.filter((b) => b.id !== targetId);
+      saveLocalBanners(bannersList);
+
+      // 3. Update UI optimistically
+      updateBannerStats();
+      renderBannersTable();
+      closeDeleteModal();
+      showToast("تم حذف الإعلان بنجاح 🗑️");
+
+      // 4. Send DELETE and SYNC to serverless backend
       try {
-        const res = await fetch(`/api/admin/banners/${deletingBannerId}`, {
+        await fetch(`/api/admin/banners/${targetId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${adminToken}` },
         });
-        if (res.ok) {
-          const data = await res.json();
-          showToast(data.message || "تم حذف الإعلان بنجاح 🗑️");
-          closeDeleteModal();
-          await loadBannersData();
-        } else {
-          const err = await res.json().catch(() => ({}));
-          alert(err.detail || "فشل حذف الإعلان");
-        }
-      } catch (_) {
-        alert("تعذر الاتصال بالسيرفر لحذف الإعلان");
+        await syncBannersToServer(bannersList);
+      } catch (err) {
+        console.warn("Delete server warning:", err);
       }
     });
   }

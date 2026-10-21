@@ -42,12 +42,44 @@ EGYPTIAN_GOVERNORATES = [
 
 DEFAULT_BANNERS_PATH = PROJECT_ROOT / "dataset" / "banners" / "banners.json"
 TMP_BANNERS_PATH = Path("/tmp/banners.json")
+DELETED_IDS_PATH = Path("/tmp/deleted_banner_ids.json")
 
 
 class BannerService:
     def __init__(self):
         self._banners: List[Dict[str, Any]] = []
+        self._deleted_ids: set = set()
         self._load()
+
+    def _get_deleted_ids(self) -> set:
+        if DELETED_IDS_PATH.exists():
+            try:
+                with open(DELETED_IDS_PATH, "r", encoding="utf-8") as f:
+                    return set(json.load(f))
+            except Exception:
+                pass
+        return self._deleted_ids
+
+    def _record_deleted_id(self, banner_id: str):
+        self._deleted_ids.add(banner_id)
+        try:
+            DELETED_IDS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(DELETED_IDS_PATH, "w", encoding="utf-8") as f:
+                json.dump(list(self._deleted_ids), f)
+        except Exception:
+            pass
+
+    def _reload_if_needed(self):
+        """Always ensures memory reflects the latest disk state and filters deleted banners."""
+        if TMP_BANNERS_PATH.exists():
+            try:
+                with open(TMP_BANNERS_PATH, "r", encoding="utf-8") as f:
+                    self._banners = json.load(f)
+            except Exception:
+                pass
+        deleted = self._get_deleted_ids()
+        if deleted:
+            self._banners = [b for b in self._banners if b.get("id") not in deleted]
 
     def _load(self):
         """Loads banners from disk or initializes defaults."""
@@ -61,6 +93,9 @@ class BannerService:
             try:
                 with open(source_path, "r", encoding="utf-8") as f:
                     self._banners = json.load(f)
+                deleted = self._get_deleted_ids()
+                if deleted:
+                    self._banners = [b for b in self._banners if b.get("id") not in deleted]
                 logger.info(f"Loaded {len(self._banners)} banners from {source_path}")
                 return
             except Exception as e:
@@ -126,6 +161,7 @@ class BannerService:
         return False
 
     def get_stats(self) -> Dict[str, int]:
+        self._reload_if_needed()
         today_str = datetime.date.today().isoformat()
         total = len(self._banners)
         active = 0
@@ -149,6 +185,7 @@ class BannerService:
 
     def get_all_admin_banners(self) -> List[Dict[str, Any]]:
         """Returns all banners with computed status flags for admin panel."""
+        self._reload_if_needed()
         today_str = datetime.date.today().isoformat()
         results = []
         for b in sorted(self._banners, key=lambda x: (x.get("display_order", 999), x.get("id", ""))):
@@ -177,6 +214,7 @@ class BannerService:
         Returns active, non-expired banners suitable for the mobile app / website slider.
         Filters by target governorate if specified.
         """
+        self._reload_if_needed()
         today_str = datetime.date.today().isoformat()
         active_list = []
 
@@ -215,6 +253,7 @@ class BannerService:
 
     def create_banner(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Creates and stores a new banner."""
+        self._reload_if_needed()
         banner_id = f"banner-{uuid.uuid4().hex[:8]}"
         now_iso = datetime.datetime.utcnow().isoformat() + "Z"
         today_str = datetime.date.today().isoformat()
@@ -258,6 +297,7 @@ class BannerService:
 
     def update_banner(self, banner_id: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Updates an existing banner."""
+        self._reload_if_needed()
         for idx, b in enumerate(self._banners):
             if b.get("id") == banner_id:
                 now_iso = datetime.datetime.utcnow().isoformat() + "Z"
@@ -300,6 +340,7 @@ class BannerService:
 
     def toggle_banner(self, banner_id: str) -> Optional[Dict[str, Any]]:
         """Toggles active status of a banner."""
+        self._reload_if_needed()
         for idx, b in enumerate(self._banners):
             if b.get("id") == banner_id:
                 b["is_active"] = not b.get("is_active", True)
@@ -314,6 +355,7 @@ class BannerService:
         Accepts a list of dicts: [{'id': 'banner-id', 'display_order': 1}, ...]
         Updates all banners in memory and persists.
         """
+        self._reload_if_needed()
         id_to_order = {item["id"]: int(item["display_order"]) for item in order_map if "id" in item and "display_order" in item}
         for b in self._banners:
             if b.get("id") in id_to_order:
@@ -324,13 +366,31 @@ class BannerService:
         return self._save()
 
     def delete_banner(self, banner_id: str) -> bool:
-        """Deletes a banner by ID."""
+        """Deletes a banner by ID and records its deletion."""
+        self._reload_if_needed()
+        self._record_deleted_id(banner_id)
         initial_count = len(self._banners)
         self._banners = [b for b in self._banners if b.get("id") != banner_id]
-        if len(self._banners) < initial_count:
-            self._save()
-            return True
-        return False
+        self._save()
+        return True
+
+    def sync_banners(self, new_banners: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Replaces the active banners with a synchronized list from admin."""
+        self._banners = list(new_banners)
+        # Any default banner not present in synchronized list is permanently recorded as deleted
+        try:
+            if DEFAULT_BANNERS_PATH.exists():
+                with open(DEFAULT_BANNERS_PATH, "r", encoding="utf-8") as f:
+                    default_items = json.load(f)
+                new_ids = {b.get("id") for b in new_banners if b.get("id")}
+                for item in default_items:
+                    item_id = item.get("id")
+                    if item_id and item_id not in new_ids:
+                        self._record_deleted_id(item_id)
+        except Exception:
+            pass
+        self._save()
+        return self._banners
 
 
 banner_service = BannerService()
