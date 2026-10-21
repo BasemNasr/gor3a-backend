@@ -52,8 +52,16 @@ dataset/raw/*
 uploads/
 temp/
 
-# Large local files, models & mobile app folder
-Gor3a App/
+# Mobile App Build Artifacts
+Gor3a App/.gradle/
+Gor3a App/**/build/
+Gor3a App/.kotlin/
+Gor3a App/.idea/
+Gor3a App/local.properties
+Gor3a App/*.iml
+Gor3a App/**/.DS_Store
+
+# Large local files & models
 Gor3a.zip
 /App Design .png
 /Logo.png

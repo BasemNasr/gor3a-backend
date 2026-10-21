@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>تطبيق جرعة يحتاج للوصول إلى الكاميرا لمسح الروشتات الطبية وتحليلها / Gor3a requires camera access to scan medical prescriptions.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>تطبيق جرعة يحتاج للوصول إلى مكتبة الصور لاختيار صور الروشتات / Gor3a requires photo library access to upload prescription images.</string>
+</dict>
+</plist>
