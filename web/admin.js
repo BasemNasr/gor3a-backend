@@ -203,6 +203,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       console.warn("Failed to load settings:", err);
     }
+    // Also load banners stats and data
+    loadBannersData();
   }
 
   // =========================================================================
@@ -217,6 +219,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const targetId = btn.dataset.tab;
       const targetContent = document.getElementById(targetId);
       if (targetContent) targetContent.classList.remove("hidden");
+      if (targetId === "tabBanners") {
+        loadBannersData();
+      }
     });
   });
 
@@ -668,6 +673,640 @@ document.addEventListener("DOMContentLoaded", () => {
       commitBtnText.textContent = "✅ تأكيد وتطبيق التحديث (Confirm Changes)";
       confirmCommitBtn.disabled = false;
     }
+  }
+
+  // =========================================================================
+  // 6. Banner & Slider Management Logic
+  // =========================================================================
+  let bannersList = [];
+  let governoratesList = [];
+  let currentBannerFilter = "all";
+  let deletingBannerId = null;
+
+  // DOM Elements - Banners
+  const statActiveBannersCount = document.getElementById("statActiveBannersCount");
+  const statBannersSummary = document.getElementById("statBannersSummary");
+  const statBannerTotal = document.getElementById("statBannerTotal");
+  const statBannerActive = document.getElementById("statBannerActive");
+  const statBannerInactive = document.getElementById("statBannerInactive");
+  const statBannerExpired = document.getElementById("statBannerExpired");
+
+  const addNewBannerBtn = document.getElementById("addNewBannerBtn");
+  const emptyAddBannerBtn = document.getElementById("emptyAddBannerBtn");
+  const bannersTableBody = document.getElementById("bannersTableBody");
+  const bannersEmptyState = document.getElementById("bannersEmptyState");
+  const bannerFilterPills = document.querySelectorAll("[data-banner-filter]");
+
+  // Modal Elements
+  const bannerModal = document.getElementById("bannerModal");
+  const bannerModalTitle = document.getElementById("bannerModalTitle");
+  const closeBannerModalBtn = document.getElementById("closeBannerModalBtn");
+  const cancelBannerModalBtn = document.getElementById("cancelBannerModalBtn");
+  const bannerForm = document.getElementById("bannerForm");
+  const bannerFormError = document.getElementById("bannerFormError");
+  const saveBannerSubmitBtn = document.getElementById("saveBannerSubmitBtn");
+  const saveBannerSpinner = document.getElementById("saveBannerSpinner");
+  const saveBannerBtnText = document.getElementById("saveBannerBtnText");
+
+  // Form Fields
+  const bannerIdInput = document.getElementById("bannerId");
+  const bannerTitleInput = document.getElementById("bannerTitleInput");
+  const bannerSubtitleInput = document.getElementById("bannerSubtitleInput");
+  const bannerImageUrlInput = document.getElementById("bannerImageUrlInput");
+  const bannerImageFileInput = document.getElementById("bannerImageFileInput");
+  const bannerImagePreview = document.getElementById("bannerImagePreview");
+  const bannerImagePreviewPlaceholder = document.getElementById("bannerImagePreviewPlaceholder");
+
+  const targetTypeAll = document.getElementById("targetTypeAll");
+  const targetTypeSpecific = document.getElementById("targetTypeSpecific");
+  const specificGovsSection = document.getElementById("specificGovsSection");
+  const governoratesCheckboxes = document.getElementById("governoratesCheckboxes");
+  const selectAllGovsBtn = document.getElementById("selectAllGovsBtn");
+  const clearAllGovsBtn = document.getElementById("clearAllGovsBtn");
+
+  const bannerStartDate = document.getElementById("bannerStartDate");
+  const bannerEndDate = document.getElementById("bannerEndDate");
+  const durationPresetBtns = document.querySelectorAll(".duration-preset-btn");
+
+  const bannerActionType = document.getElementById("bannerActionType");
+  const bannerActionTarget = document.getElementById("bannerActionTarget");
+  const actionTargetLabel = document.getElementById("actionTargetLabel");
+  const bannerDisplayOrder = document.getElementById("bannerDisplayOrder");
+  const bannerIsActive = document.getElementById("bannerIsActive");
+
+  // Delete Modal Elements
+  const deleteBannerModal = document.getElementById("deleteBannerModal");
+  const closeDeleteBannerModalBtn = document.getElementById("closeDeleteBannerModalBtn");
+  const cancelDeleteBannerBtn = document.getElementById("cancelDeleteBannerBtn");
+  const confirmDeleteBannerBtn = document.getElementById("confirmDeleteBannerBtn");
+  const deleteBannerTitlePreview = document.getElementById("deleteBannerTitlePreview");
+
+  // Date Helpers
+  function getTodayIso() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function addDaysToDate(dateStr, days) {
+    const d = new Date(dateStr || getTodayIso());
+    d.setDate(d.getDate() + parseInt(days, 10));
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Load Banners from Server
+  async function loadBannersData() {
+    if (!adminToken) return;
+    try {
+      const res = await fetch("/api/admin/banners", {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      bannersList = data.banners || [];
+      const stats = data.stats || { total: 0, active: 0, inactive: 0, expired: 0 };
+
+      // Update Ribbon Stats
+      if (statActiveBannersCount) statActiveBannersCount.textContent = stats.active;
+      if (statBannersSummary) statBannersSummary.textContent = `${stats.active} إعلانات نشطة من إجمالي ${stats.total}`;
+
+      // Update Mini Stats
+      if (statBannerTotal) statBannerTotal.textContent = stats.total;
+      if (statBannerActive) statBannerActive.textContent = stats.active;
+      if (statBannerInactive) statBannerInactive.textContent = stats.inactive;
+      if (statBannerExpired) statBannerExpired.textContent = stats.expired;
+
+      // Populate Governorates
+      if (data.governorates && data.governorates.length) {
+        populateGovernoratesCheckboxes(data.governorates);
+      }
+
+      renderBannersTable();
+    } catch (err) {
+      console.warn("Failed to load banners data:", err);
+    }
+  }
+
+  // Populate Governorates Checkbox Grid
+  function populateGovernoratesCheckboxes(govs) {
+    governoratesList = govs || [];
+    if (!governoratesCheckboxes) return;
+    governoratesCheckboxes.innerHTML = "";
+    governoratesList.forEach((gov) => {
+      const label = document.createElement("label");
+      label.className = "gov-checkbox-item";
+      label.innerHTML = `
+        <input type="checkbox" name="gov_item" value="${escapeHtml(gov)}" style="accent-color: #00897b;">
+        <span>${escapeHtml(gov)}</span>
+      `;
+      governoratesCheckboxes.appendChild(label);
+    });
+  }
+
+  // Render Banners Table
+  function renderBannersTable() {
+    if (!bannersTableBody) return;
+    bannersTableBody.innerHTML = "";
+
+    const filtered = bannersList.filter((b) => {
+      if (currentBannerFilter === "active") return b.is_active && !b.is_expired && !b.is_pending;
+      if (currentBannerFilter === "inactive") return !b.is_active;
+      if (currentBannerFilter === "expired") return b.is_expired;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      if (bannersEmptyState) bannersEmptyState.classList.remove("hidden");
+      bannersTableBody.parentElement.classList.add("hidden");
+      return;
+    }
+
+    if (bannersEmptyState) bannersEmptyState.classList.add("hidden");
+    bannersTableBody.parentElement.classList.remove("hidden");
+
+    filtered.forEach((banner, idx) => {
+      const tr = document.createElement("tr");
+
+      // Action description tag
+      let actionTagHtml = "";
+      if (banner.action_type === "whatsapp") {
+        actionTagHtml = `<span class="banner-action-tag">🟢 واتساب: ${escapeHtml(banner.action_target || "شات فوري")}</span>`;
+      } else if (banner.action_type === "url") {
+        actionTagHtml = `<span class="banner-action-tag" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;">🌐 رابط: ${escapeHtml(banner.action_target || "موقع خارجي")}</span>`;
+      } else if (banner.action_type === "phone") {
+        actionTagHtml = `<span class="banner-action-tag" style="background:#fefce8;color:#a16207;border-color:#fef08a;">📞 اتصال: ${escapeHtml(banner.action_target || "خط ساخن")}</span>`;
+      } else if (banner.action_type === "drug") {
+        actionTagHtml = `<span class="banner-action-tag" style="background:#fdf2f8;color:#be185d;border-color:#fbcfe8;">💊 دواء: ${escapeHtml(banner.action_target || "دليل الأدوية")}</span>`;
+      }
+
+      // Targeting badge
+      let targetHtml = "";
+      if (banner.target_type === "all") {
+        targetHtml = `<span class="banner-gov-badge all">جميع المحافظات 🇪🇬</span>`;
+      } else {
+        const govs = banner.target_governorates || [];
+        const pills = govs.slice(0, 3).map((g) => `<span class="gov-pill-tag">${escapeHtml(g)}</span>`).join("");
+        const moreCount = govs.length > 3 ? `<span class="gov-pill-tag">+${govs.length - 3}</span>` : "";
+        targetHtml = `
+          <div>
+            <span class="banner-gov-badge specific">محافظات محددة (${govs.length})</span>
+            <div style="margin-top: 0.25rem;">${pills}${moreCount}</div>
+          </div>
+        `;
+      }
+
+      // Duration & Expiry text
+      let durationHtml = "";
+      const startStr = banner.start_date || "-";
+      const endStr = banner.end_date || null;
+      if (endStr) {
+        durationHtml = `
+          <div style="font-size:0.8rem;">
+            <div>من: <strong>${escapeHtml(startStr)}</strong></div>
+            <div>إلى: <strong>${escapeHtml(endStr)}</strong></div>
+            ${banner.is_expired ? '<span style="color:#ef4444;font-size:0.75rem;font-weight:700;">⚠️ منتهي الصلاحية</span>' : ''}
+          </div>
+        `;
+      } else {
+        durationHtml = `
+          <div style="font-size:0.8rem;">
+            <div>بدأ: <strong>${escapeHtml(startStr)}</strong></div>
+            <span style="color:#00897b;font-size:0.75rem;font-weight:600;">∞ مستمر بدون تاريخ انتهاء</span>
+          </div>
+        `;
+      }
+
+      // Status Badge
+      const statusBadge = `
+        <button type="button" class="status-badge ${banner.status_color || 'gray'}" style="cursor: pointer; border: none;" onclick="window.toggleBannerActive('${banner.id}')" title="اضغط للتفعيل أو الإلغاء">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;"></span>
+          ${escapeHtml(banner.status_label || (banner.is_active ? 'نشط' : 'معطل'))}
+        </button>
+      `;
+
+      // Order buttons
+      const isFirst = idx === 0;
+      const isLast = idx === filtered.length - 1;
+      const orderHtml = `
+        <div class="order-controls">
+          <button type="button" class="btn-order" onclick="window.moveBannerOrder('${banner.id}', 'up')" ${isFirst ? 'disabled' : ''} title="تحريك لأعلى">⬆️</button>
+          <span class="order-number">${banner.display_order || (idx + 1)}</span>
+          <button type="button" class="btn-order" onclick="window.moveBannerOrder('${banner.id}', 'down')" ${isLast ? 'disabled' : ''} title="تحريك لأسفل">⬇️</button>
+        </div>
+      `;
+
+      tr.innerHTML = `
+        <td style="text-align: center;">${orderHtml}</td>
+        <td class="banner-thumb-cell">
+          <img src="${escapeHtml(banner.image_url)}" alt="${escapeHtml(banner.title)}" class="banner-thumb-img" onerror="this.src='/static/logo.png'">
+        </td>
+        <td>
+          <div class="banner-title-text">${escapeHtml(banner.title)}</div>
+          ${banner.subtitle ? `<div class="banner-sub-text">${escapeHtml(banner.subtitle)}</div>` : ''}
+          ${actionTagHtml}
+        </td>
+        <td>${targetHtml}</td>
+        <td>${durationHtml}</td>
+        <td style="text-align: center;">${statusBadge}</td>
+        <td style="text-align: center;">
+          <div style="display:flex;gap:0.35rem;justify-content:center;">
+            <button type="button" class="btn btn-secondary btn-xs" onclick="window.openEditBannerModal('${banner.id}')" title="تعديل">✏️ تعديل</button>
+            <button type="button" class="btn btn-xs" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;" onclick="window.openDeleteBannerModal('${banner.id}')" title="حذف">🗑️</button>
+          </div>
+        </td>
+      `;
+
+      bannersTableBody.appendChild(tr);
+    });
+  }
+
+  // Filter Pills Event Listeners
+  bannerFilterPills.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      bannerFilterPills.forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentBannerFilter = pill.dataset.bannerFilter || "all";
+      renderBannersTable();
+    });
+  });
+
+  // Image Preview Logic
+  function updateImagePreview(src) {
+    if (src && src.trim()) {
+      bannerImagePreview.src = src.trim();
+      bannerImagePreview.style.display = "block";
+      if (bannerImagePreviewPlaceholder) bannerImagePreviewPlaceholder.style.display = "none";
+    } else {
+      bannerImagePreview.src = "";
+      bannerImagePreview.style.display = "none";
+      if (bannerImagePreviewPlaceholder) bannerImagePreviewPlaceholder.style.display = "block";
+    }
+  }
+
+  if (bannerImageUrlInput) {
+    bannerImageUrlInput.addEventListener("input", () => {
+      updateImagePreview(bannerImageUrlInput.value);
+    });
+  }
+
+  if (bannerImageFileInput) {
+    bannerImageFileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result;
+        bannerImageUrlInput.value = dataUrl;
+        updateImagePreview(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Targeting Radio Switch
+  if (targetTypeAll && targetTypeSpecific && specificGovsSection) {
+    targetTypeAll.addEventListener("change", () => {
+      if (targetTypeAll.checked) {
+        specificGovsSection.classList.add("hidden");
+      }
+    });
+    targetTypeSpecific.addEventListener("change", () => {
+      if (targetTypeSpecific.checked) {
+        specificGovsSection.classList.remove("hidden");
+      }
+    });
+  }
+
+  // Select / Clear all governorates
+  if (selectAllGovsBtn) {
+    selectAllGovsBtn.addEventListener("click", () => {
+      document.querySelectorAll("#governoratesCheckboxes input[name='gov_item']").forEach((cb) => {
+        cb.checked = true;
+      });
+    });
+  }
+
+  if (clearAllGovsBtn) {
+    clearAllGovsBtn.addEventListener("click", () => {
+      document.querySelectorAll("#governoratesCheckboxes input[name='gov_item']").forEach((cb) => {
+        cb.checked = false;
+      });
+    });
+  }
+
+  // Duration Helper Presets
+  durationPresetBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const days = parseInt(btn.dataset.days, 10);
+      const start = bannerStartDate.value || getTodayIso();
+      if (!bannerStartDate.value) bannerStartDate.value = start;
+
+      if (days === 0) {
+        bannerEndDate.value = "";
+      } else {
+        bannerEndDate.value = addDaysToDate(start, days);
+      }
+    });
+  });
+
+  // Action Type Helper Labels
+  if (bannerActionType) {
+    bannerActionType.addEventListener("change", () => {
+      const val = bannerActionType.value;
+      if (val === "whatsapp") {
+        actionTargetLabel.textContent = "رابط واتساب مع كود الخصم أو الرسالة:";
+        bannerActionTarget.placeholder = "https://wa.me/201... أو رقم واتساب";
+        bannerActionTarget.disabled = false;
+      } else if (val === "url") {
+        actionTargetLabel.textContent = "رابط الموقع الخارجي:";
+        bannerActionTarget.placeholder = "https://example-pharmacy.com/offer";
+        bannerActionTarget.disabled = false;
+      } else if (val === "phone") {
+        actionTargetLabel.textContent = "رقم الهاتف / الخط الساخن:";
+        bannerActionTarget.placeholder = "19011 أو 010xxxxxxxx";
+        bannerActionTarget.disabled = false;
+      } else if (val === "drug") {
+        actionTargetLabel.textContent = "معرف أو اسم الدواء لفتحه في الدليل:";
+        bannerActionTarget.placeholder = "EDA-DB-00001 أو Panadol";
+        bannerActionTarget.disabled = false;
+      } else {
+        actionTargetLabel.textContent = "الإجراء:";
+        bannerActionTarget.placeholder = "غير مطلوب";
+        bannerActionTarget.value = "";
+        bannerActionTarget.disabled = true;
+      }
+    });
+  }
+
+  // Open Modal for Add
+  function openAddBannerModal() {
+    if (!bannerModal) return;
+    bannerFormError.classList.add("hidden");
+    bannerIdInput.value = "";
+    bannerTitleInput.value = "";
+    bannerSubtitleInput.value = "";
+    bannerImageUrlInput.value = "";
+    updateImagePreview("");
+    targetTypeAll.checked = true;
+    specificGovsSection.classList.add("hidden");
+    document.querySelectorAll("#governoratesCheckboxes input[name='gov_item']").forEach((cb) => {
+      cb.checked = false;
+    });
+
+    bannerStartDate.value = getTodayIso();
+    // Default preset: 1 month duration (30 days)
+    bannerEndDate.value = addDaysToDate(getTodayIso(), 30);
+
+    bannerActionType.value = "whatsapp";
+    bannerActionType.dispatchEvent(new Event("change"));
+    bannerActionTarget.value = "";
+
+    // Set order to next available
+    const nextOrder = bannersList.length > 0 ? (Math.max(...bannersList.map((b) => b.display_order || 0)) + 1) : 1;
+    bannerDisplayOrder.value = nextOrder;
+    bannerIsActive.checked = true;
+
+    bannerModalTitle.textContent = "➕ إضافة إعلان جديد للسلايدر";
+    bannerModal.classList.remove("hidden");
+  }
+
+  // Open Modal for Edit
+  window.openEditBannerModal = function(bannerId) {
+    const banner = bannersList.find((b) => b.id === bannerId);
+    if (!banner || !bannerModal) return;
+
+    bannerFormError.classList.add("hidden");
+    bannerIdInput.value = banner.id;
+    bannerTitleInput.value = banner.title || "";
+    bannerSubtitleInput.value = banner.subtitle || "";
+    bannerImageUrlInput.value = banner.image_url || "";
+    updateImagePreview(banner.image_url || "");
+
+    if (banner.target_type === "specific") {
+      targetTypeSpecific.checked = true;
+      specificGovsSection.classList.remove("hidden");
+      const selectedGovs = new Set(banner.target_governorates || []);
+      document.querySelectorAll("#governoratesCheckboxes input[name='gov_item']").forEach((cb) => {
+        cb.checked = selectedGovs.has(cb.value);
+      });
+    } else {
+      targetTypeAll.checked = true;
+      specificGovsSection.classList.add("hidden");
+      document.querySelectorAll("#governoratesCheckboxes input[name='gov_item']").forEach((cb) => {
+        cb.checked = false;
+      });
+    }
+
+    bannerStartDate.value = banner.start_date || getTodayIso();
+    bannerEndDate.value = banner.end_date || "";
+
+    bannerActionType.value = banner.action_type || "none";
+    bannerActionType.dispatchEvent(new Event("change"));
+    bannerActionTarget.value = banner.action_target || "";
+
+    bannerDisplayOrder.value = banner.display_order || 1;
+    bannerIsActive.checked = Boolean(banner.is_active);
+
+    bannerModalTitle.textContent = "✏️ تعديل بيانات الإعلان في السلايدر";
+    bannerModal.classList.remove("hidden");
+  };
+
+  function closeBannerModal() {
+    if (bannerModal) bannerModal.classList.add("hidden");
+  }
+
+  if (addNewBannerBtn) addNewBannerBtn.addEventListener("click", openAddBannerModal);
+  if (emptyAddBannerBtn) emptyAddBannerBtn.addEventListener("click", openAddBannerModal);
+  if (closeBannerModalBtn) closeBannerModalBtn.addEventListener("click", closeBannerModal);
+  if (cancelBannerModalBtn) cancelBannerModalBtn.addEventListener("click", closeBannerModal);
+
+  // Save Banner (Add or Edit) Form Submit
+  if (bannerForm) {
+    bannerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      bannerFormError.classList.add("hidden");
+
+      const title = bannerTitleInput.value.trim();
+      const imageUrl = bannerImageUrlInput.value.trim();
+      if (!title) {
+        bannerFormError.textContent = "يرجى كتابة عنوان الإعلان";
+        bannerFormError.classList.remove("hidden");
+        return;
+      }
+      if (!imageUrl) {
+        bannerFormError.textContent = "يرجى إدخال رابط صورة أو رفع صورة للإعلان";
+        bannerFormError.classList.remove("hidden");
+        return;
+      }
+
+      const targetType = targetTypeSpecific.checked ? "specific" : "all";
+      let targetGovs = [];
+      if (targetType === "specific") {
+        document.querySelectorAll("#governoratesCheckboxes input[name='gov_item']:checked").forEach((cb) => {
+          targetGovs.push(cb.value);
+        });
+        if (targetGovs.length === 0) {
+          bannerFormError.textContent = "يرجى اختيار محافظة واحدة على الأقل للاستهداف المحدد";
+          bannerFormError.classList.remove("hidden");
+          return;
+        }
+      }
+
+      const payload = {
+        title: title,
+        subtitle: bannerSubtitleInput.value.trim(),
+        image_url: imageUrl,
+        target_type: targetType,
+        target_governorates: targetGovs,
+        action_type: bannerActionType.value,
+        action_target: bannerActionTarget.value.trim(),
+        is_active: bannerIsActive.checked,
+        start_date: bannerStartDate.value || getTodayIso(),
+        end_date: bannerEndDate.value ? bannerEndDate.value : null,
+        display_order: parseInt(bannerDisplayOrder.value, 10) || 1,
+      };
+
+      const bannerId = bannerIdInput.value;
+      const isEdit = Boolean(bannerId);
+      const url = isEdit ? `/api/admin/banners/${bannerId}` : "/api/admin/banners";
+      const method = isEdit ? "PUT" : "POST";
+
+      saveBannerSpinner.classList.remove("hidden");
+      saveBannerBtnText.textContent = "جارِ الحفظ...";
+      saveBannerSubmitBtn.disabled = true;
+
+      try {
+        const res = await fetch(url, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "فشل حفظ الإعلان");
+        }
+
+        const data = await res.json();
+        showToast(data.message || "تم حفظ الإعلان في السلايدر بنجاح ✓");
+        closeBannerModal();
+        await loadBannersData();
+      } catch (err) {
+        bannerFormError.textContent = err.message || "حدث خطأ أثناء الحفظ";
+        bannerFormError.classList.remove("hidden");
+      } finally {
+        saveBannerSpinner.classList.add("hidden");
+        saveBannerBtnText.textContent = "حفظ الإعلان في السلايدر 💾";
+        saveBannerSubmitBtn.disabled = false;
+      }
+    });
+  }
+
+  // Toggle Banner Active
+  window.toggleBannerActive = async function(bannerId) {
+    if (!adminToken) return;
+    try {
+      const res = await fetch(`/api/admin/banners/${bannerId}/toggle`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showToast(data.message || "تم تغيير حالة الإعلان ✓");
+        await loadBannersData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.detail || "فشل تغيير حالة الإعلان");
+      }
+    } catch (_) {
+      alert("تعذر الاتصال بالسيرفر لتغيير حالة الإعلان");
+    }
+  };
+
+  // Move Banner Order Up / Down
+  window.moveBannerOrder = async function(bannerId, direction) {
+    const sorted = [...bannersList].sort((a, b) => (a.display_order || 999) - (b.display_order || 999));
+    const idx = sorted.findIndex((b) => b.id === bannerId);
+    if (idx < 0) return;
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= sorted.length) return;
+
+    // Swap display_order
+    const itemA = sorted[idx];
+    const itemB = sorted[targetIdx];
+    const tempOrder = itemA.display_order;
+    itemA.display_order = itemB.display_order;
+    itemB.display_order = tempOrder;
+
+    renderBannersTable();
+
+    const orders = sorted.map((b, i) => ({ id: b.id, display_order: i + 1 }));
+    try {
+      const res = await fetch("/api/admin/banners/reorder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ orders }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        bannersList = data.banners || bannersList;
+        renderBannersTable();
+        showToast("تم تحديث ترتيب الإعلانات في السلايدر ✓");
+      }
+    } catch (err) {
+      console.error("Failed to reorder banners:", err);
+    }
+  };
+
+  // Delete Banner Modal
+  window.openDeleteBannerModal = function(bannerId) {
+    const banner = bannersList.find((b) => b.id === bannerId);
+    if (!banner || !deleteBannerModal) return;
+    deletingBannerId = bannerId;
+    deleteBannerTitlePreview.textContent = banner.title;
+    deleteBannerModal.classList.remove("hidden");
+  };
+
+  function closeDeleteModal() {
+    if (deleteBannerModal) deleteBannerModal.classList.add("hidden");
+    deletingBannerId = null;
+  }
+
+  if (closeDeleteBannerModalBtn) closeDeleteBannerModalBtn.addEventListener("click", closeDeleteModal);
+  if (cancelDeleteBannerBtn) cancelDeleteBannerBtn.addEventListener("click", closeDeleteModal);
+
+  if (confirmDeleteBannerBtn) {
+    confirmDeleteBannerBtn.addEventListener("click", async () => {
+      if (!deletingBannerId) return;
+      try {
+        const res = await fetch(`/api/admin/banners/${deletingBannerId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${adminToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          showToast(data.message || "تم حذف الإعلان بنجاح 🗑️");
+          closeDeleteModal();
+          await loadBannersData();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert(err.detail || "فشل حذف الإعلان");
+        }
+      } catch (_) {
+        alert("تعذر الاتصال بالسيرفر لحذف الإعلان");
+      }
+    });
   }
 
   function showToast(msg) {

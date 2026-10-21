@@ -95,6 +95,9 @@
         <button type="button" class="admin-tab-btn active" data-tab="tabDrugs">
           💊 تحديث وإضافة الأدوية (CSV / JSON)
         </button>
+        <button type="button" class="admin-tab-btn" data-tab="tabBanners">
+          📢 إدارة الإعلانات والسلايدر
+        </button>
         <button type="button" class="admin-tab-btn" data-tab="tabApiKey">
           🔑 مفتاح Gemini المشفر (API Key)
         </button>
@@ -109,6 +112,11 @@
           <span class="admin-stat-label">إجمالي الأدوية بالقاعدة</span>
           <span class="admin-stat-val" id="statTotalDrugsCount">25,098</span>
           <span class="admin-stat-sub">دواء مسجل بهيئة الدواء المصرية</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-label">سلايدر الإعلانات</span>
+          <span class="admin-stat-val" id="statActiveBannersCount" style="color: #00897B;">0</span>
+          <span class="admin-stat-sub" id="statBannersSummary">إعلانات نشطة للموبايل</span>
         </div>
         <div class="admin-stat-card">
           <span class="admin-stat-label">محرك الذكاء الاصطناعي</span>
@@ -248,6 +256,85 @@
         </div>
       </section>
 
+      <!-- TAB: Banners & Slider Management -->
+      <section class="admin-tab-content hidden" id="tabBanners">
+        <div class="card">
+          <div class="card-header-row">
+            <div>
+              <h3>📢 إدارة سلايدر الإعلانات والعروض في تطبيق الموبايل</h3>
+              <p class="text-muted">
+                تحكّم في البانرات التي تظهر للمستخدمين في الشاشة الرئيسية: أضف عروض الصيدليات، وجّه الإعلان لجميع المحافظات أو لمحافظات محددة، حدد مدة العرض (مثلاً شهر)، ورتّب الإعلانات فورياً.
+              </p>
+            </div>
+            <button type="button" id="addNewBannerBtn" class="btn btn-primary btn-sm">
+              ➕ إضافة إعلان جديد للسلايدر
+            </button>
+          </div>
+
+          <!-- Banners Stats Ribbon -->
+          <div class="banners-mini-stats">
+            <div class="mini-stat-item">
+              <span class="mini-stat-num" id="statBannerTotal">0</span>
+              <span class="mini-stat-lbl">إجمالي الإعلانات</span>
+            </div>
+            <div class="mini-stat-item active-item">
+              <span class="mini-stat-num" id="statBannerActive">0</span>
+              <span class="mini-stat-lbl">إعلانات نشطة الآن 🟢</span>
+            </div>
+            <div class="mini-stat-item inactive-item">
+              <span class="mini-stat-num" id="statBannerInactive">0</span>
+              <span class="mini-stat-lbl">معطلة يدوياً ⏸️</span>
+            </div>
+            <div class="mini-stat-item expired-item">
+              <span class="mini-stat-num" id="statBannerExpired">0</span>
+              <span class="mini-stat-lbl">منتهية الصلاحية ⏳</span>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="admin-banners-filter-bar">
+            <div class="banners-filter-pills">
+              <button type="button" class="banner-pill active" data-banner-filter="all">جميع الإعلانات</button>
+              <button type="button" class="banner-pill" data-banner-filter="active">النشطة فقط 🟢</button>
+              <button type="button" class="banner-pill" data-banner-filter="inactive">المعطلة ⏸️</button>
+              <button type="button" class="banner-pill" data-banner-filter="expired">المنتهية ⏳</button>
+            </div>
+          </div>
+
+          <!-- Table of Banners -->
+          <div class="table-responsive" style="margin-top: 1rem;">
+            <table class="admin-table banners-table">
+              <thead>
+                <tr>
+                  <th style="width: 85px; text-align: center;">الترتيب</th>
+                  <th style="width: 125px;">المعاينة</th>
+                  <th>بيانات الإعلان والإجراء</th>
+                  <th>المحافظات المستهدفة</th>
+                  <th>المدة والصلاحية</th>
+                  <th style="width: 100px; text-align: center;">الحالة</th>
+                  <th style="width: 130px; text-align: center;">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="bannersTableBody">
+                <!-- Dynamically populated by admin.js -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div id="bannersEmptyState" class="empty-state hidden" style="padding: 3rem 1rem; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">📢</div>
+            <h4>لا توجد إعلانات مطابقة حالياً</h4>
+            <p class="text-muted" style="margin-bottom: 1.25rem;">
+              يمكنك إضافة إعلان جديد لصيدلية أو دواء ليظهر فوراً في سلايدر تطبيق الموبايل.
+            </p>
+            <button type="button" class="btn btn-primary btn-sm" id="emptyAddBannerBtn">
+              ➕ إضافة إعلان الآن
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB 2: Gemini API Key Management -->
       <section class="admin-tab-content hidden" id="tabApiKey">
         <div class="card api-key-card">
@@ -364,6 +451,198 @@
       <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem;">
         <button type="button" id="cancelModalBtn" class="btn btn-secondary btn-sm">تراجع</button>
         <button type="button" id="executeCommitBtn" class="btn btn-primary btn-sm">نعم، طبق التحديث الآن ✅</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Banner -->
+  <div id="bannerModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card modal-card-lg" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3 id="bannerModalTitle" style="margin: 0; color: var(--primary);">➕ إضافة إعلان جديد للسلايدر</h3>
+        <button type="button" id="closeBannerModalBtn" class="modal-close-btn">✕</button>
+      </div>
+
+      <form id="bannerForm" class="modal-body" style="padding: 1.25rem;">
+        <input type="hidden" id="bannerId" value="">
+
+        <!-- Title -->
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="bannerTitleInput">عنوان الإعلان / العرض <span class="text-danger" style="color: #ef4444;">*</span>:</label>
+          <input 
+            type="text" 
+            id="bannerTitleInput" 
+            class="form-control" 
+            placeholder="مثال: خصم 15% على جميع الروشتات من صيدليات العزبي" 
+            required 
+            maxlength="150"
+          >
+        </div>
+
+        <!-- Subtitle -->
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="bannerSubtitleInput">الوصف المختصر أو كود الخصم:</label>
+          <input 
+            type="text" 
+            id="bannerSubtitleInput" 
+            class="form-control" 
+            placeholder="مثال: اطلب روشتتك عبر واتساب الآن بكود خصم GOR3A15"
+          >
+        </div>
+
+        <!-- Image Input & Preview -->
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label>صورة الإعلان (رابط مباشر أو رفع ملف) <span class="text-danger" style="color: #ef4444;">*</span>:</label>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+            <input 
+              type="url" 
+              id="bannerImageUrlInput" 
+              class="form-control" 
+              placeholder="https://... رابط صورة الإعلان" 
+              style="flex: 1; min-width: 240px;"
+              dir="ltr"
+            >
+            <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; margin: 0;">
+              📁 رفع صورة
+              <input type="file" id="bannerImageFileInput" accept="image/*" style="display: none;">
+            </label>
+          </div>
+          <!-- Image preview container -->
+          <div id="bannerImagePreviewContainer" style="border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 0.5rem; text-align: center; background: #fafafa; min-height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <img id="bannerImagePreview" src="" alt="معاينة الصورة" style="max-height: 140px; max-width: 100%; border-radius: 8px; object-fit: contain; display: none;">
+            <span id="bannerImagePreviewPlaceholder" class="text-muted" style="font-size: 0.85rem;">ستظهر معاينة صورة البانر هنا</span>
+          </div>
+        </div>
+
+        <!-- Targeting -->
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label style="font-weight: 700;">المحافظات المستهدفة 📍:</label>
+          <div style="display: flex; gap: 1.5rem; margin: 0.5rem 0;">
+            <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+              <input type="radio" name="targetType" id="targetTypeAll" value="all" checked>
+              <span><strong>كل محافظات مصر 🇪🇬</strong> (عام لجميع المستخدمين)</span>
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+              <input type="radio" name="targetType" id="targetTypeSpecific" value="specific">
+              <span><strong>محافظات محددة فقط 📌</strong></span>
+            </label>
+          </div>
+
+          <!-- Specific Governorates Selection Grid -->
+          <div id="specificGovsSection" class="hidden" style="background: var(--bg-subtle, #f8fafc); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem; margin-top: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span style="font-size: 0.85rem; font-weight: 600;">اختر المحافظات المستهدفة:</span>
+              <div style="display: flex; gap: 0.4rem;">
+                <button type="button" id="selectAllGovsBtn" class="btn btn-link btn-xs" style="padding: 0; font-size: 0.8rem;">تحديد الكل</button>
+                <span style="color: #cbd5e1;">|</span>
+                <button type="button" id="clearAllGovsBtn" class="btn btn-link btn-xs" style="padding: 0; font-size: 0.8rem; color: #ef4444;">إلغاء التحديد</button>
+              </div>
+            </div>
+            <div id="governoratesCheckboxes" class="govs-checkbox-grid">
+              <!-- Checkboxes dynamically generated for all 27 governorates -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Duration & Schedule -->
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label style="font-weight: 700;">مدة الإعلان والصلاحية ⏳:</label>
+          
+          <!-- Quick Duration Helper Buttons -->
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.6rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); align-self: center;">مدد سريعة:</span>
+            <button type="button" class="btn btn-secondary btn-xs duration-preset-btn" data-days="30">🗓️ شهر واحد (30 يوم)</button>
+            <button type="button" class="btn btn-secondary btn-xs duration-preset-btn" data-days="14">أسبوعين (14 يوم)</button>
+            <button type="button" class="btn btn-secondary btn-xs duration-preset-btn" data-days="90">3 أشهر (90 يوم)</button>
+            <button type="button" class="btn btn-secondary btn-xs duration-preset-btn" data-days="0">∞ مستمر دائماً</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div>
+              <label for="bannerStartDate" style="font-size: 0.825rem;">تاريخ بدء العرض:</label>
+              <input type="date" id="bannerStartDate" class="form-control" required>
+            </div>
+            <div>
+              <label for="bannerEndDate" style="font-size: 0.825rem;">تاريخ انتهاء العرض (اختياري):</label>
+              <input type="date" id="bannerEndDate" class="form-control">
+              <small class="text-muted" style="font-size: 0.75rem;">اتركه فارغاً إذا كان الإعلان مستمراً دون تاريخ انتهاء.</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action / Click Behavior -->
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label style="font-weight: 700;">الإجراء عند نقر المستخدم على الإعلان 👆:</label>
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; align-items: start;">
+            <div>
+              <label for="bannerActionType" style="font-size: 0.825rem;">نوع الإجراء:</label>
+              <select id="bannerActionType" class="form-control">
+                <option value="whatsapp">واتساب (WhatsApp) 🟢</option>
+                <option value="url">رابط خارجي (Website Link) 🌐</option>
+                <option value="phone">اتصال بخط ساخن (Call Hotline) 📞</option>
+                <option value="drug">دليل الأدوية والبدائل 💊</option>
+                <option value="none">بدون إجراء (صورة إعلامية فقط)</option>
+              </select>
+            </div>
+            <div>
+              <label for="bannerActionTarget" style="font-size: 0.825rem;" id="actionTargetLabel">رابط واتساب مع كود الخصم أو الرسالة:</label>
+              <input 
+                type="text" 
+                id="bannerActionTarget" 
+                class="form-control" 
+                placeholder="https://wa.me/201... أو رقم هاتف"
+                dir="ltr"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Order & Status -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: var(--bg-subtle, #f8fafc); padding: 0.75rem; border-radius: var(--radius-md); margin-bottom: 1rem; align-items: center;">
+          <div>
+            <label for="bannerDisplayOrder" style="font-size: 0.85rem; font-weight: 600;">ترتيب الظهور في السلايدر:</label>
+            <input type="number" id="bannerDisplayOrder" class="form-control" min="1" max="999" value="1" style="width: 100px;">
+            <small class="text-muted" style="display: block; font-size: 0.75rem;">رقم 1 يظهر كأول شريحة في السلايدر.</small>
+          </div>
+          <div>
+            <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+              <input type="checkbox" id="bannerIsActive" checked style="width: 18px; height: 18px;">
+              <span>تفعيل الإعلان فور الحفظ 🟢</span>
+            </label>
+            <small class="text-muted" style="display: block; font-size: 0.75rem;">يمكنك إيقافه مؤقتاً في أي وقت لاحقاً بنقرة واحدة.</small>
+          </div>
+        </div>
+
+        <div id="bannerFormError" class="alert alert-error hidden" style="margin-bottom: 1rem;"></div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.5rem;">
+          <button type="button" id="cancelBannerModalBtn" class="btn btn-secondary btn-sm">إلغاء</button>
+          <button type="submit" id="saveBannerSubmitBtn" class="btn btn-primary btn-sm">
+            <span class="btn-spinner hidden" id="saveBannerSpinner"></span>
+            <span id="saveBannerBtnText">حفظ الإعلان في السلايدر 💾</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Delete Confirmation -->
+  <div id="deleteBannerModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 style="margin: 0; color: #ef4444;">حذف الإعلان نهائياً</h3>
+        <button type="button" id="closeDeleteBannerModalBtn" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 0.75rem;">
+          هل أنت متأكد من رغبتك في حذف هذا الإعلان من السلايدر نهائياً؟
+        </p>
+        <div id="deleteBannerTitlePreview" style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 0.75rem; font-weight: 700; color: #991b1b; font-size: 0.9rem;"></div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.75rem;">لن يظهر هذا الإعلان مرة أخرى في تطبيق الموبايل بعد حذفه.</p>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem;">
+        <button type="button" id="cancelDeleteBannerBtn" class="btn btn-secondary btn-sm">تراجع</button>
+        <button type="button" id="confirmDeleteBannerBtn" class="btn btn-sm" style="background: #ef4444; color: white;">نعم، احذف الإعلان 🗑️</button>
       </div>
     </div>
   </div>

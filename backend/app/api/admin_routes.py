@@ -16,6 +16,7 @@ from ..config import PROJECT_ROOT, settings
 from ..drugs.repository import drug_repository
 from ..providers.factory import register_provider
 from ..providers.gemini import GeminiProvider
+from ..services.banner_service import EGYPTIAN_GOVERNORATES, banner_service
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,29 @@ class ConfirmImportRequest(BaseModel):
     staging_id: str
     import_new: bool = True
     apply_updates: bool = True
+
+
+class BannerCreateUpdateRequest(BaseModel):
+    title: str = Field(..., min_length=2, max_length=150)
+    subtitle: Optional[str] = ""
+    image_url: str = Field(..., min_length=3)
+    target_type: str = Field("all", pattern="^(all|specific)$")
+    target_governorates: List[str] = Field(default_factory=list)
+    action_type: str = Field("none", pattern="^(none|whatsapp|url|phone|drug)$")
+    action_target: Optional[str] = ""
+    is_active: bool = True
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    display_order: Optional[int] = 1
+
+
+class BannerOrderItem(BaseModel):
+    id: str
+    display_order: int
+
+
+class BannerReorderRequest(BaseModel):
+    orders: List[BannerOrderItem]
 
 
 # ==============================================================================
@@ -330,3 +354,95 @@ async def export_drugs_database(
             media_type="application/json",
             headers={"Content-Disposition": "attachment; filename=gor3a_egyptian_drugs_export.json"},
         )
+
+
+# ==============================================================================
+# Banner & Slider Management Endpoints
+# ==============================================================================
+
+@router.get("/banners")
+async def admin_get_banners(admin_email: str = Depends(get_current_admin)):
+    """Returns all banners with computed status flags and statistics for admin panel."""
+    return {
+        "banners": banner_service.get_all_admin_banners(),
+        "stats": banner_service.get_stats(),
+        "governorates": EGYPTIAN_GOVERNORATES,
+    }
+
+
+@router.post("/banners")
+async def admin_create_banner(
+    payload: BannerCreateUpdateRequest,
+    admin_email: str = Depends(get_current_admin),
+):
+    """Creates a new banner with targeting and duration rules."""
+    created = banner_service.create_banner(payload.model_dump())
+    return {
+        "success": True,
+        "message": "تم إضافة الإعلان بنجاح إلى السلايدر ✓",
+        "banner": created,
+    }
+
+
+@router.put("/banners/{banner_id}")
+async def admin_update_banner(
+    banner_id: str,
+    payload: BannerCreateUpdateRequest,
+    admin_email: str = Depends(get_current_admin),
+):
+    """Updates an existing banner."""
+    updated = banner_service.update_banner(banner_id, payload.model_dump())
+    if not updated:
+        raise HTTPException(status_code=404, detail="الإعلان غير موجود")
+    return {
+        "success": True,
+        "message": "تم حفظ تعديلات الإعلان بنجاح ✓",
+        "banner": updated,
+    }
+
+
+@router.patch("/banners/{banner_id}/toggle")
+async def admin_toggle_banner(
+    banner_id: str,
+    admin_email: str = Depends(get_current_admin),
+):
+    """Toggles active/inactive state of a banner."""
+    toggled = banner_service.toggle_banner(banner_id)
+    if not toggled:
+        raise HTTPException(status_code=404, detail="الإعلان غير موجود")
+    state_str = "تفعيل" if toggled.get("is_active") else "إلغاء تفعيل"
+    return {
+        "success": True,
+        "message": f"تم {state_str} الإعلان بنجاح ✓",
+        "banner": toggled,
+    }
+
+
+@router.post("/banners/reorder")
+async def admin_reorder_banners(
+    payload: BannerReorderRequest,
+    admin_email: str = Depends(get_current_admin),
+):
+    """Updates display orders for a list of banners."""
+    orders_data = [item.model_dump() for item in payload.orders]
+    success = banner_service.reorder_banners(orders_data)
+    return {
+        "success": success,
+        "message": "تم تحديث ترتيب ظهور الإعلانات في السلايدر بنجاح ✓",
+        "banners": banner_service.get_all_admin_banners(),
+    }
+
+
+@router.delete("/banners/{banner_id}")
+async def admin_delete_banner(
+    banner_id: str,
+    admin_email: str = Depends(get_current_admin),
+):
+    """Deletes a banner permanently."""
+    success = banner_service.delete_banner(banner_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="الإعلان غير موجود أو تم حذفه مسبقاً")
+    return {
+        "success": True,
+        "message": "تم حذف الإعلان بنجاح 🗑️",
+    }

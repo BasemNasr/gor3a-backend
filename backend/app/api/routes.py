@@ -11,6 +11,7 @@ from ..drugs.web_enricher import web_enricher
 from ..models.prescription import AnalysisResponse
 from ..providers.factory import list_available_providers
 from ..services.analyzer import PrescriptionAnalyzer
+from ..services.banner_service import EGYPTIAN_GOVERNORATES, banner_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -26,6 +27,29 @@ async def health_check():
         "service": "Prescription AI Lab",
         "version": "1.0.0",
         "phase": "Phase 1 - Local Prescription AI Lab",
+    }
+
+
+@router.get("/banners", summary="Get Active Banners for Mobile Slider")
+async def get_active_banners(governorate: Optional[str] = None):
+    """
+    Returns active, validly scheduled promotional and pharmacy banners for the mobile app slider.
+    Can be filtered dynamically by user governorate.
+    """
+    banners = banner_service.get_active_banners(governorate=governorate)
+    return {
+        "banners": banners,
+        "count": len(banners),
+        "governorate": governorate,
+    }
+
+
+@router.get("/governorates", summary="List Egyptian Governorates")
+async def get_governorates():
+    """Returns the official list of Egyptian governorates for targeting and profiles."""
+    return {
+        "governorates": EGYPTIAN_GOVERNORATES,
+        "count": len(EGYPTIAN_GOVERNORATES),
     }
 
 
