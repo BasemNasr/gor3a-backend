@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bn.gor3a.core.localization.LocalAppLanguage
 import com.bn.gor3a.core.localization.LocalStrings
+import com.bn.gor3a.core.preferences.PlatformPreferences
 import com.bn.gor3a.core.theme.Gor3aTealAccent
 import com.bn.gor3a.core.theme.Gor3aTealDark
 import com.bn.gor3a.core.theme.Gor3aTealPrimary
@@ -119,7 +120,11 @@ fun TopHeaderBar(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (user != null) "👤 ${user.name.split(" ").firstOrNull() ?: user.name}" else "👤 دخول",
+                    text = if (user != null) {
+                        "👤 ${user.name.split(" ").firstOrNull() ?: user.name}"
+                    } else {
+                        if (strings.isArabic) "👤 دخول" else "👤 Sign In"
+                    },
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = if (user != null) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface,
@@ -135,7 +140,9 @@ fun TopHeaderBar(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
                     .clickable {
-                        currentLang.value = currentLang.value.toggle()
+                        val nextLang = currentLang.value.toggle()
+                        currentLang.value = nextLang
+                        PlatformPreferences.setString("app_language", nextLang.code)
                     }
                     .padding(horizontal = 10.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
@@ -158,7 +165,9 @@ fun TopHeaderBar(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), CircleShape)
                     .clickable {
-                        isDark.value = !isDark.value
+                        val nextDark = !isDark.value
+                        isDark.value = nextDark
+                        PlatformPreferences.setBoolean("app_dark_theme", nextDark)
                     },
                 contentAlignment = Alignment.Center
             ) {

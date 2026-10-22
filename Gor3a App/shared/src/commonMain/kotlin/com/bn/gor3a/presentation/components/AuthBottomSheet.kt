@@ -47,6 +47,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bn.gor3a.core.localization.AppLanguage
+import com.bn.gor3a.core.localization.LocalAppLanguage
 import com.bn.gor3a.core.theme.Gor3aSafeGreen
 import com.bn.gor3a.core.theme.Gor3aTealAccent
 import com.bn.gor3a.core.theme.Gor3aTealDark
@@ -60,6 +62,40 @@ enum class AuthMode {
     PROFILE
 }
 
+fun getGovDisplayName(gov: String, isArabic: Boolean): String {
+    if (isArabic) return gov
+    return when (gov) {
+        "القاهرة" -> "Cairo"
+        "الجيزة" -> "Giza"
+        "الإسكندرية" -> "Alexandria"
+        "الدقهلية" -> "Dakahlia"
+        "الشرقية" -> "Sharqia"
+        "المنوفية" -> "Monufia"
+        "القليوبية" -> "Qalyubia"
+        "الغربية" -> "Gharbia"
+        "البحيرة" -> "Beheira"
+        "دمياط" -> "Damietta"
+        "بورسعيد" -> "Port Said"
+        "الإسماعيلية" -> "Ismailia"
+        "السويس" -> "Suez"
+        "كفر الشيخ" -> "Kafr El Sheikh"
+        "الفيوم" -> "Fayoum"
+        "بني سويف" -> "Beni Suef"
+        "المنيا" -> "Minya"
+        "أسيوط" -> "Asyut"
+        "سوهاج" -> "Sohag"
+        "قنا" -> "Qena"
+        "الأقصر" -> "Luxor"
+        "أسوان" -> "Aswan"
+        "مطروح" -> "Matrouh"
+        "الوادي الجديد" -> "New Valley"
+        "شمال سيناء" -> "North Sinai"
+        "جنوب سيناء" -> "South Sinai"
+        "البحر الأحمر" -> "Red Sea"
+        else -> gov
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthBottomSheet(
@@ -67,6 +103,9 @@ fun AuthBottomSheet(
     onDismissRequest: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
+    val currentLang = LocalAppLanguage.current
+    val isArabic = currentLang.value == AppLanguage.ARABIC
+
     val uiState by viewModel.uiState.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
@@ -108,6 +147,7 @@ fun AuthBottomSheet(
                     currentUser?.let { user ->
                         UserProfileView(
                             user = user,
+                            isArabic = isArabic,
                             onLogout = {
                                 viewModel.logout()
                                 passwordInput = ""
@@ -128,6 +168,7 @@ fun AuthBottomSheet(
                         governorate = governorateInput,
                         gender = genderInput,
                         age = ageInput,
+                        isArabic = isArabic,
                         governorates = uiState.governorates.ifEmpty {
                             listOf("القاهرة", "الجيزة", "الإسكندرية", "الدقهلية", "الشرقية", "المنوفية", "القليوبية", "الغربية", "البحيرة", "دمياط", "بورسعيد", "الإسماعيلية", "السويس", "كفر الشيخ", "الفيوم", "بني سويف", "المنيا", "أسيوط", "سوهاج", "قنا", "الأقصر", "أسوان")
                         },
@@ -147,6 +188,7 @@ fun AuthBottomSheet(
                                 governorate = governorateInput,
                                 gender = genderInput,
                                 age = ageInput.toIntOrNull(),
+                                isArabic = isArabic,
                                 onSuccess = onDismissRequest
                             )
                         },
@@ -161,6 +203,7 @@ fun AuthBottomSheet(
                     AuthLoginView(
                         phone = phoneInput,
                         password = passwordInput,
+                        isArabic = isArabic,
                         isLoading = uiState.isLoading,
                         errorMessage = uiState.errorMessage,
                         onPhoneChange = { phoneInput = it; viewModel.clearMessages() },
@@ -169,6 +212,7 @@ fun AuthBottomSheet(
                             viewModel.login(
                                 phone = phoneInput,
                                 password = passwordInput,
+                                isArabic = isArabic,
                                 onSuccess = onDismissRequest,
                                 onRequiresRegistration = {
                                     mode = AuthMode.REGISTER
@@ -194,6 +238,7 @@ private fun AuthRegisterView(
     governorate: String,
     gender: String,
     age: String,
+    isArabic: Boolean,
     governorates: List<String>,
     isLoading: Boolean,
     errorMessage: String?,
@@ -227,7 +272,7 @@ private fun AuthRegisterView(
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
-                    text = "إنشاء حسابك الطبي السحابي",
+                    text = if (isArabic) "إنشاء حسابك الطبي السحابي" else "Create Cloud Medical Account",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = Gor3aTealDark,
@@ -235,7 +280,7 @@ private fun AuthRegisterView(
                     )
                 )
                 Text(
-                    text = "احفظ روشتاتك وتاريخك الدوائي في السحابة بأمان",
+                    text = if (isArabic) "احفظ روشتاتك وتاريخك الدوائي في السحابة بأمان" else "Safely backup your prescriptions & medication history",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -253,7 +298,10 @@ private fun AuthRegisterView(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Text(
-                text = "✨ بفضل الحساب السحابي، لن تفقد روشتاتك أبداً حتى لو قمت بتغيير هاتفك أو إعادة تثبيت التطبيق.",
+                text = if (isArabic)
+                    "✨ بفضل الحساب السحابي، لن تفقد روشتاتك أبداً حتى لو قمت بتغيير هاتفك أو إعادة تثبيت التطبيق."
+                else
+                    "✨ With a cloud account, you will never lose your prescriptions even if you switch devices or reinstall the app.",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = 12.sp,
                     color = Gor3aTealDark,
@@ -266,8 +314,8 @@ private fun AuthRegisterView(
         OutlinedTextField(
             value = phone,
             onValueChange = onPhoneChange,
-            label = { Text("رقم الهاتف المحمول (01xxxxxxxxx)") },
-            placeholder = { Text("مثال: 01012345678") },
+            label = { Text(if (isArabic) "رقم الهاتف المحمول (01xxxxxxxxx)" else "Egyptian Mobile Number (01xxxxxxxxx)") },
+            placeholder = { Text(if (isArabic) "مثال: 01012345678" else "e.g. 01012345678") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -282,7 +330,7 @@ private fun AuthRegisterView(
         OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
-            label = { Text("كلمة المرور (6 أحرف على الأقل)") },
+            label = { Text(if (isArabic) "كلمة المرور (6 أحرف على الأقل)" else "Password (min 6 characters)") },
             placeholder = { Text("••••••••") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -311,8 +359,8 @@ private fun AuthRegisterView(
         OutlinedTextField(
             value = name,
             onValueChange = onNameChange,
-            label = { Text("الاسم بالكامل") },
-            placeholder = { Text("مثال: أحمد محمد") },
+            label = { Text(if (isArabic) "الاسم بالكامل" else "Full Name") },
+            placeholder = { Text(if (isArabic) "مثال: أحمد محمد" else "e.g. Ahmed Mohamed") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -325,7 +373,7 @@ private fun AuthRegisterView(
         // Gender Selection (ذكر / أنثى)
         Column {
             Text(
-                text = "الجنس 👤",
+                text = if (isArabic) "الجنس 👤" else "Gender 👤",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -353,7 +401,7 @@ private fun AuthRegisterView(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "ذكر 👨",
+                            text = if (isArabic) "ذكر 👨" else "Male 👨",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = if (isMale) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isMale) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
@@ -383,7 +431,7 @@ private fun AuthRegisterView(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "أنثى 👩",
+                            text = if (isArabic) "أنثى 👩" else "Female 👩",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = if (isFemale) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isFemale) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
@@ -401,7 +449,7 @@ private fun AuthRegisterView(
         // Governorate Dropdown Trigger
         Column {
             Text(
-                text = "المحافظة 📍",
+                text = if (isArabic) "المحافظة 📍" else "Governorate 📍",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -420,7 +468,7 @@ private fun AuthRegisterView(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = governorate,
+                        text = getGovDisplayName(governorate, isArabic),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -435,8 +483,8 @@ private fun AuthRegisterView(
         OutlinedTextField(
             value = age,
             onValueChange = onAgeChange,
-            label = { Text("العمر (اختياري)") },
-            placeholder = { Text("مثال: 32") },
+            label = { Text(if (isArabic) "العمر (اختياري)" else "Age (optional)") },
+            placeholder = { Text(if (isArabic) "مثال: 32" else "e.g. 32") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -481,7 +529,7 @@ private fun AuthRegisterView(
                 )
             } else {
                 Text(
-                    text = "حفظ وإنشاء الحساب السحابي ☁️✓",
+                    text = if (isArabic) "حفظ وإنشاء الحساب السحابي ☁️✓" else "Create & Save Cloud Account ☁️✓",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -498,12 +546,12 @@ private fun AuthRegisterView(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "لديك حساب مسجل بالفعل؟",
+                text = if (isArabic) "لديك حساب مسجل بالفعل؟" else "Already have an account?",
                 style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "تسجيل الدخول",
+                text = if (isArabic) "تسجيل الدخول" else "Sign In",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.Bold,
                     color = Gor3aTealPrimary
@@ -516,12 +564,14 @@ private fun AuthRegisterView(
     // Governorates Dialog / Picker with Live Search
     if (showGovDialog) {
         var govSearchQuery by remember { mutableStateOf("") }
-        val filteredGovs = remember(govSearchQuery, governorates) {
+        val filteredGovs = remember(govSearchQuery, governorates, isArabic) {
             if (govSearchQuery.isBlank()) governorates
             else {
-                val q = normalizeArabicSearch(govSearchQuery)
+                val qAr = normalizeArabicSearch(govSearchQuery)
+                val qEn = govSearchQuery.trim().lowercase()
                 governorates.filter { gov ->
-                    normalizeArabicSearch(gov).contains(q)
+                    normalizeArabicSearch(gov).contains(qAr) ||
+                    getGovDisplayName(gov, false).lowercase().contains(qEn)
                 }
             }
         }
@@ -543,7 +593,7 @@ private fun AuthRegisterView(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "اختر المحافظة 📍",
+                            text = if (isArabic) "اختر المحافظة 📍" else "Select Governorate 📍",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = Gor3aTealDark,
@@ -568,7 +618,12 @@ private fun AuthRegisterView(
                     OutlinedTextField(
                         value = govSearchQuery,
                         onValueChange = { govSearchQuery = it },
-                        placeholder = { Text("ابحث عن محافظتك (مثال: أسيوط...)", fontSize = 13.sp) },
+                        placeholder = {
+                            Text(
+                                if (isArabic) "ابحث عن محافظتك (مثال: أسيوط...)" else "Search governorate (e.g. Cairo...)",
+                                fontSize = 13.sp
+                            )
+                        },
                         leadingIcon = { Text("🔍", fontSize = 15.sp) },
                         trailingIcon = {
                             if (govSearchQuery.isNotEmpty()) {
@@ -604,7 +659,7 @@ private fun AuthRegisterView(
                                 Text("🔍", fontSize = 26.sp)
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = "لا توجد نتائج مطابقة لـ \"$govSearchQuery\"",
+                                    text = if (isArabic) "لا توجد نتائج مطابقة لـ \"$govSearchQuery\"" else "No results matching \"$govSearchQuery\"",
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 13.sp
@@ -638,7 +693,7 @@ private fun AuthRegisterView(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = gov,
+                                            text = getGovDisplayName(gov, isArabic),
                                             style = MaterialTheme.typography.bodyMedium.copy(
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                                 color = if (isSelected) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
@@ -662,6 +717,7 @@ private fun AuthRegisterView(
 private fun AuthLoginView(
     phone: String,
     password: String,
+    isArabic: Boolean,
     isLoading: Boolean,
     errorMessage: String?,
     onPhoneChange: (String) -> Unit,
@@ -689,7 +745,7 @@ private fun AuthLoginView(
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
-                    text = "تسجيل الدخول",
+                    text = if (isArabic) "تسجيل الدخول" else "Sign In",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = Gor3aTealDark,
@@ -697,7 +753,7 @@ private fun AuthLoginView(
                     )
                 )
                 Text(
-                    text = "أدخل رقم الهاتف وكلمة المرور للوصول لحسابك",
+                    text = if (isArabic) "أدخل رقم الهاتف وكلمة المرور للوصول لحسابك" else "Enter your phone and password to access your account",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -709,8 +765,8 @@ private fun AuthLoginView(
         OutlinedTextField(
             value = phone,
             onValueChange = onPhoneChange,
-            label = { Text("رقم الهاتف المحمول (01xxxxxxxxx)") },
-            placeholder = { Text("مثال: 01012345678") },
+            label = { Text(if (isArabic) "رقم الهاتف المحمول (01xxxxxxxxx)" else "Egyptian Mobile Number (01xxxxxxxxx)") },
+            placeholder = { Text(if (isArabic) "مثال: 01012345678" else "e.g. 01012345678") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -725,7 +781,7 @@ private fun AuthLoginView(
         OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
-            label = { Text("كلمة المرور") },
+            label = { Text(if (isArabic) "كلمة المرور" else "Password") },
             placeholder = { Text("••••••••") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -788,7 +844,7 @@ private fun AuthLoginView(
                 )
             } else {
                 Text(
-                    text = "تسجيل الدخول ومزامنة الروشتات 🔄",
+                    text = if (isArabic) "تسجيل الدخول ومزامنة الروشتات 🔄" else "Sign In & Sync Prescriptions 🔄",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -805,12 +861,12 @@ private fun AuthLoginView(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "مستخدم جديد؟",
+                text = if (isArabic) "مستخدم جديد؟" else "New user?",
                 style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "إنشاء حساب سحابي جديد",
+                text = if (isArabic) "إنشاء حساب سحابي جديد" else "Create New Cloud Account",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.Bold,
                     color = Gor3aTealPrimary
@@ -824,10 +880,16 @@ private fun AuthLoginView(
 @Composable
 private fun UserProfileView(
     user: UserDto,
+    isArabic: Boolean,
     onLogout: () -> Unit,
     onClose: () -> Unit
 ) {
-    val genderLabel = if (user.gender == "female") "أنثى 👩" else "ذكر 👨"
+    val genderLabel = if (user.gender == "female") {
+        if (isArabic) "أنثى 👩" else "Female 👩"
+    } else {
+        if (isArabic) "ذكر 👨" else "Male 👨"
+    }
+    val govDisplay = getGovDisplayName(user.governorate ?: "القاهرة", isArabic)
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -861,7 +923,7 @@ private fun UserProfileView(
                 )
             )
             Text(
-                text = "📍 محافظة ${user.governorate ?: "القاهرة"} • $genderLabel • ${user.phone}",
+                text = if (isArabic) "📍 محافظة $govDisplay • $genderLabel • ${user.phone}" else "📍 $govDisplay • $genderLabel • ${user.phone}",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -879,7 +941,7 @@ private fun UserProfileView(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "☁️ الروشتات السحابية",
+                    text = if (isArabic) "☁️ الروشتات السحابية" else "☁️ Cloud Prescriptions",
                     style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
                 Text(
@@ -893,11 +955,11 @@ private fun UserProfileView(
             Box(modifier = Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "🔒 حالة الأمان",
+                    text = if (isArabic) "🔒 حالة الأمان" else "🔒 Security Status",
                     style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
                 Text(
-                    text = "مشفر ومحمي",
+                    text = if (isArabic) "مشفر ومحمي" else "Encrypted & Secure",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = Gor3aSafeGreen
@@ -919,7 +981,7 @@ private fun UserProfileView(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "تسجيل الخروج من الحساب 🚪",
+                text = if (isArabic) "تسجيل الخروج من الحساب 🚪" else "Sign Out of Account 🚪",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.error
@@ -938,7 +1000,7 @@ private fun UserProfileView(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "إغلاق",
+                text = if (isArabic) "إغلاق" else "Close",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -957,5 +1019,3 @@ private fun normalizeArabicSearch(text: String): String {
         .replace("ى", "ي")
         .replace("ء", "")
 }
-
-

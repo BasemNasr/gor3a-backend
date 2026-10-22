@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import com.bn.gor3a.core.localization.AppLanguage
 import com.bn.gor3a.core.localization.Gor3aLocalizationProvider
 import com.bn.gor3a.core.navigation.PlatformBackHandler
+import com.bn.gor3a.core.preferences.PlatformPreferences
 import com.bn.gor3a.core.theme.Gor3aTheme
 import com.bn.gor3a.core.theme.LocalThemeIsDark
 import com.bn.gor3a.di.startGor3aKoin
@@ -59,8 +60,24 @@ fun App() {
         startGor3aKoin()
     }
 
-    val currentLanguageState = remember { mutableStateOf(AppLanguage.ARABIC) }
-    val isDarkState = remember { mutableStateOf(false) }
+    val initialLang = remember {
+        val savedLang = PlatformPreferences.getString("app_language", AppLanguage.ARABIC.code)
+        if (savedLang == AppLanguage.ENGLISH.code) AppLanguage.ENGLISH else AppLanguage.ARABIC
+    }
+    val currentLanguageState = remember { mutableStateOf(initialLang) }
+
+    val initialDark = remember {
+        PlatformPreferences.getBoolean("app_dark_theme", false)
+    }
+    val isDarkState = remember { mutableStateOf(initialDark) }
+
+    LaunchedEffect(currentLanguageState.value) {
+        PlatformPreferences.setString("app_language", currentLanguageState.value.code)
+    }
+
+    LaunchedEffect(isDarkState.value) {
+        PlatformPreferences.setBoolean("app_dark_theme", isDarkState.value)
+    }
 
     CompositionLocalProvider(LocalThemeIsDark provides isDarkState) {
         Gor3aLocalizationProvider(currentLanguageState = currentLanguageState) {

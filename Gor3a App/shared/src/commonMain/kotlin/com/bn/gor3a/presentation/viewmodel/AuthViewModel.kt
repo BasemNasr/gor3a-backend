@@ -70,24 +70,31 @@ class AuthViewModel(
         governorate: String,
         gender: String = "male",
         age: Int? = null,
+        isArabic: Boolean = true,
         onSuccess: () -> Unit = {}
     ) {
         val normPhone = normalizeEgyptianPhone(phone)
         if (!isValidEgyptianPhone(normPhone)) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "يرجى إدخال رقم هاتف محمول مصري صحيح (مثال: 01012345678 أو 011 أو 012 أو 015)"
+                errorMessage = if (isArabic)
+                    "يرجى إدخال رقم هاتف محمول مصري صحيح (مثال: 01012345678 أو 011 أو 012 أو 015)"
+                else
+                    "Please enter a valid Egyptian mobile number (e.g. 01012345678, 011, 012, or 015)"
             )
             return
         }
         if (password.trim().length < 6) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "يجب أن تتكون كلمة المرور من 6 أحرف أو أرقام على الأقل"
+                errorMessage = if (isArabic)
+                    "يجب أن تتكون كلمة المرور من 6 أحرف أو أرقام على الأقل"
+                else
+                    "Password must be at least 6 characters"
             )
             return
         }
         if (name.isBlank() || name.trim().length < 2) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "يرجى إدخال الاسم بالكامل"
+                errorMessage = if (isArabic) "يرجى إدخال الاسم بالكامل" else "Please enter your full name"
             )
             return
         }
@@ -107,14 +114,14 @@ class AuthViewModel(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         errorMessage = null,
-                        successMessage = res.message ?: "تم إنشاء الحساب بنجاح ✓"
+                        successMessage = res.message ?: (if (isArabic) "تم إنشاء الحساب بنجاح ✓" else "Account created successfully ✓")
                     )
                     onSuccess()
                 },
                 onFailure = { err ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = err.message ?: "حدث خطأ أثناء التسجيل، يرجى المحاولة لاحقاً"
+                        errorMessage = err.message ?: (if (isArabic) "حدث خطأ أثناء التسجيل، يرجى المحاولة لاحقاً" else "Registration failed, please try again")
                     )
                 }
             )
@@ -124,19 +131,23 @@ class AuthViewModel(
     fun login(
         phone: String,
         password: String,
+        isArabic: Boolean = true,
         onSuccess: () -> Unit = {},
         onRequiresRegistration: (String) -> Unit = {}
     ) {
         val normPhone = normalizeEgyptianPhone(phone)
         if (!isValidEgyptianPhone(normPhone)) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "يرجى إدخال رقم هاتف محمول مصري صحيح يبدأ بـ 010 أو 011 أو 012 أو 015"
+                errorMessage = if (isArabic)
+                    "يرجى إدخال رقم هاتف محمول مصري صحيح يبدأ بـ 010 أو 011 أو 012 أو 015"
+                else
+                    "Please enter a valid Egyptian mobile starting with 010, 011, 012, or 015"
             )
             return
         }
         if (password.isBlank()) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "يرجى إدخال كلمة المرور"
+                errorMessage = if (isArabic) "يرجى إدخال كلمة المرور" else "Please enter your password"
             )
             return
         }
@@ -150,14 +161,16 @@ class AuthViewModel(
                     if (res.requiresRegistration) {
                         onRequiresRegistration(normPhone)
                     } else {
-                        _uiState.value = _uiState.value.copy(successMessage = res.message ?: "أهلاً بك مجدداً ✓")
+                        _uiState.value = _uiState.value.copy(
+                            successMessage = res.message ?: (if (isArabic) "أهلاً بك مجدداً ✓" else "Welcome back ✓")
+                        )
                         onSuccess()
                     }
                 },
                 onFailure = { err ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = err.message ?: "تعذر تسجيل الدخول، يرجى التأكد من البيانات والمحاولة ثانية"
+                        errorMessage = err.message ?: (if (isArabic) "تعذر تسجيل الدخول، يرجى التأكد من البيانات والمحاولة ثانية" else "Login failed, please check your credentials and try again")
                     )
                 }
             )
