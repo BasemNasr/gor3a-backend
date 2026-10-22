@@ -513,54 +513,140 @@ private fun AuthRegisterView(
         }
     }
 
-    // Governorates Dialog / Picker
+    // Governorates Dialog / Picker with Live Search
     if (showGovDialog) {
+        var govSearchQuery by remember { mutableStateOf("") }
+        val filteredGovs = remember(govSearchQuery, governorates) {
+            if (govSearchQuery.isBlank()) governorates
+            else {
+                val q = normalizeArabicSearch(govSearchQuery)
+                governorates.filter { gov ->
+                    normalizeArabicSearch(gov).contains(q)
+                }
+            }
+        }
+
         androidx.compose.ui.window.Dialog(onDismissRequest = { showGovDialog = false }) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 420.dp)
+                    .heightIn(max = 520.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(20.dp)
             ) {
                 Column {
-                    Text(
-                        text = "اختر المحافظة 📍",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Gor3aTealDark
+                    // Header Row with Title & Close button
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "اختر المحافظة 📍",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Gor3aTealDark,
+                                fontSize = 18.sp
+                            )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                                .clickable { showGovDialog = false },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("✕", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Search input field
+                    OutlinedTextField(
+                        value = govSearchQuery,
+                        onValueChange = { govSearchQuery = it },
+                        placeholder = { Text("ابحث عن محافظتك (مثال: أسيوط...)", fontSize = 13.sp) },
+                        leadingIcon = { Text("🔍", fontSize = 15.sp) },
+                        trailingIcon = {
+                            if (govSearchQuery.isNotEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .clickable { govSearchQuery = "" }
+                                        .padding(8.dp)
+                                ) {
+                                    Text("✕", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Gor3aTealPrimary,
+                            focusedLabelColor = Gor3aTealPrimary
                         )
                     )
+
                     Spacer(modifier = Modifier.height(12.dp))
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(governorates) { gov ->
-                            val isSelected = gov == governorate
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSelected) Gor3aTealPrimary.copy(alpha = 0.12f) else Color.Transparent)
-                                    .clickable {
-                                        onGovChange(gov)
-                                        showGovDialog = false
-                                    }
-                                    .padding(horizontal = 14.dp, vertical = 10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = gov,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
-                                        )
+
+                    // Results or Empty State
+                    if (filteredGovs.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🔍", fontSize = 26.sp)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "لا توجد نتائج مطابقة لـ \"$govSearchQuery\"",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 13.sp
                                     )
-                                    if (isSelected) {
-                                        Text("✓", color = Gor3aTealPrimary, fontWeight = FontWeight.Bold)
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .heightIn(max = 340.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            items(filteredGovs) { gov ->
+                                val isSelected = gov == governorate
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isSelected) Gor3aTealPrimary.copy(alpha = 0.12f) else Color.Transparent)
+                                        .clickable {
+                                            onGovChange(gov)
+                                            showGovDialog = false
+                                        }
+                                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = gov,
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
+                                            )
+                                        )
+                                        if (isSelected) {
+                                            Text("✓", color = Gor3aTealPrimary, fontWeight = FontWeight.Bold)
+                                        }
                                     }
                                 }
                             }
@@ -861,4 +947,15 @@ private fun UserProfileView(
         }
     }
 }
+
+private fun normalizeArabicSearch(text: String): String {
+    return text.trim().lowercase()
+        .replace("أ", "ا")
+        .replace("إ", "ا")
+        .replace("آ", "ا")
+        .replace("ة", "ه")
+        .replace("ى", "ي")
+        .replace("ء", "")
+}
+
 
