@@ -32,6 +32,7 @@ import com.bn.gor3a.core.theme.Gor3aTealAccent
 import com.bn.gor3a.core.theme.Gor3aTealDark
 import com.bn.gor3a.core.theme.Gor3aTealPrimary
 import com.bn.gor3a.core.theme.LocalThemeIsDark
+import com.bn.gor3a.data.remote.dto.UserDto
 import gor3a.shared.generated.resources.Res
 import gor3a.shared.generated.resources.ic_logo
 import org.jetbrains.compose.resources.painterResource
@@ -39,7 +40,9 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun TopHeaderBar(
     modifier: Modifier = Modifier,
-    onTitleClick: () -> Unit = {}
+    user: UserDto? = null,
+    onTitleClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val currentLang = LocalAppLanguage.current
     val isDark = LocalThemeIsDark.current
@@ -96,11 +99,35 @@ fun TopHeaderBar(
             }
         }
 
-        // Action controls: Dark mode toggle & Language Switcher
+        // Action controls: Dark mode toggle & Language Switcher & User Profile
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // User Profile / Auth Chip
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (user != null) Gor3aTealPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant)
+                    .border(
+                        1.dp,
+                        if (user != null) Gor3aTealPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                        RoundedCornerShape(16.dp)
+                    )
+                    .clickable { onProfileClick() }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (user != null) "👤 ${user.name.split(" ").firstOrNull() ?: user.name}" else "👤 دخول",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = if (user != null) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface,
+                        fontSize = 12.sp
+                    )
+                )
+            }
+
             // Language Switcher Badge
             Box(
                 modifier = Modifier
@@ -110,7 +137,7 @@ fun TopHeaderBar(
                     .clickable {
                         currentLang.value = currentLang.value.toggle()
                     }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -126,7 +153,7 @@ fun TopHeaderBar(
             // Dark/Light Mode circular button matching design
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), CircleShape)
@@ -137,7 +164,7 @@ fun TopHeaderBar(
             ) {
                 Text(
                     text = if (isDark.value) "☀️" else "🌙",
-                    fontSize = 17.sp
+                    fontSize = 16.sp
                 )
             }
         }

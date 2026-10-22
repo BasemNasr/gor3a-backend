@@ -29,6 +29,7 @@ import com.bn.gor3a.presentation.screens.ScannerScreen
 import com.bn.gor3a.presentation.screens.ScanningAnimationScreen
 import com.bn.gor3a.presentation.screens.SplashScreen
 import com.bn.gor3a.presentation.screens.UnrecognizedPrescriptionScreen
+import com.bn.gor3a.presentation.viewmodel.AuthViewModel
 import com.bn.gor3a.presentation.viewmodel.DrugExplorerViewModel
 import com.bn.gor3a.presentation.viewmodel.HistoryViewModel
 import com.bn.gor3a.presentation.viewmodel.HomeViewModel
@@ -116,6 +117,7 @@ private fun AppNavigationContent() {
     val drugExplorerViewModel: DrugExplorerViewModel = koinInject()
     val remindersViewModel: RemindersViewModel = koinInject()
     val historyViewModel: HistoryViewModel = koinInject()
+    val authViewModel: AuthViewModel = koinInject()
 
     // Intercept hardware / gesture Back on Android
     PlatformBackHandler(enabled = backStack.size > 1 && currentScreen != Screen.Home) {
@@ -185,6 +187,7 @@ private fun AppNavigationContent() {
             Screen.Home -> {
                 HomeScreen(
                     viewModel = homeViewModel,
+                    authViewModel = authViewModel,
                     onNavigateToScanner = {
                         navigateTo(Screen.Scanner)
                     },

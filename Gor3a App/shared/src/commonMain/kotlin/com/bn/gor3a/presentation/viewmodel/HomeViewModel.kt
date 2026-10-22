@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bn.gor3a.data.remote.Gor3aApiClient
 import com.bn.gor3a.data.remote.dto.BannerDto
+import com.bn.gor3a.data.remote.dto.UserDto
 import com.bn.gor3a.domain.model.DosageReminder
 import com.bn.gor3a.domain.model.SavedPrescription
+import com.bn.gor3a.domain.repository.AuthRepository
 import com.bn.gor3a.domain.usecase.GetSavedPrescriptionsUseCase
 import com.bn.gor3a.domain.usecase.ManageRemindersUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +22,7 @@ data class HomeUiState(
     val recentPrescriptions: List<SavedPrescription> = emptyList(),
     val activeReminders: List<DosageReminder> = emptyList(),
     val banners: List<BannerDto> = emptyList(),
+    val currentUser: UserDto? = null,
     val searchQuery: String = "",
     val isLoading: Boolean = false
 )
@@ -27,7 +30,8 @@ data class HomeUiState(
 class HomeViewModel(
     private val getSavedPrescriptionsUseCase: GetSavedPrescriptionsUseCase,
     private val manageRemindersUseCase: ManageRemindersUseCase,
-    private val apiClient: Gor3aApiClient? = null
+    private val apiClient: Gor3aApiClient? = null,
+    private val authRepository: AuthRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -36,7 +40,16 @@ class HomeViewModel(
     init {
         observePrescriptions()
         observeReminders()
+        observeAuth()
         loadBanners()
+    }
+
+    private fun observeAuth() {
+        authRepository?.currentUser?.onEach { user ->
+            _uiState.update { it.copy(currentUser = user) }
+            // Reload banners tailored to user's governorate
+            loadBanners(user?.governorate)
+        }?.launchIn(viewModelScope)
     }
 
     fun loadBanners(governorate: String? = null) {

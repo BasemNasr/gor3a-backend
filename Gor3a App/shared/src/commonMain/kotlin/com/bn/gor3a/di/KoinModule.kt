@@ -3,9 +3,11 @@ package com.bn.gor3a.di
 import com.bn.gor3a.data.local.LocalPrescriptionDataSource
 import com.bn.gor3a.data.local.LocalReminderDataSource
 import com.bn.gor3a.data.remote.Gor3aApiClient
+import com.bn.gor3a.data.repository.AuthRepositoryImpl
 import com.bn.gor3a.data.repository.DrugRepositoryImpl
 import com.bn.gor3a.data.repository.PrescriptionRepositoryImpl
 import com.bn.gor3a.data.repository.ReminderRepositoryImpl
+import com.bn.gor3a.domain.repository.AuthRepository
 import com.bn.gor3a.domain.repository.DrugRepository
 import com.bn.gor3a.domain.repository.PrescriptionRepository
 import com.bn.gor3a.domain.repository.ReminderRepository
@@ -17,6 +19,7 @@ import com.bn.gor3a.domain.usecase.GetSavedPrescriptionsUseCase
 import com.bn.gor3a.domain.usecase.ManageRemindersUseCase
 import com.bn.gor3a.domain.usecase.SavePrescriptionUseCase
 import com.bn.gor3a.domain.usecase.SearchDrugsUseCase
+import com.bn.gor3a.presentation.viewmodel.AuthViewModel
 import com.bn.gor3a.presentation.viewmodel.DrugExplorerViewModel
 import com.bn.gor3a.presentation.viewmodel.HistoryViewModel
 import com.bn.gor3a.presentation.viewmodel.HomeViewModel
@@ -36,6 +39,7 @@ val appModule = module {
     single { LocalReminderDataSource() }
 
     // Repositories
+    singleOf(::AuthRepositoryImpl) bind AuthRepository::class
     singleOf(::PrescriptionRepositoryImpl) bind PrescriptionRepository::class
     singleOf(::DrugRepositoryImpl) bind DrugRepository::class
     singleOf(::ReminderRepositoryImpl) bind ReminderRepository::class
@@ -51,6 +55,7 @@ val appModule = module {
     singleOf(::ManageRemindersUseCase)
 
     // ViewModels (App-scoped singletons)
+    singleOf(::AuthViewModel)
     singleOf(::HomeViewModel)
     singleOf(::ScannerViewModel)
     singleOf(::ResultsViewModel)

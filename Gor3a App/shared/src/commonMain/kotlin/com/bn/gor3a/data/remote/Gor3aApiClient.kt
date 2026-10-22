@@ -2,11 +2,16 @@ package com.bn.gor3a.data.remote
 
 import com.bn.gor3a.data.remote.dto.AdvancedSearchResponseDto
 import com.bn.gor3a.data.remote.dto.AnalysisResponseDto
+import com.bn.gor3a.data.remote.dto.AuthResponseDto
 import com.bn.gor3a.data.remote.dto.BannerDto
 import com.bn.gor3a.data.remote.dto.BannersResponseDto
 import com.bn.gor3a.data.remote.dto.DrugAlternativesResponseDto
 import com.bn.gor3a.data.remote.dto.DrugDetailsResponseDto
+import com.bn.gor3a.data.remote.dto.GovernoratesResponseDto
 import com.bn.gor3a.data.remote.dto.HealthResponseDto
+import com.bn.gor3a.data.remote.dto.LoginRequestDto
+import com.bn.gor3a.data.remote.dto.ProfileResponseDto
+import com.bn.gor3a.data.remote.dto.RegisterRequestDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
@@ -16,9 +21,12 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.client.statement.bodyAsText
@@ -152,6 +160,50 @@ class Gor3aApiClient(
         } catch (e: Exception) {
             println("[Gor3aApiClient] getActiveBanners failed: ${e.message}")
             emptyList()
+        }
+    }
+
+    // =========================================================================
+    // Auth & Cloud User Methods
+    // =========================================================================
+    suspend fun registerUser(
+        phone: String,
+        name: String,
+        governorate: String = "القاهرة",
+        age: Int? = null,
+        gender: String? = null
+    ): AuthResponseDto {
+        return client.post("$baseUrl/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequestDto(phone = phone, name = name, governorate = governorate, age = age, gender = gender))
+        }.body()
+    }
+
+    suspend fun loginUser(phone: String): AuthResponseDto {
+        return client.post("$baseUrl/api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequestDto(phone = phone))
+        }.body()
+    }
+
+    suspend fun getCurrentUser(token: String): ProfileResponseDto {
+        return client.get("$baseUrl/api/auth/me") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }.body()
+    }
+
+    suspend fun getGovernorates(): List<String> {
+        return try {
+            val res = client.get("$baseUrl/api/auth/governorates").body<GovernoratesResponseDto>()
+            res.governorates
+        } catch (e: Exception) {
+            listOf(
+                "القاهرة", "الجيزة", "الإسكندرية", "الدقهلية", "الشرقية", "المنوفية",
+                "القليوبية", "الغربية", "البحيرة", "دمياط", "بورسعيد", "الإسماعيلية",
+                "السويس", "كفر الشيخ", "الفيوم", "بني سويف", "المنيا", "أسيوط",
+                "سوهاج", "قنا", "الأقصر", "أسوان", "البحر الأحمر", "الوادي الجديد",
+                "مطروح", "شمال سيناء", "جنوب سيناء"
+            )
         }
     }
 }

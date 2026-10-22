@@ -32,6 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +43,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -53,6 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.bn.gor3a.data.remote.dto.BannerDto
+import com.bn.gor3a.data.remote.dto.UserDto
+import com.bn.gor3a.presentation.components.AuthBottomSheet
+import com.bn.gor3a.presentation.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 import com.bn.gor3a.core.localization.AppLanguage
 import com.bn.gor3a.core.localization.LocalAppLanguage
@@ -69,9 +76,11 @@ import com.bn.gor3a.presentation.components.ScanPrescriptionCtaCard
 import com.bn.gor3a.presentation.components.TopHeaderBar
 import com.bn.gor3a.presentation.viewmodel.HomeViewModel
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    authViewModel: AuthViewModel? = null,
     onNavigateToScanner: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onSearchBarClick: () -> Unit = onNavigateToSearch,
@@ -84,10 +93,21 @@ fun HomeScreen(
     val strings = LocalStrings.current
     val currentLang = LocalAppLanguage.current
     val isArabic = currentLang.value == AppLanguage.ARABIC
+    var showAuthSheet by remember { mutableStateOf(false) }
+
+    if (showAuthSheet && authViewModel != null) {
+        AuthBottomSheet(
+            viewModel = authViewModel,
+            onDismissRequest = { showAuthSheet = false }
+        )
+    }
 
     Scaffold(
         topBar = {
-            TopHeaderBar()
+            TopHeaderBar(
+                user = state.currentUser,
+                onProfileClick = { showAuthSheet = true }
+            )
         },
         bottomBar = {
             BottomNavBar(
@@ -128,7 +148,77 @@ fun HomeScreen(
                         }
                     )
                 } else {
-                    HomeDefaultWelcomeCard()
+                    HomeDefaultWelcomeCard(user = state.currentUser)
+                }
+            }
+
+            // 2. Cloud Registration Banner (shown when user is not logged in)
+            if (state.currentUser == null) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color(0xFF0F766E), Color(0xFF00897B))
+                                )
+                            )
+                            .clickable { showAuthSheet = true }
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text("☁️", fontSize = 16.sp)
+                                    Text(
+                                        text = if (isArabic) "احفظ روشتاتك في ملفك الطبي السحابي" else "Save Prescriptions in Cloud",
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 14.sp
+                                        )
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (isArabic)
+                                        "سجل حسابك مجاناً لتسترجع روشتاتك وتاريخك الدوائي عند تغيير هاتفك."
+                                    else
+                                        "Register for free to backup your prescriptions & medication history.",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = Color.White.copy(alpha = 0.85f),
+                                        fontSize = 11.5.sp,
+                                        lineHeight = 16.sp
+                                    )
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White)
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (isArabic) "تسجيل الآن" else "Sign In",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Gor3aTealDark,
+                                        fontSize = 12.sp
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -503,9 +593,15 @@ private fun HomeEmptyPrescriptionsCard(
 
 @Composable
 fun HomeDefaultWelcomeCard(
+    user: UserDto? = null,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalStrings.current
+    val greeting = if (user != null) {
+        if (strings.isArabic) "مرحباً يا ${user.name} 👋" else "Welcome ${user.name} 👋"
+    } else {
+        strings.welcomeUser
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -523,7 +619,7 @@ fun HomeDefaultWelcomeCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = strings.welcomeUser,
+                    text = greeting,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF00897B),
