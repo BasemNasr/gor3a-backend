@@ -17,6 +17,7 @@ from ..drugs.repository import drug_repository
 from ..providers.factory import register_provider
 from ..providers.gemini import GeminiProvider
 from ..services.banner_service import EGYPTIAN_GOVERNORATES, banner_service
+from ..services.user_service import user_service
 
 logger = logging.getLogger(__name__)
 
@@ -459,4 +460,40 @@ async def admin_sync_banners(
         "success": True,
         "message": "تمت مزامنة الإعلانات بنجاح ✓",
         "banners": synced,
+    }
+
+
+# ==============================================================================
+# Admin App Users Management
+# ==============================================================================
+@router.get("/users")
+async def admin_get_users(admin_email: str = Depends(get_current_admin)):
+    """Returns all registered mobile app users with calculated stats for Admin."""
+    users = user_service.get_all_users_for_admin()
+    stats = user_service.get_stats()
+    return {
+        "success": True,
+        "users": users,
+        "stats": stats,
+    }
+
+
+@router.delete("/users/{user_id}")
+async def admin_delete_user(
+    user_id: str,
+    admin_email: str = Depends(get_current_admin),
+):
+    """Admin can delete a test/spam user account and their cloud prescriptions."""
+    user = user_service.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="المستخدم غير موجود")
+
+    user_service._users = [u for u in user_service._users if u.get("id") != user_id]
+    user_service._save_users()
+    user_service._prescriptions = [p for p in user_service._prescriptions if p.get("user_id") != user_id]
+    user_service._save_prescriptions()
+
+    return {
+        "success": True,
+        "message": "تم حذف حساب المستخدم وروشتاته السحابية بنجاح 🗑️",
     }

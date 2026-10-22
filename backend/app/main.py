@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .api.admin_routes import router as admin_router
+from .api.auth_routes import router as auth_router
 from .api.routes import router as api_router
 from .config import PROJECT_ROOT, settings
 from .providers.factory import init_providers
@@ -49,6 +50,7 @@ app.add_middleware(
 # Include API Routers
 app.include_router(api_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 # Serve Web UI static files (only if not running under Gradio / Hugging Face Spaces)
 WEB_DIR = PROJECT_ROOT / "web"

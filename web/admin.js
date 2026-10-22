@@ -203,8 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       console.warn("Failed to load settings:", err);
     }
-    // Also load banners stats and data
+    // Also load banners and users stats and data
     loadBannersData();
+    loadUsersData();
   }
 
   // =========================================================================
@@ -221,6 +222,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (targetContent) targetContent.classList.remove("hidden");
       if (targetId === "tabBanners") {
         loadBannersData();
+      }
+      if (targetId === "tabUsers") {
+        loadUsersData();
       }
     });
   });
@@ -1423,6 +1427,183 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // =========================================================================
+  // 7. Mobile App Users & Customers Management
+  // =========================================================================
+  let usersList = [];
+  const statUsersCount = document.getElementById("statUsersCount");
+  const statUsersSub = document.getElementById("statUsersSub");
+  const statUsersTotal = document.getElementById("statUsersTotal");
+  const statTopGov = document.getElementById("statTopGov");
+  const statCloudRxsTotal = document.getElementById("statCloudRxsTotal");
+
+  const usersTableBody = document.getElementById("usersTableBody");
+  const usersEmptyState = document.getElementById("usersEmptyState");
+  const userSearchInput = document.getElementById("userSearchInput");
+  const refreshUsersBtn = document.getElementById("refreshUsersBtn");
+
+  async function loadUsersData() {
+    if (!adminToken) return;
+    try {
+      const res = await fetch("/api/admin/users", {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      usersList = data.users || [];
+      const stats = data.stats || { total_users: 0, total_prescriptions: 0, top_governorate: "القاهرة" };
+
+      // Update Ribbon Stats
+      if (statUsersCount) statUsersCount.textContent = (stats.total_users || 0).toLocaleString();
+      if (statUsersSub) statUsersSub.textContent = `${stats.total_users || 0} عملاء مسجلين`;
+
+      // Update Mini Stats
+      if (statUsersTotal) statUsersTotal.textContent = (stats.total_users || 0).toLocaleString();
+      if (statTopGov) statTopGov.textContent = stats.top_governorate || "القاهرة";
+      if (statCloudRxsTotal) statCloudRxsTotal.textContent = (stats.total_prescriptions || 0).toLocaleString();
+
+      renderUsersTable(usersList);
+    } catch (err) {
+      console.warn("Failed to load users data:", err);
+    }
+  }
+
+  function renderUsersTable(list) {
+    if (!usersTableBody) return;
+    usersTableBody.innerHTML = "";
+
+    const query = (userSearchInput?.value || "").trim().toLowerCase();
+    const filtered = list.filter((u) => {
+      if (!query) return true;
+      const matchName = (u.name || "").toLowerCase().includes(query);
+      const matchPhone = (u.phone || "").toLowerCase().includes(query);
+      const matchGov = (u.governorate || "").toLowerCase().includes(query);
+      return matchName || matchPhone || matchGov;
+    });
+
+    if (filtered.length === 0) {
+      if (usersEmptyState) usersEmptyState.classList.remove("hidden");
+      usersTableBody.parentElement.classList.add("hidden");
+      return;
+    }
+
+    if (usersEmptyState) usersEmptyState.classList.add("hidden");
+    usersTableBody.parentElement.classList.remove("hidden");
+
+    filtered.forEach((user, idx) => {
+      const tr = document.createElement("tr");
+
+      // Phone formatting and WhatsApp direct link
+      const rawPhone = user.phone || "";
+      const waNumber = rawPhone.startsWith("0") ? `20${rawPhone.slice(1)}` : rawPhone;
+      const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(`مرحباً أستاذ ${user.name || ''}، معك فريق دعم تطبيق جرعة Gor3a 🩺`)}`;
+
+      // Format date
+      let regDate = "-";
+      if (user.created_at) {
+        try {
+          regDate = new Date(user.created_at).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
+        } catch (_) {
+          regDate = user.created_at.split("T")[0];
+        }
+      }
+
+      let lastLoginDate = "-";
+      if (user.last_login_at) {
+        try {
+          lastLoginDate = new Date(user.last_login_at).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        } catch (_) {
+          lastLoginDate = user.last_login_at.split("T")[0];
+        }
+      }
+
+      const avatarLetter = (user.name || "م").trim().charAt(0);
+      const rxsCount = user.prescriptions_count || 0;
+
+      tr.innerHTML = `
+        <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${idx + 1}</td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem;">
+              ${escapeHtml(avatarLetter)}
+            </div>
+            <div>
+              <div style="font-weight: 700; color: var(--text);">${escapeHtml(user.name || "مستخدم بدون اسم")}</div>
+              ${user.age ? `<span style="font-size: 0.75rem; color: var(--text-muted);">${user.age} سنة</span>` : ''}
+              ${user.gender === 'male' ? '<span style="font-size: 0.75rem; color: #2563eb; margin-right: 4px;">ذكر</span>' : (user.gender === 'female' ? '<span style="font-size: 0.75rem; color: #db2777; margin-right: 4px;">أنثى</span>' : '')}
+            </div>
+          </div>
+        </td>
+        <td dir="ltr" style="text-align: right;">
+          <a href="${waLink}" target="_blank" rel="noopener" class="btn btn-secondary btn-xs" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; color: #15803d; font-weight: 600; border-color: #bbf7d0; background: #f0fdf4;">
+            <span style="font-size: 1rem;">🟢</span>
+            <span>${escapeHtml(rawPhone)}</span>
+          </a>
+        </td>
+        <td>
+          <span class="gov-pill-tag" style="background: #f1f5f9; color: #334155; font-weight: 600;">
+            📍 ${escapeHtml(user.governorate || "القاهرة")}
+          </span>
+        </td>
+        <td style="text-align: center;">
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.65rem; border-radius: 999px; background: ${rxsCount > 0 ? '#ecfdf5' : '#f8fafc'}; color: ${rxsCount > 0 ? '#047857' : '#94a3b8'}; font-weight: 700; font-size: 0.85rem; border: 1px solid ${rxsCount > 0 ? '#a7f3d0' : '#e2e8f0'};">
+            📋 ${rxsCount} ${rxsCount === 1 ? 'روشتة' : 'روشتات'}
+          </span>
+        </td>
+        <td style="font-size: 0.825rem; color: var(--text-muted);">${escapeHtml(regDate)}</td>
+        <td style="font-size: 0.825rem; color: var(--text-muted);">${escapeHtml(lastLoginDate)}</td>
+        <td style="text-align: center;">
+          <button type="button" class="btn btn-xs" style="background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;" onclick="window.deleteUserAccount('${user.id}')" title="حذف حساب العميل">
+            🗑️
+          </button>
+        </td>
+      `;
+
+      usersTableBody.appendChild(tr);
+    });
+  }
+
+  // Live Search Users
+  if (userSearchInput) {
+    userSearchInput.addEventListener("input", () => {
+      renderUsersTable(usersList);
+    });
+  }
+
+  if (refreshUsersBtn) {
+    refreshUsersBtn.addEventListener("click", () => {
+      loadUsersData();
+      showToast("تم تحديث قائمة العملاء ✓");
+    });
+  }
+
+  window.deleteUserAccount = async function(userId) {
+    if (!adminToken) return;
+    const user = usersList.find((u) => u.id === userId);
+    const userName = user ? user.name : "هذا المستخدم";
+    if (!confirm(`هل أنت متأكد من رغبتك في حذف حساب ${userName} وروشتاته السحابية نهائياً؟`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (res.ok) {
+        usersList = usersList.filter((u) => u.id !== userId);
+        renderUsersTable(usersList);
+        if (statUsersCount) statUsersCount.textContent = usersList.length;
+        if (statUsersTotal) statUsersTotal.textContent = usersList.length;
+        showToast("تم حذف الحساب بنجاح 🗑️");
+      } else {
+        alert("فشل حذف الحساب");
+      }
+    } catch (_) {
+      alert("تعذر الاتصال بالسيرفر");
+    }
+  };
 
   function showToast(msg) {
     adminToast.textContent = msg;

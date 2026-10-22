@@ -98,6 +98,9 @@
         <button type="button" class="admin-tab-btn" data-tab="tabBanners">
           📢 إدارة الإعلانات والسلايدر
         </button>
+        <button type="button" class="admin-tab-btn" data-tab="tabUsers">
+          👥 العملاء والمستخدمين (الموبايل)
+        </button>
         <button type="button" class="admin-tab-btn" data-tab="tabApiKey">
           🔑 مفتاح Gemini المشفر (API Key)
         </button>
@@ -117,6 +120,11 @@
           <span class="admin-stat-label">سلايدر الإعلانات</span>
           <span class="admin-stat-val" id="statActiveBannersCount" style="color: #00897B;">0</span>
           <span class="admin-stat-sub" id="statBannersSummary">إعلانات نشطة للموبايل</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-label">عملاء تطبيق الموبايل</span>
+          <span class="admin-stat-val" id="statUsersCount" style="color: #0284c7;">0</span>
+          <span class="admin-stat-sub" id="statUsersSub">عملاء مسجلين</span>
         </div>
         <div class="admin-stat-card">
           <span class="admin-stat-label">محرك الذكاء الاصطناعي</span>
@@ -331,6 +339,68 @@
             <button type="button" class="btn btn-primary btn-sm" id="emptyAddBannerBtn">
               ➕ إضافة إعلان الآن
             </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: App Users & Customers -->
+      <section class="admin-tab-content hidden" id="tabUsers">
+        <div class="card">
+          <div class="card-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+              <h3>👥 سجل عملاء ومستخدمي تطبيق الموبايل (Gor3a App)</h3>
+              <p class="text-muted" style="margin: 0.25rem 0 0 0;">
+                قائمة العملاء الذين قاموا بالتسجيل في التطبيق، محافظاتهم، وتاريخ روشتاتهم السحابية المحفوظة.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="text" id="userSearchInput" class="form-control form-control-sm" placeholder="🔍 بحث بالاسم أو الهاتف أو المحافظة..." style="width: 250px;">
+              <button type="button" id="refreshUsersBtn" class="btn btn-secondary btn-sm" title="تحديث القائمة">🔄 تحديث</button>
+            </div>
+          </div>
+
+          <!-- Mini Stats Ribbon -->
+          <div class="banner-mini-stats-grid" style="margin-bottom: 1.25rem;">
+            <div class="mini-stat-box">
+              <span class="mini-stat-title">إجمالي العملاء المسجلين</span>
+              <span class="mini-stat-num" id="statUsersTotal" style="color: #0284c7;">0</span>
+            </div>
+            <div class="mini-stat-box">
+              <span class="mini-stat-title">أعلى محافظة تواجداً</span>
+              <span class="mini-stat-num" id="statTopGov" style="font-size: 1.1rem; color: #00897b;">القاهرة</span>
+            </div>
+            <div class="mini-stat-box">
+              <span class="mini-stat-title">إجمالي الروشتات السحابية</span>
+              <span class="mini-stat-num" id="statCloudRxsTotal" style="color: #10b981;">0</span>
+            </div>
+          </div>
+
+          <!-- Users Table Container -->
+          <div class="admin-table-container">
+            <table class="admin-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th style="width: 50px; text-align: center;">#</th>
+                  <th>العميل</th>
+                  <th>رقم الهاتف (واتساب)</th>
+                  <th>المحافظة 📍</th>
+                  <th style="text-align: center;">الروشتات السحابية 📋</th>
+                  <th>تاريخ التسجيل</th>
+                  <th>آخر نشاط</th>
+                  <th style="text-align: center;">إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div id="usersEmptyState" class="banners-empty-card hidden" style="text-align: center; padding: 2.5rem 1rem;">
+            <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">👥</span>
+            <h4>لا يوجد عملاء مسجلين بعد</h4>
+            <p class="text-muted">عند قيام أول مستخدم بالتسجيل من تطبيق الموبايل ستظهر بياناته هنا فوراً.</p>
           </div>
         </div>
       </section>
