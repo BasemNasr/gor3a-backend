@@ -42,6 +42,46 @@ def normalize_phone(phone: str) -> str:
     return clean
 
 
+EGYPTIAN_PHONE_REGEX = re.compile(r"^01[0125][0-9]{8}$")
+
+
+def is_valid_egyptian_phone(phone: str) -> bool:
+    """Checks whether the phone is a valid Egyptian mobile number (Vodafone, Orange, Etisalat, WE)."""
+    if not phone:
+        return False
+    clean = normalize_phone(phone)
+    return bool(EGYPTIAN_PHONE_REGEX.match(clean))
+
+
+def hash_password(password: str, salt: Optional[str] = None) -> Tuple[str, str]:
+    """Hashes a password with SHA256 PBKDF2 and returns (hash_hex, salt)."""
+    if not salt:
+        salt = uuid.uuid4().hex[:16]
+    derived = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        100000,
+    ).hex()
+    return derived, salt
+
+
+def verify_password(password: str, stored_hash: str, salt: str) -> bool:
+    """Verifies a password against the stored hash and salt."""
+    if not stored_hash or not salt:
+        return True
+    derived, _ = hash_password(password, salt)
+    return hmac.compare_digest(derived, stored_hash)
+
+
+def sanitize_user(user: Dict[str, Any]) -> Dict[str, Any]:
+    """Removes sensitive password hash/salt from user object before returning to client."""
+    safe = dict(user)
+    safe.pop("password_hash", None)
+    safe.pop("password_salt", None)
+    return safe
+
+
 def create_user_token(user_id: str, phone: str) -> str:
     """Creates a secure HMAC token valid for 365 days."""
     timestamp = int(time.time())
@@ -173,6 +213,100 @@ class UserService:
             logger.warning(f"Failed to save prescriptions to {TMP_PRESCRIPTIONS_PATH}: {exc}")
             return False
 
+    def register_user(
+        self,
+        phone: str,
+        password: str,
+        name: str,
+        governorate: str = "القاهرة",
+        gender: str = "male",
+        age: Optional[int] = None,
+    ) -> Tuple[Dict[str, Any], str]:
+        """
+        Registers a new user with strict Egyptian phone validation, password hashing, and gender.
+        """
+        self._reload_if_needed()
+        if not is_valid_egyptian_phone(phone):
+            raise ValueError("يرجى إدخال رقم هاتف محمول مصري صحيح (مثال: 01012345678 أو 011 أو 012 أو 015)")
+
+        if not password or len(password.strip()) < 6:
+            raise ValueError("يجب أن تتكون كلمة المرور من 6 أحرف أو أرقام على الأقل")
+
+        if not name or len(name.strip()) < 2:
+            raise ValueError("يرجى كتابة الاسم بالكامل")
+
+        norm_phone = normalize_phone(phone)
+        existing = next((u for u in self._users if u.get("phone") == norm_phone), None)
+        if existing:
+            raise ValueError("رقم الهاتف مسجل مسبقاً بالفعل، يرجى تسجيل الدخول")
+
+        now_iso = datetime.datetime.utcnow().isoformat() + "Z"
+        new_id = f"usr-{uuid.uuid4().hex[:10]}"
+        pwd_hash, pwd_salt = hash_password(password.strip())
+
+        clean_gender = gender.strip().lower() if gender else "male"
+        if clean_gender not in ["male", "female"]:
+            clean_gender = "male"
+
+        new_user = {
+            "id": new_id,
+            "phone": norm_phone,
+            "name": name.strip(),
+            "governorate": governorate.strip() if governorate and governorate.strip() else "القاهرة",
+            "gender": clean_gender,
+            "age": age,
+            "password_hash": pwd_hash,
+            "password_salt": pwd_salt,
+            "created_at": now_iso,
+            "updated_at": now_iso,
+            "last_login_at": now_iso,
+            "prescriptions_count": 0,
+        }
+
+        self._users.append(new_user)
+        self._save_users()
+        token = create_user_token(new_id, norm_phone)
+        return sanitize_user(new_user), token
+
+    def login_user(
+        self,
+        phone: str,
+        password: str,
+    ) -> Tuple[Dict[str, Any], str]:
+        """
+        Logs in user verifying phone and password.
+        """
+        self._reload_if_needed()
+        if not is_valid_egyptian_phone(phone):
+            raise ValueError("رقم الهاتف المحمول غير صحيح، يرجى إدخال رقم مصري يبدأ بـ 010 أو 011 أو 012 أو 015")
+
+        if not password:
+            raise ValueError("يرجى إدخال كلمة المرور")
+
+        norm_phone = normalize_phone(phone)
+        user = next((u for u in self._users if u.get("phone") == norm_phone), None)
+        if not user:
+            raise ValueError("رقم الهاتف غير مسجل مسبقاً، يرجى إنشاء حساب جديد")
+
+        stored_hash = user.get("password_hash")
+        stored_salt = user.get("password_salt")
+        if stored_hash and stored_salt:
+            if not verify_password(password.strip(), stored_hash, stored_salt):
+                raise ValueError("كلمة المرور غير صحيحة، يرجى التأكد والمحاولة ثانية")
+        else:
+            # Set password for legacy accounts
+            pwd_hash, pwd_salt = hash_password(password.strip())
+            user["password_hash"] = pwd_hash
+            user["password_salt"] = pwd_salt
+
+        now_iso = datetime.datetime.utcnow().isoformat() + "Z"
+        user["last_login_at"] = now_iso
+        user["prescriptions_count"] = self.count_user_prescriptions(user["id"])
+        self._save_users()
+
+        token = create_user_token(user["id"], user["phone"])
+        return sanitize_user(user), token
+
     def register_or_login(
         self,
         phone: str,
@@ -230,7 +364,7 @@ class UserService:
         self._reload_if_needed()
         user = next((u for u in self._users if u.get("id") == user_id), None)
         if user:
-            user_copy = dict(user)
+            user_copy = sanitize_user(user)
             user_copy["prescriptions_count"] = self.count_user_prescriptions(user_id)
             return user_copy
         return None
@@ -240,7 +374,7 @@ class UserService:
         norm_phone = normalize_phone(phone)
         user = next((u for u in self._users if u.get("phone") == norm_phone), None)
         if user:
-            user_copy = dict(user)
+            user_copy = sanitize_user(user)
             user_copy["prescriptions_count"] = self.count_user_prescriptions(user["id"])
             return user_copy
         return None
@@ -356,7 +490,7 @@ class UserService:
         self._reload_if_needed()
         results = []
         for u in sorted(self._users, key=lambda x: x.get("created_at", ""), reverse=True):
-            user_data = dict(u)
+            user_data = sanitize_user(u)
             user_data["prescriptions_count"] = self.count_user_prescriptions(u["id"])
             results.append(user_data)
         return results

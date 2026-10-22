@@ -39,31 +39,68 @@ class AuthViewModel(
         }
     }
 
+    companion object {
+        fun normalizeEgyptianPhone(phone: String): String {
+            var p = phone.trim().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+            p = p.map { c ->
+                when (c) {
+                    '٠' -> '0'; '١' -> '1'; '٢' -> '2'; '٣' -> '3'; '٤' -> '4'
+                    '٥' -> '5'; '٦' -> '6'; '٧' -> '7'; '٨' -> '8'; '٩' -> '9'
+                    else -> c
+                }
+            }.joinToString("")
+
+            if (p.startsWith("+20")) p = "0" + p.removePrefix("+20")
+            else if (p.startsWith("0020")) p = "0" + p.removePrefix("0020")
+            else if (p.startsWith("20") && p.length == 12) p = "0" + p.removePrefix("20")
+
+            return p
+        }
+
+        fun isValidEgyptianPhone(phone: String): Boolean {
+            val norm = normalizeEgyptianPhone(phone)
+            return Regex("^01[0125][0-9]{8}$").matches(norm)
+        }
+    }
+
     fun register(
         phone: String,
+        password: String,
         name: String,
         governorate: String,
+        gender: String = "male",
         age: Int? = null,
-        gender: String? = null,
         onSuccess: () -> Unit = {}
     ) {
-        if (phone.isBlank() || phone.length < 10) {
-            _uiState.value = _uiState.value.copy(errorMessage = "يرجى إدخال رقم هاتف محمول مصري صحيح")
+        val normPhone = normalizeEgyptianPhone(phone)
+        if (!isValidEgyptianPhone(normPhone)) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "يرجى إدخال رقم هاتف محمول مصري صحيح (مثال: 01012345678 أو 011 أو 012 أو 015)"
+            )
             return
         }
-        if (name.isBlank()) {
-            _uiState.value = _uiState.value.copy(errorMessage = "يرجى إدخال الاسم بالكامل")
+        if (password.trim().length < 6) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "يجب أن تتكون كلمة المرور من 6 أحرف أو أرقام على الأقل"
+            )
+            return
+        }
+        if (name.isBlank() || name.trim().length < 2) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "يرجى إدخال الاسم بالكامل"
+            )
             return
         }
 
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
             val result = authRepository.register(
-                phone = phone,
-                name = name,
-                governorate = governorate,
-                age = age,
-                gender = gender
+                phone = normPhone,
+                password = password.trim(),
+                name = name.trim(),
+                governorate = governorate.trim().ifEmpty { "القاهرة" },
+                gender = if (gender.trim().lowercase() == "female") "female" else "male",
+                age = age
             )
             result.fold(
                 onSuccess = { res ->
@@ -86,22 +123,32 @@ class AuthViewModel(
 
     fun login(
         phone: String,
+        password: String,
         onSuccess: () -> Unit = {},
         onRequiresRegistration: (String) -> Unit = {}
     ) {
-        if (phone.isBlank() || phone.length < 10) {
-            _uiState.value = _uiState.value.copy(errorMessage = "يرجى إدخال رقم هاتف صحيح")
+        val normPhone = normalizeEgyptianPhone(phone)
+        if (!isValidEgyptianPhone(normPhone)) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "يرجى إدخال رقم هاتف محمول مصري صحيح يبدأ بـ 010 أو 011 أو 012 أو 015"
+            )
+            return
+        }
+        if (password.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "يرجى إدخال كلمة المرور"
+            )
             return
         }
 
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
-            val result = authRepository.login(phone = phone)
+            val result = authRepository.login(phone = normPhone, password = password.trim())
             result.fold(
                 onSuccess = { res ->
                     _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = null)
                     if (res.requiresRegistration) {
-                        onRequiresRegistration(phone)
+                        onRequiresRegistration(normPhone)
                     } else {
                         _uiState.value = _uiState.value.copy(successMessage = res.message ?: "أهلاً بك مجدداً ✓")
                         onSuccess()
@@ -110,7 +157,7 @@ class AuthViewModel(
                 onFailure = { err ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = err.message ?: "تعذر تسجيل الدخول"
+                        errorMessage = err.message ?: "تعذر تسجيل الدخول، يرجى التأكد من البيانات والمحاولة ثانية"
                     )
                 }
             )

@@ -42,6 +42,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,10 +76,11 @@ fun AuthBottomSheet(
     }
 
     var phoneInput by remember { mutableStateOf(currentUser?.phone ?: "") }
+    var passwordInput by remember { mutableStateOf("") }
     var nameInput by remember { mutableStateOf(currentUser?.name ?: "") }
     var governorateInput by remember { mutableStateOf(currentUser?.governorate ?: "القاهرة") }
+    var genderInput by remember { mutableStateOf(currentUser?.gender ?: "male") }
     var ageInput by remember { mutableStateOf(currentUser?.age?.toString() ?: "") }
-    var showGovPicker by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -107,6 +110,7 @@ fun AuthBottomSheet(
                             user = user,
                             onLogout = {
                                 viewModel.logout()
+                                passwordInput = ""
                                 mode = AuthMode.REGISTER
                             },
                             onClose = onDismissRequest
@@ -119,8 +123,10 @@ fun AuthBottomSheet(
                 AuthMode.REGISTER -> {
                     AuthRegisterView(
                         phone = phoneInput,
+                        password = passwordInput,
                         name = nameInput,
                         governorate = governorateInput,
+                        gender = genderInput,
                         age = ageInput,
                         governorates = uiState.governorates.ifEmpty {
                             listOf("القاهرة", "الجيزة", "الإسكندرية", "الدقهلية", "الشرقية", "المنوفية", "القليوبية", "الغربية", "البحيرة", "دمياط", "بورسعيد", "الإسماعيلية", "السويس", "كفر الشيخ", "الفيوم", "بني سويف", "المنيا", "أسيوط", "سوهاج", "قنا", "الأقصر", "أسوان")
@@ -128,14 +134,18 @@ fun AuthBottomSheet(
                         isLoading = uiState.isLoading,
                         errorMessage = uiState.errorMessage,
                         onPhoneChange = { phoneInput = it; viewModel.clearMessages() },
+                        onPasswordChange = { passwordInput = it; viewModel.clearMessages() },
                         onNameChange = { nameInput = it; viewModel.clearMessages() },
                         onGovChange = { governorateInput = it },
+                        onGenderChange = { genderInput = it },
                         onAgeChange = { ageInput = it },
                         onSubmit = {
                             viewModel.register(
                                 phone = phoneInput,
+                                password = passwordInput,
                                 name = nameInput,
                                 governorate = governorateInput,
+                                gender = genderInput,
                                 age = ageInput.toIntOrNull(),
                                 onSuccess = onDismissRequest
                             )
@@ -150,12 +160,15 @@ fun AuthBottomSheet(
                 AuthMode.LOGIN -> {
                     AuthLoginView(
                         phone = phoneInput,
+                        password = passwordInput,
                         isLoading = uiState.isLoading,
                         errorMessage = uiState.errorMessage,
                         onPhoneChange = { phoneInput = it; viewModel.clearMessages() },
+                        onPasswordChange = { passwordInput = it; viewModel.clearMessages() },
                         onSubmit = {
                             viewModel.login(
                                 phone = phoneInput,
+                                password = passwordInput,
                                 onSuccess = onDismissRequest,
                                 onRequiresRegistration = {
                                     mode = AuthMode.REGISTER
@@ -176,20 +189,25 @@ fun AuthBottomSheet(
 @Composable
 private fun AuthRegisterView(
     phone: String,
+    password: String,
     name: String,
     governorate: String,
+    gender: String,
     age: String,
     governorates: List<String>,
     isLoading: Boolean,
     errorMessage: String?,
     onPhoneChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
     onNameChange: (String) -> Unit,
     onGovChange: (String) -> Unit,
+    onGenderChange: (String) -> Unit,
     onAgeChange: (String) -> Unit,
     onSubmit: () -> Unit,
     onSwitchToLogin: () -> Unit
 ) {
     var showGovDialog by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         // Title & Cloud Reassurance Header
@@ -260,6 +278,35 @@ private fun AuthRegisterView(
             )
         )
 
+        // Password Input
+        OutlinedTextField(
+            value = password,
+            onValueChange = onPasswordChange,
+            label = { Text("كلمة المرور (6 أحرف على الأقل)") },
+            placeholder = { Text("••••••••") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                Box(
+                    modifier = Modifier
+                        .clickable { passwordVisible = !passwordVisible }
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = if (passwordVisible) "👁️" else "🔒",
+                        fontSize = 18.sp
+                    )
+                }
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Gor3aTealPrimary,
+                focusedLabelColor = Gor3aTealPrimary
+            )
+        )
+
         // Name Input
         OutlinedTextField(
             value = name,
@@ -274,6 +321,82 @@ private fun AuthRegisterView(
                 focusedLabelColor = Gor3aTealPrimary
             )
         )
+
+        // Gender Selection (ذكر / أنثى)
+        Column {
+            Text(
+                text = "الجنس 👤",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                val isMale = gender != "female"
+                val isFemale = gender == "female"
+
+                // Male Option
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isMale) Gor3aTealPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                        .border(
+                            width = if (isMale) 2.dp else 1.dp,
+                            color = if (isMale) Gor3aTealPrimary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .clickable { onGenderChange("male") }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "ذكر 👨",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = if (isMale) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isMale) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                        if (isMale) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("✓", color = Gor3aTealPrimary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                // Female Option
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isFemale) Gor3aTealPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                        .border(
+                            width = if (isFemale) 2.dp else 1.dp,
+                            color = if (isFemale) Gor3aTealPrimary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .clickable { onGenderChange("female") }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "أنثى 👩",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = if (isFemale) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isFemale) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                        if (isFemale) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("✓", color = Gor3aTealPrimary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
 
         // Governorate Dropdown Trigger
         Column {
@@ -322,13 +445,22 @@ private fun AuthRegisterView(
 
         // Error message
         if (!errorMessage.isNullOrBlank()) {
-            Text(
-                text = errorMessage,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
+                    .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                    .padding(10.dp)
+            ) {
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
                 )
-            )
+            }
         }
 
         // Submit Button
@@ -443,12 +575,16 @@ private fun AuthRegisterView(
 @Composable
 private fun AuthLoginView(
     phone: String,
+    password: String,
     isLoading: Boolean,
     errorMessage: String?,
     onPhoneChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
     onSubmit: () -> Unit,
     onSwitchToRegister: () -> Unit
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // Title
         Row(
@@ -467,7 +603,7 @@ private fun AuthLoginView(
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
-                    text = "تسجيل الدخول برقم الهاتف",
+                    text = "تسجيل الدخول",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = Gor3aTealDark,
@@ -475,7 +611,7 @@ private fun AuthLoginView(
                     )
                 )
                 Text(
-                    text = "للوصول إلى روشتاتك وتاريخك الطبي السحابي",
+                    text = "أدخل رقم الهاتف وكلمة المرور للوصول لحسابك",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -499,15 +635,53 @@ private fun AuthLoginView(
             )
         )
 
+        // Password Input
+        OutlinedTextField(
+            value = password,
+            onValueChange = onPasswordChange,
+            label = { Text("كلمة المرور") },
+            placeholder = { Text("••••••••") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                Box(
+                    modifier = Modifier
+                        .clickable { passwordVisible = !passwordVisible }
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = if (passwordVisible) "👁️" else "🔒",
+                        fontSize = 18.sp
+                    )
+                }
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Gor3aTealPrimary,
+                focusedLabelColor = Gor3aTealPrimary
+            )
+        )
+
         // Error message
         if (!errorMessage.isNullOrBlank()) {
-            Text(
-                text = errorMessage,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
+                    .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                    .padding(10.dp)
+            ) {
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
                 )
-            )
+            }
         }
 
         // Submit Button
@@ -567,6 +741,8 @@ private fun UserProfileView(
     onLogout: () -> Unit,
     onClose: () -> Unit
 ) {
+    val genderLabel = if (user.gender == "female") "أنثى 👩" else "ذكر 👨"
+
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -599,7 +775,7 @@ private fun UserProfileView(
                 )
             )
             Text(
-                text = "📍 محافظة ${user.governorate ?: "القاهرة"} • ${user.phone}",
+                text = "📍 محافظة ${user.governorate ?: "القاهرة"} • $genderLabel • ${user.phone}",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -685,3 +861,4 @@ private fun UserProfileView(
         }
     }
 }
+

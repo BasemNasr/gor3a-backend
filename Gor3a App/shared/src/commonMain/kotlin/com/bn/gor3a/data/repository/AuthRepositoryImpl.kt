@@ -83,18 +83,20 @@ class AuthRepositoryImpl(
 
     override suspend fun register(
         phone: String,
+        password: String,
         name: String,
         governorate: String,
-        age: Int?,
-        gender: String?
+        gender: String,
+        age: Int?
     ): Result<AuthResponseDto> {
         return try {
             val res = apiClient.registerUser(
                 phone = phone,
+                password = password,
                 name = name,
                 governorate = governorate,
-                age = age,
-                gender = gender
+                gender = gender,
+                age = age
             )
             if (res.success && res.token != null && res.user != null) {
                 saveSession(res.token, res.user)
@@ -105,9 +107,9 @@ class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun login(phone: String): Result<AuthResponseDto> {
+    override suspend fun login(phone: String, password: String): Result<AuthResponseDto> {
         return try {
-            val res = apiClient.loginUser(phone = phone)
+            val res = apiClient.loginUser(phone = phone, password = password)
             if (res.success && res.token != null && res.user != null) {
                 saveSession(res.token, res.user)
             }

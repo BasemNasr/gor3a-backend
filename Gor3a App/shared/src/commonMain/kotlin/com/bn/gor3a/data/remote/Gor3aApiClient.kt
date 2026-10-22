@@ -168,21 +168,31 @@ class Gor3aApiClient(
     // =========================================================================
     suspend fun registerUser(
         phone: String,
+        password: String,
         name: String,
         governorate: String = "القاهرة",
-        age: Int? = null,
-        gender: String? = null
+        gender: String = "male",
+        age: Int? = null
     ): AuthResponseDto {
         return client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
-            setBody(RegisterRequestDto(phone = phone, name = name, governorate = governorate, age = age, gender = gender))
+            setBody(
+                RegisterRequestDto(
+                    phone = phone,
+                    password = password,
+                    name = name,
+                    governorate = governorate,
+                    gender = gender,
+                    age = age
+                )
+            )
         }.body()
     }
 
-    suspend fun loginUser(phone: String): AuthResponseDto {
+    suspend fun loginUser(phone: String, password: String): AuthResponseDto {
         return client.post("$baseUrl/api/auth/login") {
             contentType(ContentType.Application.Json)
-            setBody(LoginRequestDto(phone = phone))
+            setBody(LoginRequestDto(phone = phone, password = password))
         }.body()
     }
 

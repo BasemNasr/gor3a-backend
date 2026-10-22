@@ -19,15 +19,17 @@ data class UserDto(
 @Serializable
 data class RegisterRequestDto(
     @SerialName("phone") val phone: String,
+    @SerialName("password") val password: String,
     @SerialName("name") val name: String,
     @SerialName("governorate") val governorate: String = "القاهرة",
-    @SerialName("age") val age: Int? = null,
-    @SerialName("gender") val gender: String? = null
+    @SerialName("gender") val gender: String = "male",
+    @SerialName("age") val age: Int? = null
 )
 
 @Serializable
 data class LoginRequestDto(
-    @SerialName("phone") val phone: String
+    @SerialName("phone") val phone: String,
+    @SerialName("password") val password: String
 )
 
 @Serializable

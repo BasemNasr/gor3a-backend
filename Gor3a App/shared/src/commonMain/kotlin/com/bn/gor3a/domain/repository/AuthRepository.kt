@@ -11,13 +11,14 @@ interface AuthRepository {
 
     suspend fun register(
         phone: String,
+        password: String,
         name: String,
         governorate: String = "القاهرة",
-        age: Int? = null,
-        gender: String? = null
+        gender: String = "male",
+        age: Int? = null
     ): Result<AuthResponseDto>
 
-    suspend fun login(phone: String): Result<AuthResponseDto>
+    suspend fun login(phone: String, password: String): Result<AuthResponseDto>
     suspend fun refreshProfile(): Result<UserDto>
     suspend fun logout()
     suspend fun getGovernorates(): List<String>

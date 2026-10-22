@@ -1531,7 +1531,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div>
               <div style="font-weight: 700; color: var(--text);">${escapeHtml(user.name || "مستخدم بدون اسم")}</div>
               ${user.age ? `<span style="font-size: 0.75rem; color: var(--text-muted);">${user.age} سنة</span>` : ''}
-              ${user.gender === 'male' ? '<span style="font-size: 0.75rem; color: #2563eb; margin-right: 4px;">ذكر</span>' : (user.gender === 'female' ? '<span style="font-size: 0.75rem; color: #db2777; margin-right: 4px;">أنثى</span>' : '')}
+              ${user.gender === 'male' ? '<span style="display: inline-block; padding: 2px 6px; border-radius: 6px; background: #eff6ff; color: #1d4ed8; font-size: 0.75rem; font-weight: 600; margin-right: 4px;">ذكر 👨</span>' : (user.gender === 'female' ? '<span style="display: inline-block; padding: 2px 6px; border-radius: 6px; background: #fdf2f8; color: #be185d; font-size: 0.75rem; font-weight: 600; margin-right: 4px;">أنثى 👩</span>' : '')}
             </div>
           </div>
         </td>

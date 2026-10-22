@@ -16,14 +16,16 @@ router = APIRouter(prefix="", tags=["auth"])
 # ==============================================================================
 class RegisterRequest(BaseModel):
     phone: str = Field(..., min_length=10, max_length=15, description="Egyptian Mobile (01xxxxxxxxx)")
+    password: str = Field(..., min_length=6, max_length=100, description="User Password (min 6 characters)")
     name: str = Field(..., min_length=2, max_length=100, description="Full Name")
     governorate: str = Field(default="القاهرة", description="Egyptian Governorate")
+    gender: str = Field(default="male", pattern="^(male|female)$", description="Gender: male or female")
     age: Optional[int] = Field(default=None, ge=1, le=120)
-    gender: Optional[str] = Field(default=None, pattern="^(male|female|other)?$")
 
 
 class LoginRequest(BaseModel):
     phone: str = Field(..., min_length=10, max_length=15, description="Egyptian Mobile (01xxxxxxxxx)")
+    password: str = Field(..., min_length=1, max_length=100, description="User Password")
 
 
 class ProfileUpdateRequest(BaseModel):
@@ -91,59 +93,46 @@ async def get_current_user(
 @router.post("/auth/register")
 async def register_user(payload: RegisterRequest):
     """
-    Registers a new mobile app user or logs in an existing user with updated info.
+    Registers a new mobile app user with strict Egyptian phone validation, password hashing, and gender.
     Returns secure long-lived token and user profile.
     """
-    clean_phone = normalize_phone(payload.phone)
-    if len(clean_phone) < 10:
-        raise HTTPException(status_code=400, detail="يرجى إدخال رقم هاتف محمول مصري صحيح (مثال: 01012345678)")
-
-    user, token, is_new = user_service.register_or_login(
-        phone=clean_phone,
-        name=payload.name,
-        governorate=payload.governorate,
-        age=payload.age,
-        gender=payload.gender,
-    )
-
-    action_msg = "تم إنشاء حسابك بنجاح وحفظ بياناتك سحابياً ☁️✓" if is_new else "أهلاً بك مجدداً في جرعة ✓"
-
-    return {
-        "success": True,
-        "is_new_user": is_new,
-        "message": action_msg,
-        "token": token,
-        "user": user,
-    }
+    try:
+        user, token = user_service.register_user(
+            phone=payload.phone,
+            password=payload.password,
+            name=payload.name,
+            governorate=payload.governorate,
+            gender=payload.gender,
+            age=payload.age,
+        )
+        return {
+            "success": True,
+            "message": "تم إنشاء حسابك بنجاح وحفظ بياناتك سحابياً ☁️✓",
+            "token": token,
+            "user": user,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/auth/login")
 async def login_user(payload: LoginRequest):
     """
-    Logs in user with phone number.
-    If user doesn't exist yet, notifies client to collect name & governorate.
+    Logs in user with phone number and password.
     """
-    clean_phone = normalize_phone(payload.phone)
-    if len(clean_phone) < 10:
-        raise HTTPException(status_code=400, detail="رقم الهاتف غير صالح")
-
-    existing = user_service.get_user_by_phone(clean_phone)
-    if not existing:
+    try:
+        user, token = user_service.login_user(
+            phone=payload.phone,
+            password=payload.password,
+        )
         return {
-            "success": False,
-            "requires_registration": True,
-            "phone": clean_phone,
-            "message": "رقم الهاتف غير مسجل مسبقاً، يرجى استكمال بياناتك للتسجيل السحابي",
+            "success": True,
+            "message": f"مرحباً بك {user.get('name', '')} في جرعة ✓",
+            "token": token,
+            "user": user,
         }
-
-    user, token, _ = user_service.register_or_login(phone=clean_phone)
-    return {
-        "success": True,
-        "requires_registration": False,
-        "message": f"مرحباً بك {user.get('name', '')} في جرعة ✓",
-        "token": token,
-        "user": user,
-    }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/auth/me")
