@@ -31,11 +31,14 @@ async def health_check():
 
 
 @router.get("/banners", summary="Get Active Banners for Mobile Slider")
-async def get_active_banners(governorate: Optional[str] = None):
+async def get_active_banners(response: Response, governorate: Optional[str] = None):
     """
     Returns active, validly scheduled promotional and pharmacy banners for the mobile app slider.
     Can be filtered dynamically by user governorate.
     """
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     banners = banner_service.get_active_banners(governorate=governorate)
     return {
         "banners": banners,

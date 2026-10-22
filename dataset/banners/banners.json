@@ -1,21 +1,5 @@
 [
   {
-    "id": "banner-elezaby-promo",
-    "title": "خصم 15% على جميع أدويتك ومستلزماتك",
-    "subtitle": "اطلب روشتتك الآن عبر واتساب صيدليات العزبي باستخدام كود GOR3A15",
-    "image_url": "https://images.unsplash.com/photo-1586015555751-63c2c62c3e1e?auto=format&fit=crop&w=800&q=80",
-    "target_type": "all",
-    "target_governorates": [],
-    "action_type": "whatsapp",
-    "action_target": "https://wa.me/2011119011?text=مرحباً، أود طلب الأدوية بكود خصم جرعة GOR3A15",
-    "is_active": true,
-    "start_date": "2026-10-01",
-    "end_date": "2026-11-21",
-    "display_order": 1,
-    "created_at": "2026-10-21T16:00:00Z",
-    "updated_at": "2026-10-21T16:00:00Z"
-  },
-  {
     "id": "banner-seif-24h",
     "title": "توصيل روشتات مجاني 24 ساعة",
     "subtitle": "خدمة التوصيل السريع من صيدليات سيف تغطي القاهرة والجيزة والإسكندرية",
@@ -28,12 +12,12 @@
     ],
     "action_type": "phone",
     "action_target": "19199",
-    "is_active": true,
+    "is_active": false,
     "start_date": "2026-10-01",
     "end_date": "2026-12-31",
     "display_order": 2,
     "created_at": "2026-10-21T16:00:00Z",
-    "updated_at": "2026-10-21T16:00:00Z"
+    "updated_at": "2026-10-22T05:00:46.705729Z"
   },
   {
     "id": "banner-gor3a-alternatives",
@@ -49,6 +33,6 @@
     "end_date": null,
     "display_order": 3,
     "created_at": "2026-10-21T16:00:00Z",
-    "updated_at": "2026-10-21T16:00:00Z"
+    "updated_at": "2026-10-22T05:46:04.674813Z"
   }
 ]

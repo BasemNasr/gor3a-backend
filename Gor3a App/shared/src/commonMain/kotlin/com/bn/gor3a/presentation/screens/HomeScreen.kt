@@ -95,6 +95,10 @@ fun HomeScreen(
     val isArabic = currentLang.value == AppLanguage.ARABIC
     var showAuthSheet by remember { mutableStateOf(false) }
 
+    LaunchedEffect(state.currentUser?.governorate) {
+        viewModel.loadBanners(state.currentUser?.governorate)
+    }
+
     if (showAuthSheet && authViewModel != null) {
         AuthBottomSheet(
             viewModel = authViewModel,

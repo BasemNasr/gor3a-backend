@@ -57,9 +57,7 @@ class HomeViewModel(
             try {
                 val client = apiClient ?: Gor3aApiClient()
                 val fetchedBanners = client.getActiveBanners(governorate)
-                if (fetchedBanners.isNotEmpty()) {
-                    _uiState.update { it.copy(banners = fetchedBanners) }
-                }
+                _uiState.update { it.copy(banners = fetchedBanners) }
             } catch (e: Exception) {
                 println("[HomeViewModel] loadBanners error: ${e.message}")
             }
