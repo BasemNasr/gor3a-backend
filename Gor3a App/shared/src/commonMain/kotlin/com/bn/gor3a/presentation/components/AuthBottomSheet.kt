@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,14 +13,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,6 +36,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +46,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -110,6 +119,23 @@ fun AuthBottomSheet(
     val currentUser by viewModel.currentUser.collectAsState()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
 
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val scrollState = rememberScrollState()
+
+    // Automatically hide keyboard when user scrolls the sheet content
+    LaunchedEffect(scrollState.isScrollInProgress) {
+        if (scrollState.isScrollInProgress) {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        }
+    }
+
+    val dismissKeyboard: () -> Unit = {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
+
     var mode by remember(isLoggedIn) {
         mutableStateOf(if (isLoggedIn) AuthMode.PROFILE else AuthMode.REGISTER)
     }
@@ -122,7 +148,10 @@ fun AuthBottomSheet(
     var ageInput by remember { mutableStateOf(currentUser?.age?.toString() ?: "") }
 
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = {
+            dismissKeyboard()
+            onDismissRequest()
+        },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = {
@@ -139,8 +168,16 @@ fun AuthBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
+                .verticalScroll(scrollState)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    dismissKeyboard()
+                }
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 36.dp)
+                .padding(bottom = 44.dp)
         ) {
             when (mode) {
                 AuthMode.PROFILE -> {
@@ -181,6 +218,7 @@ fun AuthBottomSheet(
                         onGenderChange = { genderInput = it },
                         onAgeChange = { ageInput = it },
                         onSubmit = {
+                            dismissKeyboard()
                             viewModel.register(
                                 phone = phoneInput,
                                 password = passwordInput,
@@ -193,9 +231,11 @@ fun AuthBottomSheet(
                             )
                         },
                         onSwitchToLogin = {
+                            dismissKeyboard()
                             viewModel.clearMessages()
                             mode = AuthMode.LOGIN
-                        }
+                        },
+                        onDismissKeyboard = dismissKeyboard
                     )
                 }
 
@@ -209,6 +249,7 @@ fun AuthBottomSheet(
                         onPhoneChange = { phoneInput = it; viewModel.clearMessages() },
                         onPasswordChange = { passwordInput = it; viewModel.clearMessages() },
                         onSubmit = {
+                            dismissKeyboard()
                             viewModel.login(
                                 phone = phoneInput,
                                 password = passwordInput,
@@ -220,9 +261,11 @@ fun AuthBottomSheet(
                             )
                         },
                         onSwitchToRegister = {
+                            dismissKeyboard()
                             viewModel.clearMessages()
                             mode = AuthMode.REGISTER
-                        }
+                        },
+                        onDismissKeyboard = dismissKeyboard
                     )
                 }
             }
@@ -249,42 +292,68 @@ private fun AuthRegisterView(
     onGenderChange: (String) -> Unit,
     onAgeChange: (String) -> Unit,
     onSubmit: () -> Unit,
-    onSwitchToLogin: () -> Unit
+    onSwitchToLogin: () -> Unit,
+    onDismissKeyboard: () -> Unit
 ) {
     var showGovDialog by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        // Title & Cloud Reassurance Header
+        // Title & Cloud Reassurance Header + Dismiss Keyboard Button
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             Box(
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
                     .background(Gor3aTealPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("☁️", fontSize = 24.sp)
+                Text("☁️", fontSize = 22.sp)
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (isArabic) "إنشاء حسابك الطبي السحابي" else "Create Cloud Medical Account",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = Gor3aTealDark,
-                        fontSize = 19.sp
+                        fontSize = 17.sp
                     )
                 )
                 Text(
-                    text = if (isArabic) "احفظ روشتاتك وتاريخك الدوائي في السحابة بأمان" else "Safely backup your prescriptions & medication history",
+                    text = if (isArabic) "احفظ روشتاتك وتاريخك الدوائي بأمان" else "Safely backup prescriptions & history",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
                     )
                 )
+            }
+            Spacer(modifier = Modifier.width(6.dp))
+            // Quick Hide Keyboard Chip (ideal for iPhone/Android numeric keypad)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Gor3aTealPrimary.copy(alpha = 0.1f))
+                    .border(1.dp, Gor3aTealPrimary.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                    .clickable { onDismissKeyboard() }
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("⌨️", fontSize = 12.sp)
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = if (isArabic) "إخفاء" else "Hide",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Gor3aTealDark,
+                            fontSize = 11.sp
+                        )
+                    )
+                }
             }
         }
 
@@ -316,7 +385,7 @@ private fun AuthRegisterView(
             onValueChange = onPhoneChange,
             label = { Text(if (isArabic) "رقم الهاتف المحمول (01xxxxxxxxx)" else "Egyptian Mobile Number (01xxxxxxxxx)") },
             placeholder = { Text(if (isArabic) "مثال: 01012345678" else "e.g. 01012345678") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -332,7 +401,7 @@ private fun AuthRegisterView(
             onValueChange = onPasswordChange,
             label = { Text(if (isArabic) "كلمة المرور (6 أحرف على الأقل)" else "Password (min 6 characters)") },
             placeholder = { Text("••••••••") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 Box(
@@ -361,6 +430,7 @@ private fun AuthRegisterView(
             onValueChange = onNameChange,
             label = { Text(if (isArabic) "الاسم بالكامل" else "Full Name") },
             placeholder = { Text(if (isArabic) "مثال: أحمد محمد" else "e.g. Ahmed Mohamed") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -395,7 +465,10 @@ private fun AuthRegisterView(
                             color = if (isMale) Gor3aTealPrimary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                             shape = RoundedCornerShape(12.dp)
                         )
-                        .clickable { onGenderChange("male") }
+                        .clickable {
+                            onDismissKeyboard()
+                            onGenderChange("male")
+                        }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -425,7 +498,10 @@ private fun AuthRegisterView(
                             color = if (isFemale) Gor3aTealPrimary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                             shape = RoundedCornerShape(12.dp)
                         )
-                        .clickable { onGenderChange("female") }
+                        .clickable {
+                            onDismissKeyboard()
+                            onGenderChange("female")
+                        }
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -459,7 +535,10 @@ private fun AuthRegisterView(
                     .clip(RoundedCornerShape(12.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                    .clickable { showGovDialog = true }
+                    .clickable {
+                        onDismissKeyboard()
+                        showGovDialog = true
+                    }
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Row(
@@ -485,7 +564,11 @@ private fun AuthRegisterView(
             onValueChange = onAgeChange,
             label = { Text(if (isArabic) "العمر (اختياري)" else "Age (optional)") },
             placeholder = { Text(if (isArabic) "مثال: 32" else "e.g. 32") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                onDismissKeyboard()
+                onSubmit()
+            }),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
@@ -636,6 +719,8 @@ private fun AuthRegisterView(
                                 }
                             }
                         },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { onDismissKeyboard() }),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -723,27 +808,28 @@ private fun AuthLoginView(
     onPhoneChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onSubmit: () -> Unit,
-    onSwitchToRegister: () -> Unit
+    onSwitchToRegister: () -> Unit,
+    onDismissKeyboard: () -> Unit
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Title
+        // Title + Dismiss Keyboard Button
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             Box(
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
                     .background(Gor3aTealPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("📱", fontSize = 24.sp)
+                Text("📱", fontSize = 22.sp)
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (isArabic) "تسجيل الدخول" else "Sign In",
                     style = MaterialTheme.typography.titleMedium.copy(
@@ -753,11 +839,36 @@ private fun AuthLoginView(
                     )
                 )
                 Text(
-                    text = if (isArabic) "أدخل رقم الهاتف وكلمة المرور للوصول لحسابك" else "Enter your phone and password to access your account",
+                    text = if (isArabic) "أدخل بياناتك للوصول لروشتاتك" else "Enter details to access prescriptions",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
                 )
+            }
+            Spacer(modifier = Modifier.width(6.dp))
+            // Quick Hide Keyboard Chip
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Gor3aTealPrimary.copy(alpha = 0.1f))
+                    .border(1.dp, Gor3aTealPrimary.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                    .clickable { onDismissKeyboard() }
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("⌨️", fontSize = 12.sp)
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = if (isArabic) "إخفاء" else "Hide",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Gor3aTealDark,
+                            fontSize = 11.sp
+                        )
+                    )
+                }
             }
         }
 
@@ -767,7 +878,7 @@ private fun AuthLoginView(
             onValueChange = onPhoneChange,
             label = { Text(if (isArabic) "رقم الهاتف المحمول (01xxxxxxxxx)" else "Egyptian Mobile Number (01xxxxxxxxx)") },
             placeholder = { Text(if (isArabic) "مثال: 01012345678" else "e.g. 01012345678") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -783,7 +894,11 @@ private fun AuthLoginView(
             onValueChange = onPasswordChange,
             label = { Text(if (isArabic) "كلمة المرور" else "Password") },
             placeholder = { Text("••••••••") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                onDismissKeyboard()
+                onSubmit()
+            }),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 Box(
