@@ -845,21 +845,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const serverBanners = data.banners || [];
       const deletedIds = new Set(getDeletedBannerIds());
 
-      // Filter out any banner explicitly deleted in this browser
-      const validServerBanners = serverBanners.filter((b) => !deletedIds.has(b.id));
-
-      const localBanners = getLocalBanners();
-      if (Array.isArray(localBanners)) {
-        const localMap = new Map(localBanners.map((b) => [b.id, b]));
-        bannersList = localBanners.filter((b) => !deletedIds.has(b.id));
-        validServerBanners.forEach((sb) => {
-          if (!localMap.has(sb.id) && !deletedIds.has(sb.id)) {
-            bannersList.push(sb);
-          }
-        });
-      } else {
-        bannersList = validServerBanners;
+      // Filter out any banner explicitly deleted in this browser and ensure server deletes them too
+      const pendingServerDeletes = serverBanners.filter((b) => deletedIds.has(b.id));
+      for (const delBanner of pendingServerDeletes) {
+        fetch(`/api/admin/banners/${delBanner.id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }).catch(() => {});
       }
+
+      const validServerBanners = serverBanners.filter((b) => !deletedIds.has(b.id));
+      bannersList = validServerBanners;
 
       saveLocalBanners(bannersList);
       updateBannerStats();

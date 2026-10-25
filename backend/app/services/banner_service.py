@@ -72,9 +72,15 @@ class BannerService:
 
     def _reload_if_needed(self):
         """Always ensures memory reflects the latest state and filters deleted banners."""
+        deleted = self._get_deleted_ids()
         if supabase_service.is_configured():
             cloud_banners = supabase_service.fetch_all_banners()
             if cloud_banners is not None:
+                if deleted:
+                    for b in cloud_banners:
+                        if b.get("id") in deleted:
+                            supabase_service.delete_banner(b["id"])
+                    cloud_banners = [b for b in cloud_banners if b.get("id") not in deleted]
                 self._banners = cloud_banners
                 return
 
@@ -84,15 +90,17 @@ class BannerService:
                     self._banners = json.load(f)
             except Exception:
                 pass
-        deleted = self._get_deleted_ids()
         if deleted:
             self._banners = [b for b in self._banners if b.get("id") not in deleted]
 
     def _load(self):
-        """Loads banners from Supabase Cloud DB or disk or initializes defaults."""
+        """Loads banners from Supabase Cloud DB or disk."""
+        deleted = self._get_deleted_ids()
         if supabase_service.is_configured():
             cloud_banners = supabase_service.fetch_all_banners()
             if cloud_banners is not None:
+                if deleted:
+                    cloud_banners = [b for b in cloud_banners if b.get("id") not in deleted]
                 self._banners = cloud_banners
                 logger.info(f"Loaded {len(self._banners)} banners from Supabase Cloud DB")
                 self._save()
@@ -108,7 +116,6 @@ class BannerService:
             try:
                 with open(source_path, "r", encoding="utf-8") as f:
                     self._banners = json.load(f)
-                deleted = self._get_deleted_ids()
                 if deleted:
                     self._banners = [b for b in self._banners if b.get("id") not in deleted]
                 logger.info(f"Loaded {len(self._banners)} banners from {source_path}")
@@ -116,25 +123,8 @@ class BannerService:
             except Exception as e:
                 logger.warning(f"Failed to read banners from {source_path}: {e}")
 
-        # Fallback default seed
-        self._banners = [
-            {
-                "id": "banner-elezaby-promo",
-                "title": "خصم 15% على جميع أدويتك ومستلزماتك",
-                "subtitle": "اطلب روشتتك الآن عبر واتساب صيدليات العزبي باستخدام كود GOR3A15",
-                "image_url": "https://images.unsplash.com/photo-1586015555751-63c2c62c3e1e?auto=format&fit=crop&w=800&q=80",
-                "target_type": "all",
-                "target_governorates": [],
-                "action_type": "whatsapp",
-                "action_target": "https://wa.me/2011119011?text=مرحباً، أود طلب الأدوية بكود خصم جرعة GOR3A15",
-                "is_active": True,
-                "start_date": "2026-10-01",
-                "end_date": "2026-12-31",
-                "display_order": 1,
-                "created_at": datetime.datetime.utcnow().isoformat() + "Z",
-                "updated_at": datetime.datetime.utcnow().isoformat() + "Z",
-            }
-        ]
+        # Default to empty list so the mobile app shows its built-in default welcome banner
+        self._banners = []
 
     def _save(self) -> bool:
         """Persists banners to disk (local project root or serverless /tmp)."""
@@ -403,19 +393,37 @@ class BannerService:
 
     def sync_banners(self, new_banners: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Replaces the active banners with a synchronized list from admin."""
-        self._banners = list(new_banners)
-        # Any default banner not present in synchronized list is permanently recorded as deleted
+        cleaned_banners = [supabase_service._clean_banner(b) for b in new_banners if isinstance(b, dict) and b.get("id")]
+        new_ids = {b.get("id") for b in cleaned_banners}
+
+        # Any existing banner not present in synchronized list is permanently recorded as deleted
+        for existing in self._banners:
+            eid = existing.get("id")
+            if eid and eid not in new_ids:
+                self._record_deleted_id(eid)
+
         try:
             if DEFAULT_BANNERS_PATH.exists():
                 with open(DEFAULT_BANNERS_PATH, "r", encoding="utf-8") as f:
                     default_items = json.load(f)
-                new_ids = {b.get("id") for b in new_banners if b.get("id")}
                 for item in default_items:
                     item_id = item.get("id")
                     if item_id and item_id not in new_ids:
                         self._record_deleted_id(item_id)
         except Exception:
             pass
+
+        if supabase_service.is_configured():
+            cloud_items = supabase_service.fetch_all_banners() or []
+            for item in cloud_items:
+                cid = item.get("id")
+                if cid and cid not in new_ids:
+                    self._record_deleted_id(cid)
+                    supabase_service.delete_banner(cid)
+            for b in cleaned_banners:
+                supabase_service.upsert_banner(b)
+
+        self._banners = cleaned_banners
         self._save()
         return self._banners
 

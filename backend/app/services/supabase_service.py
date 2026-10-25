@@ -156,6 +156,26 @@ class SupabaseService:
     # --------------------------------------------------------------------------
     # Promotional Banners Management
     # --------------------------------------------------------------------------
+    _BANNER_COLUMNS = {
+        "id",
+        "title",
+        "subtitle",
+        "image_url",
+        "target_type",
+        "target_governorates",
+        "action_type",
+        "action_target",
+        "is_active",
+        "start_date",
+        "end_date",
+        "display_order",
+        "created_at",
+        "updated_at",
+    }
+
+    def _clean_banner(self, banner: Dict[str, Any]) -> Dict[str, Any]:
+        return {k: v for k, v in banner.items() if k in self._BANNER_COLUMNS}
+
     def fetch_all_banners(self) -> Optional[List[Dict[str, Any]]]:
         if not self.is_configured():
             return None
@@ -176,10 +196,11 @@ class SupabaseService:
         if not self.is_configured():
             return False
         try:
+            payload = self._clean_banner(banner)
             with httpx.Client(timeout=self.timeout) as client:
                 res = client.post(
                     f"{self.url}/rest/v1/banners",
-                    json=banner,
+                    json=payload,
                     headers=self._headers(),
                 )
                 if res.is_success:
@@ -189,14 +210,35 @@ class SupabaseService:
             logger.warning(f"[Supabase] insert_banner exception: {e}")
         return False
 
+    def upsert_banner(self, banner: Dict[str, Any]) -> bool:
+        if not self.is_configured():
+            return False
+        try:
+            payload = self._clean_banner(banner)
+            headers = self._headers()
+            headers["Prefer"] = "resolution=merge-duplicates,return=representation"
+            with httpx.Client(timeout=self.timeout) as client:
+                res = client.post(
+                    f"{self.url}/rest/v1/banners",
+                    json=payload,
+                    headers=headers,
+                )
+                if res.is_success:
+                    return True
+                logger.warning(f"[Supabase] upsert_banner failed: {res.status_code} - {res.text}")
+        except Exception as e:
+            logger.warning(f"[Supabase] upsert_banner exception: {e}")
+        return False
+
     def update_banner(self, banner_id: str, updates: Dict[str, Any]) -> bool:
         if not self.is_configured():
             return False
         try:
+            payload = self._clean_banner(updates)
             with httpx.Client(timeout=self.timeout) as client:
                 res = client.patch(
                     f"{self.url}/rest/v1/banners?id=eq.{banner_id}",
-                    json=updates,
+                    json=payload,
                     headers=self._headers(),
                 )
                 if res.is_success:
