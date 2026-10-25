@@ -1,15 +1,22 @@
 package com.bn.gor3a.data.repository
 
+import com.bn.gor3a.core.preferences.PlatformPreferences
 import com.bn.gor3a.data.local.LocalPrescriptionDataSource
 import com.bn.gor3a.data.mapper.toDomain
 import com.bn.gor3a.data.remote.Gor3aApiClient
+import com.bn.gor3a.data.remote.dto.CloudPrescriptionItemDto
 import com.bn.gor3a.domain.model.CandidateMatch
 import com.bn.gor3a.domain.model.ExtractedMedication
 import com.bn.gor3a.domain.model.PatientInfo
 import com.bn.gor3a.domain.model.PrescriptionAnalysisResult
 import com.bn.gor3a.domain.model.SavedPrescription
+import com.bn.gor3a.domain.model.encodeImageBase64
 import com.bn.gor3a.domain.repository.PrescriptionRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 class PrescriptionRepositoryImpl(
     private val apiClient: Gor3aApiClient,
@@ -57,10 +64,45 @@ class PrescriptionRepositoryImpl(
 
     override suspend fun savePrescription(prescription: SavedPrescription) {
         localDataSource.savePrescription(prescription)
+
+        val token = PlatformPreferences.getString("gor3a_user_auth_token", "").trim()
+        if (token.isNotEmpty()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val b64 = prescription.imageBase64 ?: encodeImageBase64(prescription.resolveImageBytes())
+                    val dto = CloudPrescriptionItemDto(
+                        id = prescription.id,
+                        title = prescription.title,
+                        date = prescription.date,
+                        diagnosis = prescription.diagnosis,
+                        patientAge = prescription.patientAge,
+                        patientWeight = prescription.patientWeight,
+                        medicationsCount = prescription.medications.size.coerceAtLeast(prescription.medicationsCount),
+                        medications = prescription.medications,
+                        imageUrl = b64,
+                        imageBase64 = b64
+                    )
+                    apiClient.syncPrescriptions(token, listOf(dto))
+                } catch (e: Exception) {
+                    println("[PrescriptionRepo] Cloud sync on save failed: ${e.message}")
+                }
+            }
+        }
     }
 
     override suspend fun deletePrescription(id: String) {
         localDataSource.deletePrescription(id)
+
+        val token = PlatformPreferences.getString("gor3a_user_auth_token", "").trim()
+        if (token.isNotEmpty()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    apiClient.deleteCloudPrescription(token, id)
+                } catch (e: Exception) {
+                    println("[PrescriptionRepo] Cloud delete failed: ${e.message}")
+                }
+            }
+        }
     }
 
     override suspend fun getSamplePrescriptionBytes(): ByteArray {

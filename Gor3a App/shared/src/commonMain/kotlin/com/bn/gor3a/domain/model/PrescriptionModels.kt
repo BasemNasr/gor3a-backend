@@ -1,7 +1,35 @@
 package com.bn.gor3a.domain.model
 
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+
+@OptIn(ExperimentalEncodingApi::class)
+fun encodeImageBase64(bytes: ByteArray?): String? {
+    if (bytes == null || bytes.isEmpty()) return null
+    return try {
+        Base64.encode(bytes)
+    } catch (_: Exception) {
+        null
+    }
+}
+
+@OptIn(ExperimentalEncodingApi::class)
+fun decodeImageBase64(raw: String?): ByteArray? {
+    if (raw.isNullOrBlank()) return null
+    val clean = raw.substringAfter("base64,", raw).trim()
+    if (clean.isEmpty()) return null
+    return try {
+        Base64.Mime.decode(clean)
+    } catch (_: Exception) {
+        try {
+            Base64.decode(clean)
+        } catch (_: Exception) {
+            null
+        }
+    }
+}
 
 @Serializable
 data class PatientInfo(
@@ -78,9 +106,17 @@ data class SavedPrescription(
     val patientWeight: String? = null,
     val medicationsCount: Int = 0,
     val medications: List<ExtractedMedication> = emptyList(),
+    val imageBase64: String? = null,
     @Transient
     val prescriptionImageBytes: ByteArray? = null
 ) {
+    fun resolveImageBytes(): ByteArray? {
+        if (prescriptionImageBytes != null && prescriptionImageBytes.isNotEmpty()) {
+            return prescriptionImageBytes
+        }
+        return decodeImageBase64(imageBase64)
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false
@@ -93,6 +129,7 @@ data class SavedPrescription(
         if (patientWeight != other.patientWeight) return false
         if (medicationsCount != other.medicationsCount) return false
         if (medications != other.medications) return false
+        if (imageBase64 != other.imageBase64) return false
         if (prescriptionImageBytes != null) {
             if (other.prescriptionImageBytes == null) return false
             if (!prescriptionImageBytes.contentEquals(other.prescriptionImageBytes)) return false
@@ -109,6 +146,7 @@ data class SavedPrescription(
         result = 31 * result + (patientWeight?.hashCode() ?: 0)
         result = 31 * result + medicationsCount
         result = 31 * result + medications.hashCode()
+        result = 31 * result + (imageBase64?.hashCode() ?: 0)
         result = 31 * result + (prescriptionImageBytes?.contentHashCode() ?: 0)
         return result
     }

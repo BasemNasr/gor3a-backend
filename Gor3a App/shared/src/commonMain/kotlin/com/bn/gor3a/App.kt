@@ -40,7 +40,9 @@ import com.bn.gor3a.presentation.viewmodel.ScannerEffect
 import com.bn.gor3a.presentation.viewmodel.ScannerViewModel
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.svg.SvgDecoder
+import com.bn.gor3a.data.remote.createPlatformHttpClient
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -50,6 +52,7 @@ fun App() {
     setSingletonImageLoaderFactory { context ->
         ImageLoader.Builder(context)
             .components {
+                add(KtorNetworkFetcherFactory(httpClient = { createPlatformHttpClient() }))
                 add(SvgDecoder.Factory())
             }
             .build()
@@ -156,9 +159,14 @@ private fun AppNavigationContent() {
         scannerViewModel.effects.collectLatest { effect ->
             when (effect) {
                 is ScannerEffect.NavigateToResults -> {
-                    resultsViewModel.setAnalysisResult(effect.result, effect.imageBytes)
-                    // Remove ScanningAnimation so back button takes user directly to Scanner/Home
-                    while (backStack.isNotEmpty() && backStack.lastOrNull() == Screen.ScanningAnimation) {
+                    resultsViewModel.setAnalysisResult(
+                        result = effect.result,
+                        imageBytes = effect.imageBytes,
+                        existingPrescriptionId = null,
+                        isAlreadySaved = false
+                    )
+                    // Remove ScanningAnimation and Scanner so back button takes user directly to Home
+                    while (backStack.isNotEmpty() && (backStack.lastOrNull() == Screen.ScanningAnimation || backStack.lastOrNull() == Screen.Scanner)) {
                         backStack.removeAt(backStack.lastIndex)
                     }
                     navigateTo(Screen.Results)
@@ -224,7 +232,12 @@ private fun AppNavigationContent() {
                     onSelectPrescription = { rx ->
                         // Open saved prescription into Results Screen
                         val analysisResult = rx.toAnalysisResult()
-                        resultsViewModel.setAnalysisResult(analysisResult, rx.prescriptionImageBytes)
+                        resultsViewModel.setAnalysisResult(
+                            result = analysisResult,
+                            imageBytes = rx.resolveImageBytes(),
+                            existingPrescriptionId = rx.id,
+                            isAlreadySaved = true
+                        )
                         navigateTo(Screen.Results)
                     }
                 )
@@ -343,7 +356,12 @@ private fun AppNavigationContent() {
                     },
                     onSelectPrescription = { rx ->
                         val analysisResult = rx.toAnalysisResult()
-                        resultsViewModel.setAnalysisResult(analysisResult, rx.prescriptionImageBytes)
+                        resultsViewModel.setAnalysisResult(
+                            result = analysisResult,
+                            imageBytes = rx.resolveImageBytes(),
+                            existingPrescriptionId = rx.id,
+                            isAlreadySaved = true
+                        )
                         navigateTo(Screen.Results)
                     }
                 )

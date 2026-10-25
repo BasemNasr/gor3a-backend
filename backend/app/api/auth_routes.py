@@ -44,6 +44,8 @@ class PrescriptionSyncItem(BaseModel):
     patient_weight: Optional[str] = None
     medications_count: Optional[int] = 0
     medications: List[Dict[str, Any]] = Field(default_factory=list)
+    image_url: Optional[str] = None
+    image_base64: Optional[str] = None
     created_at: Optional[str] = None
 
 

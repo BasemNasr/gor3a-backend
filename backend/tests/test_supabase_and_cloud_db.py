@@ -47,3 +47,31 @@ def test_supabase_service_configured_mock():
         assert svc.delete_user("usr-2") is True
         assert svc.delete_banner("ban-1") is True
         assert svc.delete_prescription("rx-1", "usr-1") is True
+
+
+def test_user_service_sync_prescriptions_preserves_image_base64():
+    with patch("backend.app.services.user_service.supabase_service") as mock_supa, \
+         patch.object(UserService, "_load"), \
+         patch.object(UserService, "_reload_if_needed"), \
+         patch.object(UserService, "_save_prescriptions"):
+        mock_supa.is_configured.return_value = False
+        svc = UserService()
+
+        synced = svc.sync_user_prescriptions("usr-test-1", [
+            {
+                "id": "rx_test_100",
+                "title": "روشتة تجريبية",
+                "doctorName": "د. أحمد",
+                "date": "25/10/2026",
+                "medicationsCount": 1,
+                "medications": [{"englishName": "Panadol"}],
+                "imageBase64": "YWJjMTIz",
+                "createdAt": 1700000000000,
+            }
+        ])
+        assert len(synced) == 1
+        assert synced[0]["id"] == "rx_test_100"
+        assert synced[0]["image_url"] == "YWJjMTIz"
+
+
+

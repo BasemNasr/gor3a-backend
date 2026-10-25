@@ -491,6 +491,14 @@ class UserService:
 
         for item in incoming_prescriptions:
             rx_id = item.get("id") or f"rx-{uuid.uuid4().hex[:8]}"
+            prev = existing_map.get(rx_id, {})
+            img_val = (
+                item.get("image_url")
+                or item.get("image_base64")
+                or item.get("imageUrl")
+                or item.get("imageBase64")
+                or prev.get("image_url")
+            )
             entry = {
                 "id": rx_id,
                 "user_id": user_id,
@@ -501,7 +509,8 @@ class UserService:
                 "patient_weight": item.get("patient_weight"),
                 "medications_count": item.get("medications_count", len(item.get("medications", []))),
                 "medications": item.get("medications", []),
-                "created_at": item.get("created_at") or existing_map.get(rx_id, {}).get("created_at") or now_iso,
+                "image_url": img_val,
+                "created_at": item.get("created_at") or prev.get("created_at") or now_iso,
                 "updated_at": now_iso,
             }
             existing_map[rx_id] = entry

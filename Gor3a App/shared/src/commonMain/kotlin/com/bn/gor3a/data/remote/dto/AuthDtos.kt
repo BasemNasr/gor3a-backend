@@ -1,5 +1,6 @@
 package com.bn.gor3a.data.remote.dto
 
+import com.bn.gor3a.domain.model.ExtractedMedication
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -65,12 +66,21 @@ data class CloudPrescriptionItemDto(
     @SerialName("patient_age") val patientAge: String? = null,
     @SerialName("patient_weight") val patientWeight: String? = null,
     @SerialName("medications_count") val medicationsCount: Int = 0,
+    @SerialName("medications") val medications: List<ExtractedMedication> = emptyList(),
+    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("image_base64") val imageBase64: String? = null,
     @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class PrescriptionsSyncRequestDto(
+    @SerialName("prescriptions") val prescriptions: List<CloudPrescriptionItemDto>
 )
 
 @Serializable
 data class CloudPrescriptionsResponseDto(
     @SerialName("success") val success: Boolean = false,
     @SerialName("count") val count: Int = 0,
-    @SerialName("message") val message: String? = null
+    @SerialName("message") val message: String? = null,
+    @SerialName("prescriptions") val prescriptions: List<CloudPrescriptionItemDto> = emptyList()
 )

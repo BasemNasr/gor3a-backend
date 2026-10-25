@@ -2,11 +2,13 @@ package com.bn.gor3a.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bn.gor3a.data.local.LocalPrescriptionDataSource
 import com.bn.gor3a.domain.model.DrugAlternatives
 import com.bn.gor3a.domain.model.DrugDetails
 import com.bn.gor3a.domain.model.ExtractedMedication
 import com.bn.gor3a.domain.model.PrescriptionAnalysisResult
 import com.bn.gor3a.domain.model.SavedPrescription
+import com.bn.gor3a.domain.model.encodeImageBase64
 import com.bn.gor3a.domain.usecase.GetDrugAlternativesUseCase
 import com.bn.gor3a.domain.usecase.GetDrugDetailsUseCase
 import com.bn.gor3a.domain.usecase.SavePrescriptionUseCase
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ResultsUiState(
+    val currentPrescriptionId: String? = null,
     val analysisResult: PrescriptionAnalysisResult? = null,
     val prescriptionImageBytes: ByteArray? = null,
     val isViewingPrescriptionImage: Boolean = false,
@@ -30,6 +33,7 @@ data class ResultsUiState(
         if (this === other) return true
         if (other == null || this::class != other::class) return false
         other as ResultsUiState
+        if (currentPrescriptionId != other.currentPrescriptionId) return false
         if (analysisResult != other.analysisResult) return false
         if (isViewingPrescriptionImage != other.isViewingPrescriptionImage) return false
         if (isSaved != other.isSaved) return false
@@ -45,7 +49,8 @@ data class ResultsUiState(
     }
 
     override fun hashCode(): Int {
-        var result = analysisResult?.hashCode() ?: 0
+        var result = currentPrescriptionId?.hashCode() ?: 0
+        result = 31 * result + (analysisResult?.hashCode() ?: 0)
         result = 31 * result + (prescriptionImageBytes?.contentHashCode() ?: 0)
         result = 31 * result + isViewingPrescriptionImage.hashCode()
         result = 31 * result + isSaved.hashCode()
@@ -60,18 +65,32 @@ data class ResultsUiState(
 class ResultsViewModel(
     private val savePrescriptionUseCase: SavePrescriptionUseCase,
     private val getDrugDetailsUseCase: GetDrugDetailsUseCase,
-    private val getDrugAlternativesUseCase: GetDrugAlternativesUseCase
+    private val getDrugAlternativesUseCase: GetDrugAlternativesUseCase,
+    private val localDataSource: LocalPrescriptionDataSource? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ResultsUiState())
     val uiState: StateFlow<ResultsUiState> = _uiState.asStateFlow()
 
-    fun setAnalysisResult(result: PrescriptionAnalysisResult, imageBytes: ByteArray? = null) {
+    fun setAnalysisResult(
+        result: PrescriptionAnalysisResult,
+        imageBytes: ByteArray? = null,
+        existingPrescriptionId: String? = null,
+        isAlreadySaved: Boolean = false
+    ) {
+        val resolvedBytes = if (imageBytes != null && imageBytes.isNotEmpty()) {
+            imageBytes
+        } else if (existingPrescriptionId != null) {
+            localDataSource?.getPrescriptionImageBytes(existingPrescriptionId)
+        } else {
+            null
+        }
         _uiState.update {
             it.copy(
+                currentPrescriptionId = existingPrescriptionId,
                 analysisResult = result,
-                prescriptionImageBytes = imageBytes,
-                isSaved = false,
+                prescriptionImageBytes = resolvedBytes,
+                isSaved = isAlreadySaved,
                 isViewingPrescriptionImage = false
             )
         }
@@ -84,10 +103,11 @@ class ResultsViewModel(
     fun saveCurrentPrescription() {
         val result = _uiState.value.analysisResult ?: return
         val currentImageBytes = _uiState.value.prescriptionImageBytes
+        val rxId = _uiState.value.currentPrescriptionId ?: ("rx-" + (1000..9999).random())
         viewModelScope.launch {
             val title = result.overallDiagnosis ?: "روشتة جديدة"
             val saved = SavedPrescription(
-                id = "rx-" + (1000..9999).random(),
+                id = rxId,
                 title = title,
                 date = "اليوم",
                 diagnosis = result.overallDiagnosis,
@@ -95,10 +115,11 @@ class ResultsViewModel(
                 patientWeight = result.patient.weightKg?.let { "$it كجم" },
                 medicationsCount = result.medications.size,
                 medications = result.medications,
+                imageBase64 = encodeImageBase64(currentImageBytes),
                 prescriptionImageBytes = currentImageBytes
             )
             savePrescriptionUseCase(saved)
-            _uiState.update { it.copy(isSaved = true) }
+            _uiState.update { it.copy(isSaved = true, currentPrescriptionId = rxId) }
         }
     }
 

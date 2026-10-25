@@ -5,11 +5,14 @@ import com.bn.gor3a.data.remote.dto.AnalysisResponseDto
 import com.bn.gor3a.data.remote.dto.AuthResponseDto
 import com.bn.gor3a.data.remote.dto.BannerDto
 import com.bn.gor3a.data.remote.dto.BannersResponseDto
+import com.bn.gor3a.data.remote.dto.CloudPrescriptionItemDto
+import com.bn.gor3a.data.remote.dto.CloudPrescriptionsResponseDto
 import com.bn.gor3a.data.remote.dto.DrugAlternativesResponseDto
 import com.bn.gor3a.data.remote.dto.DrugDetailsResponseDto
 import com.bn.gor3a.data.remote.dto.GovernoratesResponseDto
 import com.bn.gor3a.data.remote.dto.HealthResponseDto
 import com.bn.gor3a.data.remote.dto.LoginRequestDto
+import com.bn.gor3a.data.remote.dto.PrescriptionsSyncRequestDto
 import com.bn.gor3a.data.remote.dto.ProfileResponseDto
 import com.bn.gor3a.data.remote.dto.RegisterRequestDto
 import io.ktor.client.HttpClient
@@ -18,6 +21,7 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.delete
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
@@ -215,5 +219,28 @@ class Gor3aApiClient(
                 "مطروح", "شمال سيناء", "جنوب سيناء"
             )
         }
+    }
+
+    suspend fun syncPrescriptions(
+        token: String,
+        items: List<CloudPrescriptionItemDto>
+    ): CloudPrescriptionsResponseDto {
+        return client.post("$baseUrl/api/prescriptions/sync") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(PrescriptionsSyncRequestDto(prescriptions = items))
+        }.body()
+    }
+
+    suspend fun getCloudPrescriptions(token: String): CloudPrescriptionsResponseDto {
+        return client.get("$baseUrl/api/prescriptions/sync") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }.body()
+    }
+
+    suspend fun deleteCloudPrescription(token: String, prescriptionId: String): CloudPrescriptionsResponseDto {
+        return client.delete("$baseUrl/api/prescriptions/sync/$prescriptionId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }.body()
     }
 }
