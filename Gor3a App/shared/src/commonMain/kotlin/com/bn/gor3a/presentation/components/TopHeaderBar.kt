@@ -19,6 +19,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,20 +39,34 @@ import com.bn.gor3a.core.theme.Gor3aTealDark
 import com.bn.gor3a.core.theme.Gor3aTealPrimary
 import com.bn.gor3a.core.theme.LocalThemeIsDark
 import com.bn.gor3a.data.remote.dto.UserDto
+import com.bn.gor3a.presentation.viewmodel.AuthViewModel
 import gor3a.shared.generated.resources.Res
 import gor3a.shared.generated.resources.ic_logo
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun TopHeaderBar(
     modifier: Modifier = Modifier,
     user: UserDto? = null,
     onTitleClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: (() -> Unit)? = null
 ) {
     val currentLang = LocalAppLanguage.current
     val isDark = LocalThemeIsDark.current
     val strings = LocalStrings.current
+    val authViewModel: AuthViewModel = koinInject()
+    val authUser by authViewModel.currentUser.collectAsState()
+    val effectiveUser = user ?: authUser
+    var showInternalAuthSheet by remember { mutableStateOf(false) }
+
+    if (showInternalAuthSheet) {
+        AuthBottomSheet(
+            viewModel = authViewModel,
+            onDismissRequest = { showInternalAuthSheet = false }
+        )
+    }
 
     Row(
         modifier = modifier
@@ -109,25 +128,31 @@ fun TopHeaderBar(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(if (user != null) Gor3aTealPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant)
+                    .background(if (effectiveUser != null) Gor3aTealPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant)
                     .border(
                         1.dp,
-                        if (user != null) Gor3aTealPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                        if (effectiveUser != null) Gor3aTealPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
                         RoundedCornerShape(16.dp)
                     )
-                    .clickable { onProfileClick() }
+                    .clickable {
+                        if (onProfileClick != null) {
+                            onProfileClick()
+                        } else {
+                            showInternalAuthSheet = true
+                        }
+                    }
                     .padding(horizontal = 10.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (user != null) {
-                        "👤 ${user.name.split(" ").firstOrNull() ?: user.name}"
+                    text = if (effectiveUser != null) {
+                        "👤 ${effectiveUser.name.split(" ").firstOrNull() ?: effectiveUser.name}"
                     } else {
                         if (strings.isArabic) "👤 دخول" else "👤 Sign In"
                     },
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = if (user != null) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface,
+                        color = if (effectiveUser != null) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp
                     )
                 )
