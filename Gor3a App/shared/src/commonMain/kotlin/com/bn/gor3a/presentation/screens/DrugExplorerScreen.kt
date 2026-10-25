@@ -40,11 +40,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.bn.gor3a.core.localization.LocalStrings
 import com.bn.gor3a.core.navigation.PlatformBackHandler
+import com.bn.gor3a.core.theme.Gor3aTealContainer
 import com.bn.gor3a.core.theme.Gor3aTealDark
 import com.bn.gor3a.core.theme.Gor3aTealPrimary
 import com.bn.gor3a.data.remote.Gor3aApiClient
@@ -325,32 +327,33 @@ private fun DrugExplorerRow(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalStrings.current
+    val drug = drugCard.drug
+    val pricing = drugCard.pricing
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
             .clickable { onClick() }
-            .padding(14.dp)
+            .padding(12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Drug Icon / Packaging Thumbnail (Full Card of Image Container)
-            val img = drugCard.drug.imageUrl
+            // Drug Packaging Thumbnail
+            val img = drug.imageUrl
             Box(
                 modifier = Modifier
-                    .width(78.dp)
-                    .height(52.dp)
+                    .size(68.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                    .background(Color.White)
+                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                     .clickable {
                         if (!img.isNullOrBlank()) {
-                            onImageClick(img, drugCard.drug.commercialNameEn)
+                            onImageClick(img, drug.commercialNameEn)
                         } else {
                             onClick()
                         }
@@ -360,70 +363,164 @@ private fun DrugExplorerRow(
                 if (!img.isNullOrBlank()) {
                     AsyncImage(
                         model = img,
-                        contentDescription = drugCard.drug.commercialNameEn,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        contentDescription = drug.commercialNameEn,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(4.dp)
                     )
                 } else {
-                    Text(text = "💊", fontSize = 22.sp)
+                    Text(text = "💊", fontSize = 24.sp)
                 }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = drugCard.drug.commercialNameEn,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    DosageTagPill(form = drugCard.drug.dosageForm)
-                }
-
-                if (!drugCard.drug.commercialNameAr.isNullOrBlank()) {
-                    Text(
-                        text = drugCard.drug.commercialNameAr,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp
-                        )
-                    )
-                }
-
+            // Center Info Column
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                // English Commercial Name
                 Text(
-                    text = drugCard.drug.genericName,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        fontSize = 11.sp
-                    )
+                    text = drug.commercialNameEn,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+
+                // Arabic Commercial Name
+                if (!drug.commercialNameAr.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = drug.commercialNameAr,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = Gor3aTealDark,
+                            fontSize = 12.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Dosage Tag Pill & Strength (Clean dedicated line - NEVER squished!)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    DosageTagPill(form = drug.dosageForm)
+
+                    val strength = drug.strength?.trim()
+                    if (!strength.isNullOrBlank() && !strength.equals("unspecified", ignoreCase = true)) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                                .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = strength,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+
+                // Active Generic / Ingredient (Omitted if missing or "unspecified", capped at 1 line with ellipsis)
+                val generic = drug.genericName.trim()
+                val isValidGeneric = generic.isNotBlank() &&
+                    !generic.equals("unspecified", ignoreCase = true) &&
+                    !generic.equals("none", ignoreCase = true)
+                if (isValidGeneric) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = generic,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            fontSize = 10.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
-            // Price column
-            Column(horizontalAlignment = Alignment.End) {
-                val price = drugCard.pricing?.expectedPriceCurrentEgp ?: drugCard.drug.priceEgp
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Price Column (Formatted without trailing .0, clean pill container)
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                val price = pricing?.expectedPriceCurrentEgp ?: drug.priceEgp
                 if (price != null && price > 0) {
-                    Text(
-                        text = "$price ${strings.currencyEgp}",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Gor3aTealDark,
-                            fontSize = 13.sp
-                        )
-                    )
+                    val priceFormatted = if (price % 1.0 == 0.0) price.toLong().toString() else {
+                        val s = price.toString()
+                        if (s.contains('.')) {
+                            val parts = s.split('.')
+                            "${parts[0]}.${parts[1].take(2)}"
+                        } else s
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Gor3aTealContainer.copy(alpha = 0.5f))
+                            .border(0.5.dp, Gor3aTealPrimary.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = priceFormatted,
+                                style = MaterialTheme.typography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Gor3aTealDark,
+                                    fontSize = 14.sp
+                                )
+                            )
+                            Text(
+                                text = strings.currencyEgp,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Gor3aTealPrimary,
+                                    fontSize = 10.sp
+                                ),
+                                modifier = Modifier.padding(bottom = 1.dp)
+                            )
+                        }
+                    }
                 }
 
-                val stripPrice = drugCard.pricing?.expectedStripPriceEgp
+                val stripPrice = pricing?.expectedStripPriceEgp
                 if (stripPrice != null && stripPrice > 0) {
+                    val stripFormatted = if (stripPrice % 1.0 == 0.0) stripPrice.toLong().toString() else {
+                        val s = stripPrice.toString()
+                        if (s.contains('.')) {
+                            val parts = s.split('.')
+                            "${parts[0]}.${parts[1].take(2)}"
+                        } else s
+                    }
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "${strings.stripPriceLabel}: $stripPrice ${strings.currencyEgp}",
+                        text = "${strings.stripPriceLabel}: $stripFormatted ${strings.currencyEgp}",
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 10.sp
+                            fontSize = 9.sp
                         )
                     )
                 }

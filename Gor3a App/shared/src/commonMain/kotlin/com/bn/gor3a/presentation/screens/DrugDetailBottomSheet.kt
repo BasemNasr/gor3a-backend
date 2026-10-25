@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -37,6 +38,7 @@ import com.bn.gor3a.core.localization.LocalStrings
 import com.bn.gor3a.core.theme.Gor3aCardTint
 import com.bn.gor3a.core.theme.Gor3aSafeGreen
 import com.bn.gor3a.core.theme.Gor3aSafeGreenBg
+import com.bn.gor3a.core.theme.Gor3aTealContainer
 import com.bn.gor3a.core.theme.Gor3aTealDark
 import com.bn.gor3a.core.theme.Gor3aTealPrimary
 import com.bn.gor3a.domain.model.DrugAlternatives
@@ -338,79 +340,121 @@ private fun AlternativeDrugRow(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalStrings.current
+    val drug = drugCard.drug
+    val pricing = drugCard.pricing
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+            .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
             .padding(12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
             // Alternative packaging visual thumbnail
+            val altImg = drug.imageUrl
             Box(
                 modifier = Modifier
-                    .width(68.dp)
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                val altImg = drugCard.drug.imageUrl
                 if (!altImg.isNullOrBlank()) {
                     AsyncImage(
                         model = altImg,
-                        contentDescription = drugCard.drug.commercialNameEn,
+                        contentDescription = drug.commercialNameEn,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize().padding(2.dp)
+                        modifier = Modifier.fillMaxSize().padding(3.dp)
                     )
                 } else {
-                    Text(text = "💊", fontSize = 16.sp)
+                    Text(text = "💊", fontSize = 20.sp)
                 }
             }
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = drug.commercialNameEn,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (!drug.commercialNameAr.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = drugCard.drug.commercialNameEn,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
+                        text = drug.commercialNameAr,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = Gor3aTealDark,
+                            fontSize = 11.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    DosageTagPill(form = drugCard.drug.dosageForm)
                 }
 
-                if (!drugCard.drug.commercialNameAr.isNullOrBlank()) {
-                    Text(
-                        text = drugCard.drug.commercialNameAr,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
-                        )
-                    )
-                }
+                Spacer(modifier = Modifier.height(5.dp))
+                DosageTagPill(form = drug.dosageForm)
             }
 
+            Spacer(modifier = Modifier.width(8.dp))
+
             // Price badge
-            val price = drugCard.pricing?.expectedPriceCurrentEgp ?: drugCard.drug.priceEgp
+            val price = pricing?.expectedPriceCurrentEgp ?: drug.priceEgp
             if (price != null && price > 0) {
-                Text(
-                    text = "$price ${strings.currencyEgp}",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Gor3aTealDark,
-                        fontSize = 13.sp
-                    )
-                )
+                val priceFormatted = if (price % 1.0 == 0.0) price.toLong().toString() else {
+                    val s = price.toString()
+                    if (s.contains('.')) {
+                        val parts = s.split('.')
+                        "${parts[0]}.${parts[1].take(2)}"
+                    } else s
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Gor3aTealContainer.copy(alpha = 0.5f))
+                        .border(0.5.dp, Gor3aTealPrimary.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 7.dp, vertical = 3.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = priceFormatted,
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Gor3aTealDark,
+                                fontSize = 13.sp
+                            )
+                        )
+                        Text(
+                            text = strings.currencyEgp,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = Gor3aTealPrimary,
+                                fontSize = 10.sp
+                            ),
+                            modifier = Modifier.padding(bottom = 1.dp)
+                        )
+                    }
+                }
             }
         }
     }

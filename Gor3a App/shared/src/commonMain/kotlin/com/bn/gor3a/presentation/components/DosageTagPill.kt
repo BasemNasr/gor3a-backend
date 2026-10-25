@@ -2,9 +2,11 @@ package com.bn.gor3a.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bn.gor3a.core.localization.LocalStrings
@@ -81,16 +84,21 @@ fun DosageTagPill(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .heightIn(min = 22.dp, max = 28.dp)
+            .clip(RoundedCornerShape(10.dp))
             .background(bg)
-            .border(0.5.dp, textCol.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .border(0.5.dp, textCol.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+            .padding(horizontal = 8.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
             Text(
                 text = iconEmoji,
-                fontSize = 11.sp
+                fontSize = 11.sp,
+                maxLines = 1
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
@@ -99,7 +107,10 @@ fun DosageTagPill(
                     fontWeight = FontWeight.Bold,
                     color = textCol,
                     fontSize = 11.sp
-                )
+                ),
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

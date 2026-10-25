@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..config import PROJECT_ROOT
+from .supabase_service import supabase_service
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +125,16 @@ class UserService:
         self._load()
 
     def _reload_if_needed(self):
-        """Ensures memory reflects latest disk state in serverless environments."""
+        """Ensures memory reflects latest state in serverless environments."""
+        if supabase_service.is_configured():
+            cloud_users = supabase_service.fetch_all_users()
+            if cloud_users is not None:
+                self._users = cloud_users
+            cloud_rxs = supabase_service.fetch_all_prescriptions()
+            if cloud_rxs is not None:
+                self._prescriptions = cloud_rxs
+            return
+
         if TMP_USERS_PATH.exists():
             try:
                 with open(TMP_USERS_PATH, "r", encoding="utf-8") as f:
@@ -139,9 +149,7 @@ class UserService:
             except Exception:
                 pass
 
-    def _load(self):
-        """Loads users and cloud prescriptions from persistent files."""
-        # Load Users
+    def _load_users_from_disk(self):
         user_path = None
         if TMP_USERS_PATH.exists():
             user_path = TMP_USERS_PATH
@@ -159,7 +167,7 @@ class UserService:
         else:
             self._users = []
 
-        # Load Cloud Prescriptions
+    def _load_prescriptions_from_disk(self):
         rx_path = None
         if TMP_PRESCRIPTIONS_PATH.exists():
             rx_path = TMP_PRESCRIPTIONS_PATH
@@ -176,6 +184,32 @@ class UserService:
                 self._prescriptions = []
         else:
             self._prescriptions = []
+
+    def _load(self):
+        """Loads users and cloud prescriptions from Supabase or persistent files."""
+        # 1. Users
+        if supabase_service.is_configured():
+            cloud_users = supabase_service.fetch_all_users()
+            if cloud_users is not None:
+                self._users = cloud_users
+                logger.info(f"Loaded {len(self._users)} users from Supabase Cloud DB")
+                self._save_users()
+            else:
+                self._load_users_from_disk()
+        else:
+            self._load_users_from_disk()
+
+        # 2. Cloud Prescriptions
+        if supabase_service.is_configured():
+            cloud_rxs = supabase_service.fetch_all_prescriptions()
+            if cloud_rxs is not None:
+                self._prescriptions = cloud_rxs
+                logger.info(f"Loaded {len(self._prescriptions)} prescriptions from Supabase Cloud DB")
+                self._save_prescriptions()
+            else:
+                self._load_prescriptions_from_disk()
+        else:
+            self._load_prescriptions_from_disk()
 
     def _save_users(self) -> bool:
         """Saves users to disk and /tmp."""
@@ -265,6 +299,8 @@ class UserService:
 
         self._users.append(new_user)
         self._save_users()
+        if supabase_service.is_configured():
+            supabase_service.insert_user(new_user)
         token = create_user_token(new_id, norm_phone)
         return sanitize_user(new_user), token
 
@@ -303,6 +339,13 @@ class UserService:
         user["last_login_at"] = now_iso
         user["prescriptions_count"] = self.count_user_prescriptions(user["id"])
         self._save_users()
+        if supabase_service.is_configured():
+            supabase_service.update_user(user["id"], {
+                "last_login_at": now_iso,
+                "prescriptions_count": user["prescriptions_count"],
+                "password_hash": user.get("password_hash"),
+                "password_salt": user.get("password_salt"),
+            })
 
         token = create_user_token(user["id"], user["phone"])
         return sanitize_user(user), token
@@ -338,6 +381,8 @@ class UserService:
 
             existing["prescriptions_count"] = self.count_user_prescriptions(existing["id"])
             self._save_users()
+            if supabase_service.is_configured():
+                supabase_service.update_user(existing["id"], existing)
             token = create_user_token(existing["id"], existing["phone"])
             return existing, token, False
 
@@ -357,6 +402,8 @@ class UserService:
         }
         self._users.append(new_user)
         self._save_users()
+        if supabase_service.is_configured():
+            supabase_service.insert_user(new_user)
         token = create_user_token(new_id, norm_phone)
         return new_user, token, True
 
@@ -403,6 +450,14 @@ class UserService:
 
         user["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
         self._save_users()
+        if supabase_service.is_configured():
+            supabase_service.update_user(user_id, {
+                "name": user.get("name"),
+                "governorate": user.get("governorate"),
+                "age": user.get("age"),
+                "gender": user.get("gender"),
+                "updated_at": user["updated_at"],
+            })
         user_copy = dict(user)
         user_copy["prescriptions_count"] = self.count_user_prescriptions(user_id)
         return user_copy
@@ -457,11 +512,17 @@ class UserService:
         self._prescriptions = other_users_rxs + this_user_rxs
         self._save_prescriptions()
 
+        if supabase_service.is_configured():
+            for item in this_user_rxs:
+                supabase_service.upsert_prescription(item)
+
         # Update prescription count on user record
         user = next((u for u in self._users if u.get("id") == user_id), None)
         if user:
             user["prescriptions_count"] = len(this_user_rxs)
             self._save_users()
+            if supabase_service.is_configured():
+                supabase_service.update_user(user_id, {"prescriptions_count": len(this_user_rxs)})
 
         return sorted(this_user_rxs, key=lambda x: x.get("created_at", ""), reverse=True)
 
@@ -475,10 +536,14 @@ class UserService:
         ]
         if len(self._prescriptions) < before_count:
             self._save_prescriptions()
+            if supabase_service.is_configured():
+                supabase_service.delete_prescription(prescription_id, user_id)
             user = next((u for u in self._users if u.get("id") == user_id), None)
             if user:
                 user["prescriptions_count"] = self.count_user_prescriptions(user_id)
                 self._save_users()
+                if supabase_service.is_configured():
+                    supabase_service.update_user(user_id, {"prescriptions_count": user["prescriptions_count"]})
             return True
         return False
 

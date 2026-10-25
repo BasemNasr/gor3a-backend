@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..config import PROJECT_ROOT
+from .supabase_service import supabase_service
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,13 @@ class BannerService:
             pass
 
     def _reload_if_needed(self):
-        """Always ensures memory reflects the latest disk state and filters deleted banners."""
+        """Always ensures memory reflects the latest state and filters deleted banners."""
+        if supabase_service.is_configured():
+            cloud_banners = supabase_service.fetch_all_banners()
+            if cloud_banners is not None:
+                self._banners = cloud_banners
+                return
+
         if TMP_BANNERS_PATH.exists():
             try:
                 with open(TMP_BANNERS_PATH, "r", encoding="utf-8") as f:
@@ -82,7 +89,15 @@ class BannerService:
             self._banners = [b for b in self._banners if b.get("id") not in deleted]
 
     def _load(self):
-        """Loads banners from disk or initializes defaults."""
+        """Loads banners from Supabase Cloud DB or disk or initializes defaults."""
+        if supabase_service.is_configured():
+            cloud_banners = supabase_service.fetch_all_banners()
+            if cloud_banners is not None:
+                self._banners = cloud_banners
+                logger.info(f"Loaded {len(self._banners)} banners from Supabase Cloud DB")
+                self._save()
+                return
+
         source_path: Optional[Path] = None
         if TMP_BANNERS_PATH.exists():
             source_path = TMP_BANNERS_PATH
@@ -293,6 +308,8 @@ class BannerService:
 
         self._banners.append(new_banner)
         self._save()
+        if supabase_service.is_configured():
+            supabase_service.insert_banner(new_banner)
         return new_banner
 
     def update_banner(self, banner_id: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -335,6 +352,8 @@ class BannerService:
                 updated["updated_at"] = now_iso
                 self._banners[idx] = updated
                 self._save()
+                if supabase_service.is_configured():
+                    supabase_service.update_banner(banner_id, updated)
                 return updated
         return None
 
@@ -347,6 +366,8 @@ class BannerService:
                 b["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
                 self._banners[idx] = b
                 self._save()
+                if supabase_service.is_configured():
+                    supabase_service.update_banner(banner_id, {"is_active": b["is_active"], "updated_at": b["updated_at"]})
                 return b
         return None
 
@@ -363,7 +384,11 @@ class BannerService:
                 b["updated_at"] = datetime.datetime.utcnow().isoformat() + "Z"
 
         self._banners.sort(key=lambda x: (x.get("display_order", 999), x.get("id", "")))
-        return self._save()
+        saved = self._save()
+        if supabase_service.is_configured():
+            for b in self._banners:
+                supabase_service.update_banner(b["id"], {"display_order": b.get("display_order", 1), "updated_at": b.get("updated_at")})
+        return saved
 
     def delete_banner(self, banner_id: str) -> bool:
         """Deletes a banner by ID and records its deletion."""
@@ -372,6 +397,8 @@ class BannerService:
         initial_count = len(self._banners)
         self._banners = [b for b in self._banners if b.get("id") != banner_id]
         self._save()
+        if supabase_service.is_configured():
+            supabase_service.delete_banner(banner_id)
         return True
 
     def sync_banners(self, new_banners: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

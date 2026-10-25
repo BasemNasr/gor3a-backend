@@ -3,20 +3,16 @@ package com.bn.gor3a.core.camera
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.usePinned
-import platform.Foundation.NSData
 import platform.UIKit.UIApplication
 import platform.UIKit.UIImage
-import platform.UIKit.UIImageJPEGRepresentation
 import platform.UIKit.UIImagePickerController
 import platform.UIKit.UIImagePickerControllerDelegateProtocol
 import platform.UIKit.UIImagePickerControllerOriginalImage
 import platform.UIKit.UIImagePickerControllerSourceType
 import platform.UIKit.UINavigationControllerDelegateProtocol
 import platform.UIKit.UIViewController
+import platform.UIKit.UIWindow
 import platform.darwin.NSObject
-import platform.posix.memcpy
 
 class IosImagePickerLauncher(
     private val onImagePicked: (ByteArray) -> Unit
@@ -30,12 +26,9 @@ class IosImagePickerLauncher(
         ) {
             val image = didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage] as? UIImage
             if (image != null) {
-                val nsData = UIImageJPEGRepresentation(image, 0.85)
-                if (nsData != null) {
-                    val bytes = nsData.toByteArray()
-                    if (bytes.isNotEmpty()) {
-                        onImagePicked(bytes)
-                    }
+                val bytes = compressAndResizeUIImage(image)
+                if (bytes.isNotEmpty()) {
+                    onImagePicked(bytes)
                 }
             }
             picker.dismissViewControllerAnimated(true, null)
@@ -68,31 +61,19 @@ class IosImagePickerLauncher(
     }
 
     override fun requestCameraPermission() {
-        // iOS automatically requests camera permissions upon presenting UIImagePickerController
+        // Handled directly by CameraPreviewContainerView on iOS
     }
 
     private fun presentViewController(controller: UIViewController) {
         val root = UIApplication.sharedApplication.keyWindow?.rootViewController
-            ?: (UIApplication.sharedApplication.windows.firstOrNull() as? platform.UIKit.UIWindow)?.rootViewController
-        
+            ?: (UIApplication.sharedApplication.windows.firstOrNull() as? UIWindow)?.rootViewController
+
         var current = root
         while (current?.presentedViewController != null) {
             current = current.presentedViewController
         }
         current?.presentViewController(controller, animated = true, completion = null)
     }
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private fun NSData.toByteArray(): ByteArray {
-    val length = this.length.toInt()
-    val bytes = ByteArray(length)
-    if (length > 0) {
-        bytes.usePinned { pinned ->
-            memcpy(pinned.addressOf(0), this.bytes, this.length)
-        }
-    }
-    return bytes
 }
 
 @Composable
