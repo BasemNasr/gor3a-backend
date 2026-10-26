@@ -64,6 +64,20 @@ def test_serve_static_index():
     assert "Google Play" in response.text
     assert "App Store" in response.text
     assert "/static/screens/2.jpeg" in response.text
+    assert 'href="/privacy"' in response.text
+    assert 'href="/terms"' in response.text
+
+
+def test_serve_privacy_and_terms_pages():
+    privacy_res = client.get("/privacy")
+    assert privacy_res.status_code == 200
+    assert "Privacy Policy" in privacy_res.text
+    assert "com.bn.gor3a" in privacy_res.text
+
+    terms_res = client.get("/terms")
+    assert terms_res.status_code == 200
+    assert "Terms of Use" in terms_res.text
+    assert "Medical Disclaimer" in terms_res.text
 
 
 def test_serve_admin_with_scanner_tab():

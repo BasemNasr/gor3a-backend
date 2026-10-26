@@ -82,6 +82,23 @@ if WEB_DIR.exists() and not is_hf_space:
             return FileResponse(admin_file)
         return {"message": "Admin dashboard page not found in web/admin.html."}
 
+    @app.api_route("/privacy", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/privacy-policy", methods=["GET", "HEAD"], include_in_schema=False)
+    async def serve_privacy_page():
+        privacy_file = WEB_DIR / "privacy.html"
+        if privacy_file.exists():
+            return FileResponse(privacy_file)
+        return {"message": "Privacy policy page not found in web/privacy.html."}
+
+    @app.api_route("/terms", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/terms-of-service", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/tos", methods=["GET", "HEAD"], include_in_schema=False)
+    async def serve_terms_page():
+        terms_file = WEB_DIR / "terms.html"
+        if terms_file.exists():
+            return FileResponse(terms_file)
+        return {"message": "Terms of service page not found in web/terms.html."}
+
 
 if __name__ == "__main__":
     import uvicorn
