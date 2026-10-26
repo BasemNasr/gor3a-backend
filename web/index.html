@@ -1,717 +1,948 @@
 <!DOCTYPE html>
-<html lang="en">
+<!-- Gor3a | جرعة — Prescription AI Lab & Official Mobile App Landing Page -->
+<html lang="ar" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gor3a | جرعة — Smart Medical Prescription Scanner</title>
+  <title>Gor3a | جرعة — صحتك في أمان | المسح الذكي للروشتات الطبية ودليل الأدوية المصرية</title>
+  <meta name="description" content="تطبيق جرعة (Gor3a) — حوّل خط الطبيب اليدوي في الروشتة فوراً إلى بيانات أدوية دقيقة، تشخيص مقترح، بدائل وأسعار رسمية من قاعدة بيانات هيئة الدواء المصرية (25,098 دواء). متوفر على Google Play و App Store.">
   <link rel="icon" type="image/png" href="/static/logo.png">
-  <link rel="stylesheet" href="/static/styles.css?v=3.0">
-  <link rel="stylesheet" href="/static/drugs.css?v=3.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/landing.css?v=1.0">
 </head>
-<body>
+<body class="landing-body" dir="rtl">
 
-  <!-- Top Navigation Bar -->
-  <header class="app-header">
-    <div class="header-container">
-      <a href="/" class="brand">
-        <img src="/static/logo.png" alt="Gor3a Logo" class="brand-logo">
-        <div class="brand-text">
-          <h1>Gor3a <span style="opacity: 0.5; font-weight: 400;">|</span> جرعة</h1>
-          <span class="badge phase-badge" id="phaseBadge">AI PRESCRIPTION SCANNER • صحتك في أمان</span>
+  <!-- ===================================================================== -->
+  <!-- 1. Floating Glassmorphic Navigation Bar                               -->
+  <!-- ===================================================================== -->
+  <div class="navbar-wrapper">
+    <header class="landing-navbar" id="landingNavbar">
+      <a href="#" class="nav-brand">
+        <img src="/static/logo.png" alt="Gor3a Logo" class="nav-logo">
+        <div class="nav-brand-text">
+          <div class="nav-brand-title">
+            <span>جرعة</span>
+            <span class="brand-divider">|</span>
+            <span>Gor3a</span>
+          </div>
+          <span class="nav-brand-sub" data-ar="صحتك في أمان • AI HEALTH" data-en="YOUR HEALTH IS SAFE • AI HEALTH">صحتك في أمان • AI HEALTH</span>
         </div>
       </a>
 
-      <!-- Navigation Tabs -->
-      <nav class="nav-tabs">
-        <button type="button" class="tab-btn active" id="tabLabBtn">📷 Prescription Scanner | فحص الروشتة</button>
-        <button type="button" class="tab-btn" id="tabBenchmarkBtn" style="display: none;">📊 Model Benchmark Suite</button>
-        <button type="button" class="tab-btn" id="tabBilingualBtn" style="display: none;">📚 Bilingual Arabic Dataset & Training</button>
-        <a href="/drugs" class="tab-btn tab-link" id="tabDrugsLink" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">💊 EDA Drug Database (25,098)</a>
-      </nav>
+      <ul class="nav-links" id="navLinksList">
+        <li><a href="#features" class="nav-link" data-ar="مميزات التطبيق" data-en="Features">مميزات التطبيق</a></li>
+        <li><a href="#how-it-works" class="nav-link" data-ar="كيف يعمل؟" data-en="How It Works">كيف يعمل؟</a></li>
+        <li><a href="#screens" class="nav-link" data-ar="شاشات التطبيق" data-en="App Screens">شاشات التطبيق</a></li>
+        <li><a href="#eda-directory" class="nav-link" data-ar="دليل الأدوية (25,098)" data-en="EDA Drugs (25,098)">دليل الأدوية (25,098)</a></li>
+        <li><a href="#faq" class="nav-link" data-ar="الأسئلة الشائعة" data-en="FAQ">الأسئلة الشائعة</a></li>
+      </ul>
 
-      <div class="safety-indicator">
-        <span class="safety-dot"></span>
-        <span>Clinical Safety Verified • 25,098 EDA Drugs</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- ======================================================================= -->
-  <!-- TAB 1: Single Prescription Lab (Phase 1)                                -->
-  <!-- ======================================================================= -->
-  <main class="main-layout" id="labView">
-    
-    <!-- Left Column: Controls & Input -->
-    <section class="control-panel">
-      <div class="card">
-        <h2 class="card-title">
-          <span class="icon">📷</span>
-          1. Upload Prescription (ارفع صورة الروشتة)
-        </h2>
-        
-        <!-- Upload Box -->
-        <div class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="file-input">
-          <div class="dropzone-content" id="dropzoneContent">
-            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <p class="dropzone-text"><strong>Click to upload</strong> or drag & drop</p>
-            <p class="dropzone-sub">Egyptian handwritten prescription (JPEG, PNG, WEBP)</p>
-          </div>
-        </div>
-
-        <!-- Quick Sample Button -->
-        <div class="sample-action-row">
-          <button type="button" id="loadSampleBtn" class="btn btn-secondary btn-sm">
-            🧪 Load Sample Egyptian Prescription
-          </button>
-        </div>
-
-        <!-- Image Preview Container -->
-        <div class="preview-wrapper hidden" id="previewWrapper">
-          <div class="preview-header">
-            <span class="preview-title" id="previewFilename">prescription.jpg</span>
-            <span class="preview-meta" id="previewMeta">1200 x 800 • 450 KB</span>
-          </div>
-          <div class="preview-box">
-            <img id="prescriptionPreview" src="" alt="Prescription Preview">
-          </div>
-        </div>
-      </div>
-
-      <!-- Gor3a Secured AI Engine Configuration -->
-      <div class="card">
-        <h2 class="card-title">
-          <span class="icon">🧠</span>
-          2. Gor3a AI Clinical Engine
-        </h2>
-
-        <div class="gor3a-engine-status">
-          <div class="gor3a-engine-header">
-            <span class="gor3a-engine-title">🔒 Gor3a Vision AI + EDA Registry</span>
-            <span class="gor3a-engine-badge">SECURED</span>
-          </div>
-          <p class="gor3a-engine-desc">
-            Powered by multimodal clinical OCR &amp; cross-referenced with <strong>25,098</strong> official Egyptian Drug Authority records. Cloud API credentials are encrypted server-side.
-          </p>
-        </div>
-
-        <!-- Hidden internal selectors preserved for automatic backend binding -->
-        <div class="form-group" style="display: none;">
-          <label for="providerSelect">Vision AI Provider:</label>
-          <select id="providerSelect" class="form-control">
-            <option value="">Loading providers...</option>
-          </select>
-          <div id="providerStatusHint" class="status-hint"></div>
-        </div>
-
-        <div class="form-group" style="display: none;">
-          <label for="modelSelect">Vision Model:</label>
-          <select id="modelSelect" class="form-control">
-            <option value="">Select model...</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="display: none;">
-          <label for="pipelineSelect">AI Pipeline Architecture:</label>
-          <select id="pipelineSelect" class="form-control">
-            <option value="v2" selected>Pipeline V2: Vision + Egyptian Drug Database (Recommended)</option>
-            <option value="v1">Pipeline V1: Raw Multimodal Vision Only</option>
-          </select>
-        </div>
-
-        <!-- Action Button -->
-        <button id="analyzeBtn" class="btn btn-primary btn-block" disabled>
-          <span class="btn-spinner hidden" id="btnSpinner"></span>
-          <span id="btnText">🔍 Analyze Prescription | تحليل الروشتة</span>
+      <div class="nav-actions">
+        <button type="button" class="icon-pill-btn" id="langToggleBtn" aria-label="Switch Language">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span id="langToggleLabel">English</span>
         </button>
 
-        <div id="errorAlert" class="alert alert-error hidden"></div>
-      </div>
+        <button type="button" class="icon-pill-btn theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Dark Mode" title="الوضع الليلي / النهاري">
+          <svg id="themeIconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg id="themeIconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+          </svg>
+        </button>
 
-      <!-- Safety Rules Card -->
-      <div class="card safety-card">
-        <h3 class="safety-title">🛡️ Gor3a Clinical Safety Protocol</h3>
-        <ul class="safety-list">
-          <li><strong>Zero Hallucination:</strong> If handwriting is illegible, value is returned as <code>null</code>.</li>
-          <li><strong>No Guessing:</strong> Ambiguous doses or strengths are NOT inferred from clinical context.</li>
-          <li><strong>Preserve Uncertainty:</strong> Unreadable items are flagged for human pharmacist review.</li>
-        </ul>
-      </div>
-    </section>
+        <a href="#download" class="btn-nav-cta">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span data-ar="حمّل التطبيق" data-en="Download App">حمّل التطبيق</span>
+        </a>
 
-    <!-- Right Column: Results & Analysis -->
-    <section class="results-panel">
-      
-      <!-- Placeholder State -->
-      <div class="card empty-state" id="emptyState">
-        <div class="empty-icon">📋</div>
-        <h3>Ready to Scan Your Prescription</h3>
-        <p>Upload a handwritten Egyptian prescription image on the left and click <strong>Analyze Prescription</strong> to extract medicines, doses, clinical indications, and live pharmacy prices.</p>
-        <div class="sample-hint">Tip: Click <em>Load Sample Egyptian Prescription</em> to test Gor3a immediately.</div>
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
       </div>
+    </header>
+  </div>
 
-      <!-- Active Loading State -->
-      <div class="card loading-state hidden" id="loadingState">
-        <div class="spinner-large"></div>
-        <h3>Gor3a AI is Analyzing Prescription...</h3>
-        <p>Applying medical handwriting OCR and cross-referencing with 25,098 Egyptian Drug Authority medicines.</p>
-        <div class="timer-badge">Elapsed: <span id="elapsedSeconds">0.0</span>s</div>
-      </div>
+  <!-- ===================================================================== -->
+  <!-- 2. Hero Section with Store Buttons & 3D Interactive Phone Stage       -->
+  <!-- ===================================================================== -->
+  <section class="hero-section">
+    <div class="hero-bg-grid"></div>
 
-      <!-- Analysis Results View -->
-      <div class="results-content hidden" id="resultsContent">
-        
-        <!-- Summary Stats Ribbon -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Overall Confidence</div>
-            <div class="stat-value" id="statConfidence">--</div>
-            <div class="confidence-bar-bg">
-              <div class="confidence-bar-fill" id="statConfidenceBar" style="width: 0%"></div>
+    <!-- Animated ECG Heartbeat Line (from App Screen 4) -->
+    <svg class="hero-ecg-bg" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none">
+      <path class="ecg-path" d="M0 60 H420 L455 60 L475 20 L500 105 L530 12 L555 92 L580 45 L600 60 H1440" stroke="#00897B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <div class="container">
+      <div class="hero-grid">
+
+        <!-- Hero Copy & Store CTAs -->
+        <div class="hero-content">
+          <div class="hero-trust-badge">
+            <span class="pulse-dot"></span>
+            <span data-ar="المسح الذكي للروشتات الطبية + 25,098 دواء بهيئة الدواء المصرية" data-en="Smart AI Prescription Scanner + 25,098 Official EDA Medicines">المسح الذكي للروشتات الطبية + 25,098 دواء بهيئة الدواء المصرية</span>
+          </div>
+
+          <h1 class="hero-title" data-ar="روشتتك بقت أوضح..<br><span class='text-gradient'>وصحتك في أمان مع جرعة</span>" data-en="Your Prescription, Crystal Clear.<br><span class='text-gradient'>Your Health is Safe with Gor3a</span>">
+            روشتتك بقت أوضح..<br><span class="text-gradient">وصحتك في أمان مع جرعة</span>
+          </h1>
+
+          <p class="hero-subtitle" data-ar="صوّر الروشتة بكاميرا هاتفك وحوّل خط الطبيب اليدوي فوراً إلى بيانات أدوية دقيقة، تشخيص طبي مقترح، تعليمات الجرعات بالعربية، وأسعار الصيدليات الرسمية والبدائل المعتمدة من هيئة الدواء المصرية." data-en="Snap a photo of any handwritten prescription to instantly decode medicine names, get AI clinical diagnosis insights, Arabic dosage instructions, live pharmacy prices, and verified EDA alternatives.">
+            صوّر الروشتة بكاميرا هاتفك وحوّل خط الطبيب اليدوي فوراً إلى بيانات أدوية دقيقة، تشخيص طبي مقترح، تعليمات الجرعات بالعربية، وأسعار الصيدليات الرسمية والبدائل المعتمدة من هيئة الدواء المصرية.
+          </p>
+
+          <!-- Official Google Play & App Store Buttons -->
+          <div class="store-buttons-group">
+            <!-- Google Play Button -->
+            <a href="#download" class="store-btn store-btn-primary" data-open-download-modal="google-play">
+              <svg class="store-icon" viewBox="0 0 512 512" fill="currentColor">
+                <path fill="#4CAF50" d="M48 59.49v393a14.07 14.07 0 0 0 22.2 11.49L284 256 70.2 48A14.07 14.07 0 0 0 48 59.49z"/>
+                <path fill="#FFC107" d="M361.4 333.4 284 256l77.4-77.4 91.5 52.3c18.8 10.7 18.8 39.5 0 50.2l-91.5 52.3z"/>
+                <path fill="#2196F3" d="M70.2 48 284 256l77.4-77.4L95.7 26.8C83.8 20 69.5 29.8 70.2 48z"/>
+                <path fill="#F44336" d="M284 256 70.2 464c-.7 18.2 13.6 28 25.5 21.2l265.7-151.8L284 256z"/>
+              </svg>
+              <div class="store-btn-text">
+                <span class="store-btn-small" data-ar="احصل عليه من" data-en="GET IT ON">احصل عليه من</span>
+                <span class="store-btn-large">Google Play</span>
+              </div>
+            </a>
+
+            <!-- Apple App Store Button -->
+            <a href="#download" class="store-btn" data-open-download-modal="app-store">
+              <svg class="store-icon" viewBox="0 0 384 512" fill="currentColor">
+                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+              </svg>
+              <div class="store-btn-text">
+                <span class="store-btn-small" data-ar="حمّل التطبيق من" data-en="Download on the">حمّل التطبيق من</span>
+                <span class="store-btn-large">App Store</span>
+              </div>
+            </a>
+
+            <!-- Quick QR Code Button -->
+            <button type="button" class="qr-quick-btn" data-open-download-modal="qr">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span data-ar="رمز QR" data-en="QR Code">رمز QR</span>
+            </button>
+          </div>
+
+          <!-- Trust Highlights Row -->
+          <div class="hero-highlights">
+            <div class="hero-highlight-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <span data-ar="مجاني للأندرويد والآيفون" data-en="Free on Android & iOS">مجاني للأندرويد والآيفون</span>
             </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Medications Found</div>
-            <div class="stat-value" id="statMedCount">0</div>
-            <div class="stat-sub" id="statMedBreakdown">0 identified • 0 uncertain</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Processing Time</div>
-            <div class="stat-value" id="statLatency">-- ms</div>
-            <div class="stat-sub" id="statModelUsed">Gor3a Clinical AI</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">EDA Registry Grounding</div>
-            <div class="stat-value" style="color: var(--primary);">25,098</div>
-            <div class="stat-sub">Official Egyptian Drug Database</div>
-            <span id="statCost" style="display: none;">$0.0000</span>
-            <span id="statTokens" style="display: none;">-- tokens</span>
+            <div class="hero-highlight-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span data-ar="معتمد على سجلات هيئة الدواء (EDA)" data-en="Verified against EDA Registry">معتمد على سجلات هيئة الدواء (EDA)</span>
+            </div>
+            <div class="hero-highlight-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span data-ar="منبه مواعيد الجرعات الذكي" data-en="Smart Dose Reminders">منبه مواعيد الجرعات الذكي</span>
+            </div>
           </div>
         </div>
 
-        <!-- Uncertain Items Banner (If Any) -->
-        <div class="card alert-card-uncertain hidden" id="uncertainBanner">
-          <div class="uncertain-header">
-            <span class="uncertain-icon">⚠️</span>
-            <h4>Uncertain / Unreadable Items Detected</h4>
-          </div>
-          <p class="uncertain-desc">The AI detected ambiguous or degraded handwriting. Values were preserved as <code>null</code> rather than guessing:</p>
-          <ul class="uncertain-items-list" id="uncertainItemsList"></ul>
-        </div>
+        <!-- Hero 3D Interactive Phones Stage -->
+        <div class="hero-visual-stage" id="heroVisualStage">
+          <div class="stage-glow-orb"></div>
 
-        <!-- Patient Demographics Card -->
-        <div class="card patient-card">
-          <h3 class="section-title">
-            <span>👤</span> Patient Information
-          </h3>
-          <div class="patient-grid">
-            <div class="patient-cell">
-              <span class="patient-label">Patient Age</span>
-              <span class="patient-val" id="patientAge">Not Specified</span>
-            </div>
-            <div class="patient-cell">
-              <span class="patient-label">Patient Weight</span>
-              <span class="patient-val" id="patientWeight">Not Specified</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Overall Prescription Diagnosis Insight Card -->
-        <div class="card overall-diagnosis-card hidden" id="overallDiagnosisCard">
-          <div class="overall-diag-header">
-            <div class="diag-header-title">
-              <span class="diag-icon-large">🩺</span>
-              <div>
-                <h3 class="diag-title">تحليل تشخيص الطبيب واستنتاج الحالة الإجمالية للروشتة</h3>
-                <span class="diag-subtitle">بناءً على التوافق العلاجي للأدوية المكتوبة في هذه الروشتة</span>
+          <div class="phones-composition" id="phonesComposition">
+            <!-- Secondary Background Phone (Results Screen 5.jpeg) -->
+            <div class="phone-mockup secondary-phone">
+              <div class="phone-notch"><span class="phone-camera-dot"></span></div>
+              <div class="phone-screen">
+                <img src="/static/screens/5.jpeg" alt="نتائج تحليل الروشتة في تطبيق جرعة">
               </div>
             </div>
-            <span class="badge badge-success">تشخيص استدلالي ذكي</span>
-          </div>
-          <div class="overall-diag-body" id="overallDiagnosisBody">
-            <!-- Dynamically populated -->
+
+            <!-- Primary Foreground Phone (Interactive Screen Switcher) -->
+            <div class="phone-mockup primary-phone">
+              <div class="phone-notch"><span class="phone-camera-dot"></span></div>
+              <div class="phone-screen">
+                <img id="heroPrimaryImg" src="/static/screens/2.jpeg" alt="الشاشة الرئيسية لتطبيق جرعة Gor3a">
+                <div class="scanner-laser-overlay">
+                  <div class="scanner-laser-line"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating Clinical Badge 1: Diagnosis Confidence -->
+            <div class="floating-badge badge-top-right">
+              <div class="floating-badge-icon" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">🩺</div>
+              <div class="floating-badge-text">
+                <span class="floating-badge-title" data-ar="دقة قراءة وتشخيص 98%" data-en="98% OCR & Diagnosis">دقة قراءة وتشخيص 98%</span>
+                <span class="floating-badge-sub" data-ar="تحليل فوري لخط الطبيب" data-en="Instant Handwriting AI">تحليل فوري لخط الطبيب</span>
+              </div>
+            </div>
+
+            <!-- Floating Clinical Badge 2: EDA Database -->
+            <div class="floating-badge badge-mid-left">
+              <div class="floating-badge-icon" style="background: rgba(0, 137, 123, 0.15); color: #00897B;">💊</div>
+              <div class="floating-badge-text">
+                <span class="floating-badge-title" data-ar="25,098 دواء مصري" data-en="25,098 EDA Medicines">25,098 دواء مصري</span>
+                <span class="floating-badge-sub" data-ar="الأسعار الرسمية والبدائل" data-en="Official Prices & Generics">الأسعار الرسمية والبدائل</span>
+              </div>
+            </div>
+
+            <!-- Floating Clinical Badge 3: Safety Protocol -->
+            <div class="floating-badge badge-bottom-left">
+              <div class="floating-badge-icon" style="background: rgba(245, 158, 11, 0.16); color: #F59E0B;">🛡️</div>
+              <div class="floating-badge-text">
+                <span class="floating-badge-title" data-ar="حماية من تشابه الأدوية" data-en="LASA Drug Safety Guard">حماية من تشابه الأدوية</span>
+                <span class="floating-badge-sub" data-ar="تنبيهات LASA السريرية" data-en="Zero-Guessing Protocol">تنبيهات LASA السريرية</span>
+              </div>
+            </div>
+
+            <!-- Quick Screen Switcher Pills under Phone -->
+            <div class="hero-phone-switcher" role="tablist" aria-label="معاينة شاشات التطبيق">
+              <button type="button" class="hero-screen-pill active" data-screen="/static/screens/2.jpeg" data-ar="الرئيسية" data-en="Home">الرئيسية</button>
+              <button type="button" class="hero-screen-pill" data-screen="/static/screens/3.jpeg" data-ar="الكاميرا" data-en="Scanner">الكاميرا</button>
+              <button type="button" class="hero-screen-pill" data-screen="/static/screens/5.jpeg" data-ar="النتائج" data-en="Results">النتائج</button>
+              <button type="button" class="hero-screen-pill" data-screen="/static/screens/6.jpeg" data-ar="الأدوية" data-en="Drugs">الأدوية</button>
+            </div>
           </div>
         </div>
 
-        <!-- Extracted Medications List -->
-        <div class="card medications-card">
-          <h3 class="section-title">
-            <span>💊</span> Extracted Medications (<span id="medListCount">0</span>)
-          </h3>
-          <div class="medications-list" id="medicationsList">
-            <!-- Dynamic Medication Cards injected here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 3. Animated Clinical Stats Ribbon                                     -->
+  <!-- ===================================================================== -->
+  <section class="stats-ribbon-section">
+    <div class="container">
+      <div class="stats-ribbon-card reveal-on-scroll">
+        <div class="stat-ribbon-item">
+          <div class="stat-ribbon-number" data-count-target="25098" data-count-prefix="+">25,098</div>
+          <div class="stat-ribbon-label" data-ar="مستحضر دوائي مسجل" data-en="Registered EDA Medicines">مستحضر دوائي مسجل</div>
+          <div class="stat-ribbon-sub" data-ar="قاعدة بيانات هيئة الدواء المصرية" data-en="Official Egyptian Drug Authority">قاعدة بيانات هيئة الدواء المصرية</div>
+        </div>
+
+        <div class="stat-ribbon-item">
+          <div class="stat-ribbon-number" data-count-target="98.4" data-count-suffix="%" data-count-decimals="1">98.4%</div>
+          <div class="stat-ribbon-label" data-ar="دقة التعرف والمطابقة" data-en="Clinical Matching Accuracy">دقة التعرف والمطابقة</div>
+          <div class="stat-ribbon-sub" data-ar="قراءة الأسماء التجارية والعلمية" data-en="Brand & Active Ingredient OCR">قراءة الأسماء التجارية والعلمية</div>
+        </div>
+
+        <div class="stat-ribbon-item">
+          <div class="stat-ribbon-number" data-count-target="3" data-count-prefix="< " data-count-suffix=" ثوانٍ">&lt; 3 ثوانٍ</div>
+          <div class="stat-ribbon-label" data-ar="سرعة تحليل الروشتة" data-en="Prescription Scan Speed">سرعة تحليل الروشتة</div>
+          <div class="stat-ribbon-sub" data-ar="معالجة فورية بالذكاء الاصطناعي" data-en="Real-time Multimodal Vision AI">معالجة فورية بالذكاء الاصطناعي</div>
+        </div>
+
+        <div class="stat-ribbon-item">
+          <div class="stat-ribbon-number" data-count-target="100" data-count-suffix="%">100%</div>
+          <div class="stat-ribbon-label" data-ar="بروتوكول أمان سريري" data-en="Clinical Safety Protocol">بروتوكول أمان سريري</div>
+          <div class="stat-ribbon-sub" data-ar="صفر تخمين عشوائي للجرعات" data-en="Zero Hallucination Guarantee">صفر تخمين عشوائي للجرعات</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 4. Bento Grid Features Section (#features)                            -->
+  <!-- ===================================================================== -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header reveal-on-scroll">
+        <span class="section-eyebrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          <span data-ar="لماذا تطبيق جرعة؟" data-en="WHY GOR3A APP?">لماذا تطبيق جرعة؟</span>
+        </span>
+        <h2 class="section-title-main" data-ar="كل ما تحتاجه لفهم روشتتك وإدارة دوائك في تطبيق واحد" data-en="Everything You Need to Decode Prescriptions & Manage Medications">
+          كل ما تحتاجه لفهم روشتتك وإدارة دوائك في تطبيق واحد
+        </h2>
+        <p class="section-desc" data-ar="صُمم تطبيق جرعة بأحدث تقنيات الرؤية الحاسوبية الطبية خصيصاً للروشتات المصرية، ليمنحك راحة البال والمعلومة الدوائية الموثوقة." data-en="Engineered specifically for Egyptian medical prescriptions with clinical-grade Vision AI and complete EDA registry integration.">
+          صُمم تطبيق جرعة بأحدث تقنيات الرؤية الحاسوبية الطبية خصيصاً للروشتات المصرية، ليمنحك راحة البال والمعلومة الدوائية الموثوقة.
+        </p>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Bento 1: AI Prescription Scanner (Featured Teal Card) -->
+        <div class="bento-card bento-span-7 bento-teal-featured reveal-on-scroll">
+          <div>
+            <div class="bento-icon-box">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+            </div>
+            <h3 class="bento-title" data-ar="فك طلاسم خط الروشتات اليدوية بالذكاء الاصطناعي" data-en="AI Medical Handwriting OCR Scanner">
+              فك طلاسم خط الروشتات اليدوية بالذكاء الاصطناعي
+            </h3>
+            <p class="bento-desc" data-ar="لا مزيد من الحيرة أمام خط الطبيب! صوّر الروشتة بالكاميرا أو ارفعها من المعرض ليقوم محرك Gor3a Vision AI بقراءة أسماء الأدوية الإنجليزية وتعليمات الطبيب المكتوبة بالعربية بدقة فائقة." data-en="No more struggling with doctor handwriting. Capture any prescription with smart camera guides and decode English drug brands and Arabic instructions in seconds.">
+              لا مزيد من الحيرة أمام خط الطبيب! صوّر الروشتة بالكاميرا أو ارفعها من المعرض ليقوم محرك Gor3a Vision AI بقراءة أسماء الأدوية الإنجليزية وتعليمات الطبيب المكتوبة بالعربية بدقة فائقة.
+            </p>
+          </div>
+
+          <div class="bento-micro-ui">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="background: #10B981; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 999px;">98% صحة وقراءة</span>
+                <span style="font-weight: 800; font-size: 0.95rem;">Hibiotic 1gm • هيبيوتيك</span>
+              </div>
+              <span style="color: #5EEAD4; font-weight: 800; font-size: 0.9rem;">السعر الرسمي: 173 ج.م</span>
+            </div>
           </div>
         </div>
 
-        <!-- Dietary & Herbal Advice Card -->
-        <div class="card dietary-advice-card hidden" id="dietaryAdviceCard" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.03)); border: 1px solid rgba(16, 185, 129, 0.35);">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.4rem;">🌿</span>
-              <h3 class="section-title" style="margin: 0; color: #10b981;">
-                Dietary & Herbal Instructions / تعليمات الأعشاب والنظام الغذائي
+        <!-- Bento 2: Smart Diagnosis Inference -->
+        <div class="bento-card bento-span-5 reveal-on-scroll">
+          <div>
+            <div class="bento-icon-box">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+            </div>
+            <h3 class="bento-title" data-ar="التشخيص المقترح وتفسير كل دواء" data-en="Probable Diagnosis & Clinical Indications">
+              التشخيص المقترح وتفسير كل دواء
+            </h3>
+            <p class="bento-desc" data-ar="يحلل التطبيق توليفة الأدوية المكتوبة في الروشتة ليوضح لك التشخيص الطبي المرجح مع نسبة الدقة، ويشرح لك بلغة عربية مبسطة ماذا يعالج كل دواء وكيف يعمل في الجسم." data-en="Understands the therapeutic combination of prescribed medicines to explain the probable diagnosis and what each medication treats in plain Arabic.">
+              يحلل التطبيق توليفة الأدوية المكتوبة في الروشتة ليوضح لك التشخيص الطبي المرجح مع نسبة الدقة، ويشرح لك بلغة عربية مبسطة ماذا يعالج كل دواء وكيف يعمل في الجسم.
+            </p>
+          </div>
+
+          <div class="bento-micro-ui" style="border-inline-start: 4px solid var(--teal-primary);">
+            <div style="font-size: 0.78rem; font-weight: 800; color: var(--teal-primary); margin-bottom: 0.2rem;" data-ar="🩺 التشخيص المقترح (مؤشر الدقة: 95%)" data-en="🩺 Suggested Diagnosis (95% Confidence)">🩺 التشخيص المقترح (مؤشر الدقة: 95%)</div>
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-main);" data-ar="عدوى بكتيرية حادة في الجهاز التنفسي أو الأذن" data-en="Acute bacterial respiratory or ear infection">عدوى بكتيرية حادة في الجهاز التنفسي أو الأذن</div>
+          </div>
+        </div>
+
+        <!-- Bento 3: Official EDA 25,098 Drug Directory & Dosage Forms -->
+        <div class="bento-card bento-span-6 reveal-on-scroll">
+          <div>
+            <div class="bento-icon-box">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+            </div>
+            <h3 class="bento-title" data-ar="دليل الأدوية المصرية الرسمي (25,098 مستحضر)" data-en="Official EDA Drug Directory (25,098 Drugs)">
+              دليل الأدوية المصرية الرسمي (25,098 مستحضر)
+            </h3>
+            <p class="bento-desc" data-ar="ابحث فوراً بالاسم التجاري أو المادة الفعالة مع فلاتر ذكية حسب الشكل الصيدلي، وتعرّف على التسعيرة الجبرية المحدثة، سعر الشريط، والبدائل المتطابقة في المادة الفعالة." data-en="Instant search by brand or active ingredient across 25,098 EDA-registered drugs with official box/strip prices and exact generic alternatives.">
+              ابحث فوراً بالاسم التجاري أو المادة الفعالة مع فلاتر ذكية حسب الشكل الصيدلي، وتعرّف على التسعيرة الجبرية المحدثة، سعر الشريط، والبدائل المتطابقة في المادة الفعالة.
+            </p>
+          </div>
+
+          <!-- Exact Dosage Form Pills from Color.kt -->
+          <div class="dosage-pills-showcase">
+            <span class="dosage-pill pill-tablet">💊 أقراص</span>
+            <span class="dosage-pill pill-capsule">🟢 كبسولات</span>
+            <span class="dosage-pill pill-syrup">🟣 شراب</span>
+            <span class="dosage-pill pill-drops">💧 نقط</span>
+            <span class="dosage-pill pill-topical">🧴 دهان موضعي</span>
+            <span class="dosage-pill pill-injection">💉 حقن</span>
+          </div>
+        </div>
+
+        <!-- Bento 4: Smart Medication Reminders -->
+        <div class="bento-card bento-span-6 reveal-on-scroll">
+          <div>
+            <div class="bento-icon-box">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </div>
+            <h3 class="bento-title" data-ar="منبه مواعيد الأدوية والجرعات الذكي" data-en="Smart Medication & Dose Reminders">
+              منبه مواعيد الأدوية والجرعات الذكي
+            </h3>
+            <p class="bento-desc" data-ar="لا تفوّت أي جرعة بعد اليوم! أضف أدوية الروشتة بنقرة واحدة إلى جدول مواعيدك اليومي مع إشعارات دقيقة وتنبيهات بتعليمات الطبيب (قبل الأكل، بعد الأكل، قبل النوم)." data-en="Never miss a dose. Turn extracted prescription medicines into automated daily notifications with physician instructions.">
+              لا تفوّت أي جرعة بعد اليوم! أضف أدوية الروشتة بنقرة واحدة إلى جدول مواعيدك اليومي مع إشعارات دقيقة وتنبيهات بتعليمات الطبيب (قبل الأكل، بعد الأكل، قبل النوم).
+            </p>
+          </div>
+
+          <div class="bento-micro-ui" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <span style="font-size: 1.35rem;">⏰</span>
+              <div>
+                <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-main);">08:00 ص • قرص واحد بعد الإفطار</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted);">كل 12 ساعة لمدة 7 أيام • مفعّل يومياً</div>
+              </div>
+            </div>
+            <span style="background: var(--safe-green-bg); color: var(--safe-green); font-weight: 800; font-size: 0.75rem; padding: 0.25rem 0.65rem; border-radius: 999px;">نشط 🔔</span>
+          </div>
+        </div>
+
+        <!-- Bento 5: Cloud History & Family Archive -->
+        <div class="bento-card bento-span-4 reveal-on-scroll">
+          <div>
+            <div class="bento-icon-box">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+            </div>
+            <h3 class="bento-title" data-ar="سجل الروشتات السحابي" data-en="Cloud Prescription Archive">
+              سجل الروشتات السحابي
+            </h3>
+            <p class="bento-desc" data-ar="احفظ روشتاتك وروشتات أطفالك وأسرتك مع صورة الروشتة الأصلية لتعود إليها في أي وقت أو تشاركها مع طبيبك أو الصيدلي." data-en="Save and organize all your family prescriptions in the cloud with zoomable original prescription photos and instant sharing.">
+              احفظ روشتاتك وروشتات أطفالك وأسرتك مع صورة الروشتة الأصلية لتعود إليها في أي وقت أو تشاركها مع طبيبك أو الصيدلي.
+            </p>
+          </div>
+        </div>
+
+        <!-- Bento 6: LASA Clinical Safety Guard -->
+        <div class="bento-card bento-span-4 reveal-on-scroll">
+          <div>
+            <div class="bento-icon-box" style="background: var(--warning-amber-bg); color: var(--warning-amber);">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
+            <h3 class="bento-title" data-ar="تنبيهات تشابه الأدوية (LASA)" data-en="LASA Drug Look-Alike Alerts">
+              تنبيهات تشابه الأدوية (LASA)
+            </h3>
+            <p class="bento-desc" data-ar="يرصد النظام آلياً الأدوية المتشابهة في النطق أو الكتابة اليدوية ويصدر تنبيهاً واضحاً لمراجعتها مع الصيدلي حفاظاً على سلامتك." data-en="Automatically flags Look-Alike Sound-Alike (LASA) high-risk medications for pharmacist verification.">
+              يرصد النظام آلياً الأدوية المتشابهة في النطق أو الكتابة اليدوية ويصدر تنبيهاً واضحاً لمراجعتها مع الصيدلي حفاظاً على سلامتك.
+            </p>
+          </div>
+        </div>
+
+        <!-- Bento 7: Bilingual & Dark Mode Ready -->
+        <div class="bento-card bento-span-4 reveal-on-scroll">
+          <div>
+            <div class="bento-icon-box">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              </svg>
+            </div>
+            <h3 class="bento-title" data-ar="واجهة عربية وإنجليزية + وضع ليلي" data-en="Bilingual AR/EN & Dark Mode">
+              واجهة عربية وإنجليزية + وضع ليلي
+            </h3>
+            <p class="bento-desc" data-ar="تجربة استخدام سريعة وخفيفة تدعم اللغتين العربية والإنجليزية بالكامل مع الوضع الليلي المريح للعين." data-en="Crafted with Compose Multiplatform for silky 60fps performance on both Android and iOS.">
+              تجربة استخدام سريعة وخفيفة تدعم اللغتين العربية والإنجليزية بالكامل مع الوضع الليلي المريح للعين.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 5. Interactive Step-by-Step "How Gor3a Works" (#how-it-works)         -->
+  <!-- ===================================================================== -->
+  <section class="how-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header reveal-on-scroll">
+        <span class="section-eyebrow" data-ar="خطوات بسيطة وسريعة" data-en="HOW GOR3A WORKS">خطوات بسيطة وسريعة</span>
+        <h2 class="section-title-main" data-ar="كيف يعمل تطبيق جرعة في 4 خطوات؟" data-en="How Gor3a Works in 4 Simple Steps">
+          كيف يعمل تطبيق جرعة في 4 خطوات؟
+        </h2>
+        <p class="section-desc" data-ar="انقر على أي خطوة لمعاينة شاشة التطبيق الحية ومشاهدة كيف تتحول الروشتة الورقية إلى تقرير طبي متكامل." data-en="Click any step below to preview the real mobile app screen in action.">
+          انقر على أي خطوة لمعاينة شاشة التطبيق الحية ومشاهدة كيف تتحول الروشتة الورقية إلى تقرير طبي متكامل.
+        </p>
+      </div>
+
+      <div class="how-interactive-grid reveal-on-scroll">
+        <!-- Steps Cards Column -->
+        <div class="steps-list">
+          <div class="step-card active" data-step="0" data-caption-ar="شاشة الكاميرا الذكية وضبط إطار الروشتة" data-caption-en="Smart Camera Viewfinder & Prescription Framing">
+            <div class="step-card-header">
+              <div class="step-number-badge">1</div>
+              <h3 class="step-title" data-ar="صوّر الروشتة بالكاميرا أو اخترها من المعرض" data-en="1. Capture Prescription with Smart Camera">
+                صوّر الروشتة بالكاميرا أو اخترها من المعرض
               </h3>
             </div>
-            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #059669; font-weight: 600;">نصائح طبيعية</span>
+            <p class="step-desc" data-ar="افتح ماسح الروشتات الذكي في التطبيق، واضبط الروشتة داخل الإطار المضيء أو جرّب روشتة عينة بضغطة زر واحدة." data-en="Align your prescription inside the illuminated camera frame with built-in flash and gallery support.">
+              افتح ماسح الروشتات الذكي في التطبيق، واضبط الروشتة داخل الإطار المضيء أو جرّب روشتة عينة بضغطة زر واحدة.
+            </p>
+            <div class="step-progress-bar"></div>
           </div>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
-            Non-pharmacological directions, natural remedies, and lifestyle guidance prescribed by the physician:
+
+          <div class="step-card" data-step="1" data-caption-ar="الذكاء الاصطناعي يقرأ خط الطبيب ويطابق سجلات هيئة الدواء" data-caption-en="AI OCR Reading & EDA Registry Cross-Verification">
+            <div class="step-card-header">
+              <div class="step-number-badge">2</div>
+              <h3 class="step-title" data-ar="الذكاء الاصطناعي يقرأ ويطابق الأدوية رسمياً" data-en="2. AI Reads Handwriting & Matches EDA Registry">
+                الذكاء الاصطناعي يقرأ ويطابق الأدوية رسمياً
+              </h3>
+            </div>
+            <p class="step-desc" data-ar="يقوم المحرك الطبي بمعالجة الصورة، فك خط الطبيب اليدوي، ومطابقة كل صنف مع 25,098 دواء مسجل في هيئة الدواء المصرية." data-en="Our multimodal clinical AI processes handwriting and cross-references every item against 25,098 official EDA records.">
+              يقوم المحرك الطبي بمعالجة الصورة، فك خط الطبيب اليدوي، ومطابقة كل صنف مع 25,098 دواء مسجل في هيئة الدواء المصرية.
+            </p>
+            <div class="step-progress-bar"></div>
+          </div>
+
+          <div class="step-card" data-step="2" data-caption-ar="نتائج الروشتة: التشخيص المقترح، الأدوية، الجرعات والأسعار" data-caption-en="Prescription Results: Diagnosis, Medications, Doses & Prices">
+            <div class="step-card-header">
+              <div class="step-number-badge">3</div>
+              <h3 class="step-title" data-ar="استلم تقرير الروشتة الكامل والتشخيص والأسعار" data-en="3. View Full Prescription Report, Diagnosis & Prices">
+                استلم تقرير الروشتة الكامل والتشخيص والأسعار
+              </h3>
+            </div>
+            <p class="step-desc" data-ar="شاهد التشخيص المقترح، صورة علبة كل دواء، المادة الفعالة، السعر الرسمي في الصيدليات، وتعليمات الجرعة بالعربية." data-en="See probable diagnosis, official drug packaging, active ingredients, pharmacy prices, and clear dosing instructions.">
+              شاهد التشخيص المقترح، صورة علبة كل دواء، المادة الفعالة، السعر الرسمي في الصيدليات، وتعليمات الجرعة بالعربية.
+            </p>
+            <div class="step-progress-bar"></div>
+          </div>
+
+          <div class="step-card" data-step="3" data-caption-ar="دليل الأدوية المصرية (25,098 مستحضر) والبدائل المعتمدة" data-caption-en="Official EDA Drug Directory (25,098 Medicines) & Alternatives">
+            <div class="step-card-header">
+              <div class="step-number-badge">4</div>
+              <h3 class="step-title" data-ar="استكشف البدائل الرسمية واضبط منبه الجرعات" data-en="4. Compare Official Generics & Set Dose Reminders">
+                استكشف البدائل الرسمية واضبط منبه الجرعات
+              </h3>
+            </div>
+            <p class="step-desc" data-ar="قارن البدائل والمثائل التي تحتوي على نفس المادة الفعالة بأسعارها الرسمية، واحفظ الروشتة في سجلك أو فعّل منبه المواعيد." data-en="Explore lower-cost generics with the exact same active substance, save to history, or schedule dose alarms.">
+              قارن البدائل والمثائل التي تحتوي على نفس المادة الفعالة بأسعارها الرسمية، واحفظ الروشتة في سجلك أو فعّل منبه المواعيد.
+            </p>
+            <div class="step-progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Sticky Phone Screen Switcher Column -->
+        <div class="how-phone-preview-col">
+          <div class="how-phone-frame">
+            <div class="phone-notch"><span class="phone-camera-dot"></span></div>
+            <div class="how-phone-screen">
+              <img src="/static/screens/3.jpeg" alt="شاشة مسح الروشتة" class="how-screen-img active">
+              <img src="/static/screens/4.jpeg" alt="شاشة تحليل الذكاء الاصطناعي" class="how-screen-img">
+              <img src="/static/screens/5.jpeg" alt="شاشة نتائج الروشتة والتشخيص" class="how-screen-img">
+              <img src="/static/screens/6.jpeg" alt="شاشة دليل الأدوية المصرية" class="how-screen-img">
+            </div>
+          </div>
+          <div class="how-screen-caption" id="howScreenCaption">
+            شاشة الكاميرا الذكية وضبط إطار الروشتة
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 6. Full Mobile App Screens Showcase Gallery (#screens)                -->
+  <!-- ===================================================================== -->
+  <section class="screens-section" id="screens">
+    <div class="container">
+      <div class="section-header reveal-on-scroll">
+        <span class="section-eyebrow" data-ar="جولة بصرية داخل التطبيق" data-en="APP SCREENSHOTS GALLERY">جولة بصرية داخل التطبيق</span>
+        <h2 class="section-title-main" data-ar="تعرّف على شاشات تطبيق جرعة عن قرب" data-en="Explore Gor3a Mobile App Screens">
+          تعرّف على شاشات تطبيق جرعة عن قرب
+        </h2>
+        <p class="section-desc" data-ar="تصميم طبي عصري ومريح للعين باللون التيفاني الطبي (#00897B) يجمع بين البساطة والدقة السريرية. انقر على أي شاشة لتكبيرها." data-en="Clean, accessible medical teal interface designed for patients, parents, and pharmacists. Click any screen to zoom.">
+          تصميم طبي عصري ومريح للعين باللون التيفاني الطبي (#00897B) يجمع بين البساطة والدقة السريرية. انقر على أي شاشة لتكبيرها.
+        </p>
+      </div>
+
+      <div class="screens-track-wrapper reveal-on-scroll">
+        <div class="screens-grid">
+          <!-- Screen 1 -->
+          <div class="screen-showcase-card">
+            <div class="screen-device-bezel">
+              <img src="/static/screens/1.png" alt="شاشة البداية والترحيب في تطبيق جرعة" loading="lazy">
+            </div>
+            <span class="screen-step-tag" data-ar="شاشة 1" data-en="Screen 1">شاشة 1</span>
+            <h3 class="screen-card-title" data-ar="البداية السريعة" data-en="Welcome & Onboarding">البداية السريعة</h3>
+            <p class="screen-card-sub" data-ar="انطلق فوراً لمسح الروشتة بضغطة واحدة" data-en="One-tap instant access to prescription scanning">انطلق فوراً لمسح الروشتة بضغطة واحدة</p>
+          </div>
+
+          <!-- Screen 2 -->
+          <div class="screen-showcase-card">
+            <div class="screen-device-bezel">
+              <img src="/static/screens/2.jpeg" alt="الشاشة الرئيسية لتطبيق جرعة" loading="lazy">
+            </div>
+            <span class="screen-step-tag" data-ar="شاشة 2" data-en="Screen 2">شاشة 2</span>
+            <h3 class="screen-card-title" data-ar="الشاشة الرئيسية" data-en="Smart Home Dashboard">الشاشة الرئيسية</h3>
+            <p class="screen-card-sub" data-ar="بحث فوري في الأدوية، مسح سريع، وسجل روشتاتك" data-en="Quick drug search, scanner CTA & recent history">بحث فوري في الأدوية، مسح سريع، وسجل روشتاتك</p>
+          </div>
+
+          <!-- Screen 3 -->
+          <div class="screen-showcase-card">
+            <div class="screen-device-bezel">
+              <img src="/static/screens/3.jpeg" alt="شاشة الكاميرا ومسح الروشتة" loading="lazy">
+            </div>
+            <span class="screen-step-tag" data-ar="شاشة 3" data-en="Screen 3">شاشة 3</span>
+            <h3 class="screen-card-title" data-ar="ماسح الروشتة الذكي" data-en="Prescription Camera">ماسح الروشتة الذكي</h3>
+            <p class="screen-card-sub" data-ar="إطار توجيه ذكي مع إمكانية تجربة روشتة عينة" data-en="Guided viewfinder with flash & sample Rx mode">إطار توجيه ذكي مع إمكانية تجربة روشتة عينة</p>
+          </div>
+
+          <!-- Screen 4 -->
+          <div class="screen-showcase-card">
+            <div class="screen-device-bezel">
+              <img src="/static/screens/4.jpeg" alt="شاشة تحليل الذكاء الاصطناعي للروشتة" loading="lazy">
+            </div>
+            <span class="screen-step-tag" data-ar="شاشة 4" data-en="Screen 4">شاشة 4</span>
+            <h3 class="screen-card-title" data-ar="التحليل بالذكاء الاصطناعي" data-en="AI Clinical Analysis">التحليل بالذكاء الاصطناعي</h3>
+            <p class="screen-card-sub" data-ar="قراءة خط الطبيب ومطابقة سجلات هيئة الدواء" data-en="Step-by-step OCR & EDA registry verification">قراءة خط الطبيب ومطابقة سجلات هيئة الدواء</p>
+          </div>
+
+          <!-- Screen 5 -->
+          <div class="screen-showcase-card">
+            <div class="screen-device-bezel">
+              <img src="/static/screens/5.jpeg" alt="شاشة نتائج الروشتة والتشخيص والأدوية" loading="lazy">
+            </div>
+            <span class="screen-step-tag" data-ar="شاشة 5" data-en="Screen 5">شاشة 5</span>
+            <h3 class="screen-card-title" data-ar="نتائج الروشتة والتشخيص" data-en="Results & Diagnosis">نتائج الروشتة والتشخيص</h3>
+            <p class="screen-card-sub" data-ar="التشخيص المقترح، صور الأدوية، الجرعات والأسعار" data-en="Diagnosis accuracy, drug cards, prices & doses">التشخيص المقترح، صور الأدوية، الجرعات والأسعار</p>
+          </div>
+
+          <!-- Screen 6 -->
+          <div class="screen-showcase-card">
+            <div class="screen-device-bezel">
+              <img src="/static/screens/6.jpeg" alt="شاشة دليل الأدوية المصرية" loading="lazy">
+            </div>
+            <span class="screen-step-tag" data-ar="شاشة 6" data-en="Screen 6">شاشة 6</span>
+            <h3 class="screen-card-title" data-ar="دليل الأدوية (EDA)" data-en="EDA Drug Directory">دليل الأدوية (EDA)</h3>
+            <p class="screen-card-sub" data-ar="25,098 مستحضر صيدلاني بالأسعار الرسمية والبدائل" data-en="Browse 25,098 official medicines & strip prices">25,098 مستحضر صيدلاني بالأسعار الرسمية والبدائل</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 7. Official EDA Drug Directory Live Search Banner (#eda-directory)    -->
+  <!-- ===================================================================== -->
+  <section class="eda-preview-section" id="eda-directory">
+    <div class="container">
+      <div class="eda-preview-banner reveal-on-scroll">
+        <div class="eda-preview-content">
+          <span class="section-eyebrow" style="background: rgba(94, 234, 212, 0.18); color: #5EEAD4;" data-ar="🇪🇬 قاعدة بيانات هيئة الدواء المصرية الرسمية" data-en="🇪🇬 OFFICIAL EGYPTIAN DRUG AUTHORITY REGISTRY">
+            🇪🇬 قاعدة بيانات هيئة الدواء المصرية الرسمية
+          </span>
+          <h2 style="font-size: clamp(1.75rem, 3vw, 2.45rem); font-weight: 900; margin-bottom: 0.75rem;" data-ar="ابحث الآن في 25,098 دواء مسجل رسمياً في مصر" data-en="Search 25,098 Official Registered Medicines in Egypt">
+            ابحث الآن في 25,098 دواء مسجل رسمياً في مصر
+          </h2>
+          <p style="color: #CBD5E1; font-size: 1.02rem; line-height: 1.7;" data-ar="تعرّف على السعر الرسمي المحدث في الصيدليات، سعر الشريط، المادة الفعالة، دواعي الاستعمال، والبدائل المتطابقة." data-en="Check live Egyptian pharmacy prices, strip prices, active ingredients, clinical indications, and exact generics.">
+            تعرّف على السعر الرسمي المحدث في الصيدليات، سعر الشريط، المادة الفعالة، دواعي الاستعمال، والبدائل المتطابقة.
           </p>
-          <div id="dietaryAdviceContent" style="padding: 12px 16px; border-radius: 8px; background: rgba(16, 185, 129, 0.12); font-size: 1.05rem; font-weight: 600; color: #047857; direction: rtl; text-align: right; line-height: 1.6; border-right: 4px solid #10b981;">
-          </div>
-        </div>
 
-        <!-- Raw JSON Inspector (Hidden on public UI) -->
-        <div class="card json-card" style="display: none;">
-          <div class="json-header">
-            <h3 class="section-title">
-              <span>{ }</span> Raw Structured JSON Output
-            </h3>
-            <button class="btn btn-secondary btn-xs" id="copyJsonBtn">Copy JSON</button>
-          </div>
-          <pre class="json-viewer"><code id="rawJsonCode"></code></pre>
-        </div>
-
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ======================================================================= -->
-  <!-- TAB 2: Model Benchmark Suite (Phase 2)                                 -->
-  <!-- ======================================================================= -->
-  <section class="benchmark-layout hidden" id="benchmarkView">
-    <div class="benchmark-container">
-      
-      <!-- Benchmark Action Header -->
-      <div class="card benchmark-header-card">
-        <div class="bench-title-row">
-          <div>
-            <h2>Model Benchmark Suite — Egyptian Prescriptions</h2>
-            <p class="text-muted">Compare OpenAI, Gemini, Claude, and baseline models on standardized Egyptian clinical cases with verified ground truth.</p>
-          </div>
-          <button type="button" class="btn btn-primary" id="runBenchmarkBtn">
-            <span class="btn-spinner hidden" id="benchSpinner"></span>
-            <span id="benchBtnText">▶ Run Multi-Model Benchmark</span>
-          </button>
-        </div>
-
-        <!-- 100-Prescription Dataset Distribution (70 Train / 15 Val / 15 Test) -->
-        <div class="stats-grid" style="margin-top: 1rem; margin-bottom: 1rem;">
-          <div class="stat-card">
-            <div class="stat-label">Training Set (70%)</div>
-            <div class="stat-value" style="color: var(--primary);">70</div>
-            <div class="stat-sub">روشتات تدريب النماذج (70%)</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Validation Set (15%)</div>
-            <div class="stat-value" style="color: var(--warning-solid);">15</div>
-            <div class="stat-sub">روشتات التحقق وضبط المعايير (15%)</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Test Benchmark Set (15%)</div>
-            <div class="stat-value" style="color: var(--success-solid);">15</div>
-            <div class="stat-sub">روشتات الاختبار والتقييم النهائي (15%)</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Total Curated Dataset</div>
-            <div class="stat-value">100</div>
-            <div class="stat-sub">روشتة علاج مصرية معتمدة</div>
-          </div>
-        </div>
-
-        <div class="benchmark-model-selector">
-          <span class="selector-lbl">Models Included in Evaluation:</span>
-            <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="local_vlm:qwen2.5vl:3b:v2" checked>
-              <span>Local VLM Qwen2.5-VL:3B [Pipeline V2 + EDA] (Mac GPU)</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="mock:mock-conservative-v1:v2" checked>
-              <span>Mock Conservative [Pipeline V2 + EDA]</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="mock:mock-conservative-v1:v1">
-              <span>Mock Conservative [Pipeline V1 Raw]</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="mock:mock-aggressive-v1:v1">
-              <span>Mock Aggressive Baseline</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="gemini:gemini-2.5-flash:v2">
-              <span>Gemini 2.5 Flash [Pipeline V2]</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="openai:gpt-4o:v2">
-              <span>OpenAI GPT-4o [Pipeline V2]</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="benchModel" value="claude:claude-3-5-sonnet-20241022:v2">
-              <span>Claude 3.5 Sonnet [Pipeline V2]</span>
-            </label>
-          </div>
-        </div>
-
-      <!-- Comparative Results Matrix -->
-      <div class="card benchmark-matrix-card" id="benchMatrixCard">
-        <h3 class="section-title">
-          <span>🏆</span> Comparative Model Ranking & Clinical OCR Matrix
-        </h3>
-        <p class="text-muted" style="margin-bottom: 0.75rem; font-size: 0.85rem;">Evaluation across the 15 unseen Egyptian test prescriptions measuring entity extraction, OCR error rates, and safety:</p>
-        <div class="table-responsive">
-          <table class="benchmark-table" id="benchmarkTable">
-            <thead>
-              <tr>
-                <th>Model</th>
-                <th title="Accuracy: نسبة النتائج الصحيحة لكافة الحقول">Accuracy</th>
-                <th title="Precision: من كل الأدوية اللي الموديل قال إنها موجودة، كام واحد فعلاً صحيح">Precision</th>
-                <th title="Recall: من كل الأدوية الموجودة فعلاً في الروشتة، كام واحد الموديل قدر يكتشفه">Recall</th>
-                <th title="F1 Score: توازن بين Precision و Recall">F1 Score</th>
-                <th title="Character Error Rate: قياس أخطاء الحروف للـ OCR (أقل أفضل)">CER</th>
-                <th title="Word Error Rate: نسبة أخطاء الكلمات (أقل أفضل)">WER</th>
-                <th title="Exact Match / Field Accuracy: هل الموديل استخرج البيانات كاملة وصحيحة">Exact Match</th>
-                <th title="Critical Error Rate: نسبة الأخطاء الدوائية الحرجة">Critical Err 🛡️</th>
-                <th>Latency</th>
-              </tr>
-            </thead>
-            <tbody id="benchmarkTableBody">
-              <tr>
-                <td colspan="10" class="text-center">Click <strong>Run Multi-Model Benchmark</strong> to evaluate models.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Metrics Clinical Legend -->
-        <div class="metrics-legend-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem;">
-          <div class="legend-item">
-            <strong>🎯 Accuracy (الدقة الكلية):</strong> نسبة الحقول المستخرجة بشكل صحيح (الاسم، الجرعة، التكرار، المدة، والتعليمات).
-          </div>
-          <div class="legend-item">
-            <strong>🔍 Precision (الدقة التنبؤية):</strong> من بين الأدوية التي توقعها الموديل، كام دواء فعلاً موجود وصحيح.
-          </div>
-          <div class="legend-item">
-            <strong>📡 Recall (الاسترجاع):</strong> من بين الأدوية الفعلية في الروشتة، كم دواء استطاع الموديل اكتشافه.
-          </div>
-          <div class="legend-item">
-            <strong>⚖️ F1 Score:</strong> المعامل التوافقي بين الدقة والاسترجاع للمقارنة العادلة والشاملة.
-          </div>
-          <div class="legend-item">
-            <strong>🔤 CER (Character Error Rate):</strong> معدل أخطاء الحروف لقياس جودة الـ OCR المباشر.
-          </div>
-          <div class="legend-item">
-            <strong>📝 WER (Word Error Rate):</strong> معدل أخطاء الكلمات الكاملة مقارنة بالنص المرجعي.
-          </div>
-          <div class="legend-item">
-            <strong>✨ Exact Match:</strong> نسبة الأدوية التي استخرجت ببيانات كاملة وصحيحة 100% دون أي خطأ.
-          </div>
-          <div class="legend-item">
-            <strong>🛡️ Critical Error Rate:</strong> رصد أخطاء التبديل الدوائي الخطرة (مثل Losec vs Lasix) - يجب أن تكون 0%.
-          </div>
-        </div>
-      </div>
-
-      <!-- Benchmark Cases Browser -->
-      <div class="card benchmark-cases-card">
-        <h3 class="section-title">
-          <span>📁</span> Benchmark Dataset Cases (<span id="benchCaseCount">0</span>)
-        </h3>
-        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.85rem;">Standardized Egyptian prescription test cases covering pediatric dosing, English brand handwriting, Egyptian Arabic instructions, and high-risk look-alike sound-alike (LASA) safety traps.</p>
-        <div class="cases-grid" id="benchmarkCasesGrid">
-          <!-- Test cases injected dynamically -->
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ======================================================================= -->
-  <!-- TAB 3: Bilingual Arabic Dataset & Training (Noor Alzoghby)             -->
-  <!-- ======================================================================= -->
-  <section class="benchmark-layout hidden" id="bilingualView">
-    <div class="benchmark-container">
-      
-      <!-- Bilingual Dataset Header Card -->
-      <div class="card benchmark-header-card">
-        <div class="bench-title-row">
-          <div>
-            <h2>Bilingual Medical Prescriptions Dataset [Arabic & English]</h2>
-            <p class="text-muted">Noor Alzoghby dataset: 561 authentic clinical prescription images with English brand handwriting and Egyptian Arabic dosing instructions, cross-referenced with the 25,098 Egyptian Drug Authority database.</p>
-          </div>
-        </div>
-
-        <!-- Dataset Summary Stats Ribbon -->
-        <div class="stats-grid" style="margin-top: 1rem;">
-          <div class="stat-card">
-            <div class="stat-label">Verified Prescriptions</div>
-            <div class="stat-value" id="bilingualStatCases">454</div>
-            <div class="stat-sub">Paired Image + Ground Truth</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Annotated Medications</div>
-            <div class="stat-value" id="bilingualStatMeds">1,573</div>
-            <div class="stat-sub">Handwritten brand & generic</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Arabic Instructions</div>
-            <div class="stat-value" id="bilingualStatArabic">1,050</div>
-            <div class="stat-sub">بعد الأكل, قبل النوم, 1x3, etc.</div>
-          </div>
-          <a href="/drugs" class="stat-card" style="text-decoration: none; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.15s, border-color 0.15s;" title="Open EDA Drug Database Search">
-            <div class="stat-label">EDA Drug Database ↗</div>
-            <div class="stat-value" id="bilingualStatEda" style="color: var(--primary);">25,098</div>
-            <div class="stat-sub">Official Egyptian medicines (Search →)</div>
-          </a>
-        </div>
-      </div>
-
-      <!-- Training & Fine-Tuning Studio Card -->
-      <div class="card">
-        <h3 class="section-title">
-          <span>🚀</span> Model Training & Fine-Tuning Studio
-        </h3>
-        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.85rem;">Export structured fine-tuning datasets for multimodal Vision-Language Models (OpenAI GPT-4o, Google Gemini, and open-source VLMs like Qwen2-VL / LLaVA-Med), or evaluate models on the 85-case test split.</p>
-
-        <div class="training-actions-grid">
-          <div class="training-action-box">
-            <h4>Export Fine-Tuning Datasets</h4>
-            <p>Generates <code>openai_vision_train.jsonl</code> and <code>vlm_lora_train.json</code> formatted with base64 images and structured target JSON schemas.</p>
-            <button type="button" class="btn btn-secondary btn-sm" id="exportTrainingBtn">
-              <span class="btn-spinner hidden" id="exportSpinner"></span>
-              <span id="exportBtnText">📦 Export JSONL Training Sets</span>
+          <form action="/drugs" method="GET" class="eda-search-form">
+            <input
+              type="text"
+              name="q"
+              class="eda-search-input"
+              placeholder="ابحث باسم الدواء بالعربية أو الإنجليزية أو المادة الفعالة (مثال: Hibiotic, بانادول)..."
+              data-ar="ابحث باسم الدواء بالعربية أو الإنجليزية أو المادة الفعالة (مثال: Hibiotic, بانادول)..."
+              data-en="Search by drug name in Arabic/English or active ingredient (e.g. Hibiotic, Panadol)..."
+              required
+            >
+            <button type="submit" class="eda-search-submit">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <span data-ar="بحث في الدليل" data-en="Search Drugs">بحث في الدليل</span>
             </button>
-            <div id="exportStatusAlert" class="alert alert-success hidden" style="margin-top: 0.75rem; font-size: 0.8rem;"></div>
-          </div>
+          </form>
 
-          <div class="training-action-box">
-            <h4>Evaluate Model on Test Split</h4>
-            <p>Benchmark model transcription accuracy (Medication Name, Dose, Frequency, and Arabic Instructions) on the unseen bilingual test split.</p>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-              <select id="bilingualEvalProvider" class="form-control" style="flex: 1; min-width: 140px;">
-                <option value="local_vlm">Local VLM (Ollama / Qwen2.5-VL)</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="openai">OpenAI GPT-4o</option>
-                <option value="mock">Offline Mock Provider</option>
-              </select>
-              <select id="bilingualEvalPipeline" class="form-control" style="flex: 1; min-width: 140px;">
-                <option value="v2">Pipeline V2 (Vision + EDA)</option>
-                <option value="v1">Pipeline V1 (Vision Only)</option>
-              </select>
-              <button type="button" class="btn btn-primary btn-sm" id="runBilingualEvalBtn">
-                <span class="btn-spinner hidden" id="bilingualEvalSpinner"></span>
-                <span id="bilingualEvalBtnText">▶ Run Test Split Eval</span>
-              </button>
-            </div>
-            <div id="bilingualEvalResults" class="hidden" style="background: var(--bg-subtle); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.825rem;"></div>
+          <div class="eda-quick-tags">
+            <span style="font-size: 0.8rem; color: #94A3B8;" data-ar="بحث سريع:" data-en="Popular:">بحث سريع:</span>
+            <a href="/drugs?q=Hibiotic" class="eda-quick-tag">Hibiotic • هيبيوتيك</a>
+            <a href="/drugs?q=Augmentin" class="eda-quick-tag">Augmentin • أوجمنتين</a>
+            <a href="/drugs?q=Panadol" class="eda-quick-tag">Panadol • بانادول</a>
+            <a href="/drugs?q=Antinal" class="eda-quick-tag">Antinal • أنتينال</a>
+            <a href="/drugs?q=Concor" class="eda-quick-tag">Concor • كونكور</a>
+            <a href="/drugs" class="eda-quick-tag" style="background: rgba(38, 166, 154, 0.3); color: #5EEAD4;" data-ar="تصفح الدليل الكامل (25,098) ←" data-en="Browse All 25,098 Drugs →">تصفح الدليل الكامل (25,098) ←</a>
           </div>
         </div>
       </div>
-
-      <!-- Bilingual Cases Explorer -->
-      <div class="card">
-        <div class="bench-title-row" style="margin-bottom: 0.75rem;">
-          <h3 class="section-title" style="margin-bottom: 0;">
-            <span>📋</span> Explore Bilingual Prescriptions (<span id="bilingualDisplayCount">0</span>)
-          </h3>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-            <input type="text" id="bilingualSearchInput" class="form-control" placeholder="Search medication or Arabic instruction..." style="font-size: 0.85rem; padding: 0.35rem 0.65rem; width: 260px;">
-            <div class="split-filter-group">
-              <button type="button" class="split-pill active" data-split="all">All</button>
-              <button type="button" class="split-pill" data-split="train">Train</button>
-              <button type="button" class="split-pill" data-split="val">Val</button>
-              <button type="button" class="split-pill" data-split="test">Test</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cases-grid" id="bilingualCasesGrid">
-          <!-- Dynamically populated -->
-        </div>
-      </div>
-
     </div>
   </section>
 
-  <footer class="app-footer">
-    <div class="footer-container">
-      <p><strong>Gor3a | جرعة</strong> — Smart Egyptian Medical Prescription Scanner &amp; Official EDA Drug Database (25,098 Medicines).</p>
-      <p class="disclaimer">Clinical Disclaimer: Gor3a is an AI-assisted prescription reading and drug information tool. Always consult a licensed Egyptian physician or pharmacist before taking or substituting medications.</p>
-      <p style="margin-top: 0.6rem;"><a href="/admin" style="color: var(--text-muted); font-size: 0.775rem; text-decoration: none; opacity: 0.85;">🔒 لوحة تحكم الإدارة وتحديث الأدوية (Admin Portal)</a></p>
+  <!-- ===================================================================== -->
+  <!-- 8. Frequently Asked Questions (#faq)                                  -->
+  <!-- ===================================================================== -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header reveal-on-scroll">
+        <span class="section-eyebrow" data-ar="الأسئلة الشائعة" data-en="FREQUENTLY ASKED QUESTIONS">الأسئلة الشائعة</span>
+        <h2 class="section-title-main" data-ar="كل ما تود معرفته عن تطبيق جرعة" data-en="Common Questions About Gor3a">
+          كل ما تود معرفته عن تطبيق جرعة
+        </h2>
+      </div>
+
+      <div class="faq-list reveal-on-scroll">
+        <div class="faq-item">
+          <button type="button" class="faq-question">
+            <span data-ar="كيف يقرأ تطبيق جرعة خط الطبيب الصعب في الروشتات المصرية؟" data-en="How does Gor3a read difficult handwritten Egyptian prescriptions?">كيف يقرأ تطبيق جرعة خط الطبيب الصعب في الروشتات المصرية؟</span>
+            <span class="faq-chevron">▼</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner" data-ar="يعتمد تطبيق جرعة على محرك ذكاء اصطناعي طبي متعدد الوسائط (Multimodal Clinical Vision V2) مدرب خصيصاً على أنماط كتابة الأطباء في مصر، ويقوم بمطابقة كل دواء مع قاعدة بيانات هيئة الدواء المصرية الرسمية التي تضم 25,098 مستحضر لضمان أعلى دقة سريرية." data-en="Gor3a uses a specialized Multimodal Clinical Vision V2 engine trained on Egyptian prescription patterns, cross-referencing every extracted medicine against 25,098 official Egyptian Drug Authority (EDA) records.">
+              يعتمد تطبيق جرعة على محرك ذكاء اصطناعي طبي متعدد الوسائط (Multimodal Clinical Vision V2) مدرب خصيصاً على أنماط كتابة الأطباء في مصر، ويقوم بمطابقة كل دواء مع قاعدة بيانات هيئة الدواء المصرية الرسمية التي تضم 25,098 مستحضر لضمان أعلى دقة سريرية.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question">
+            <span data-ar="ماذا يحدث إذا كان خط الطبيب غير واضح تماماً في أحد الأدوية؟" data-en="What happens if part of the handwriting is completely illegible?">ماذا يحدث إذا كان خط الطبيب غير واضح تماماً في أحد الأدوية؟</span>
+            <span class="faq-chevron">▼</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner" data-ar="يطبق تطبيق جرعة بروتوكول أمان سريري صارم (Zero Hallucination Protocol): لا يقوم التطبيق بالتخمين العشوائي أبداً، بل ينبهك بوضوح لوجود صنف غير واضح أو متشابه لفظياً (LASA) ليقوم الصيدلي بمراجعته وتأكيده." data-en="Gor3a strictly enforces a Zero-Hallucination Clinical Safety Protocol: it never guesses ambiguous doses or unreadable drug names, flagging them clearly for human pharmacist verification.">
+              يطبق تطبيق جرعة بروتوكول أمان سريري صارم (Zero Hallucination Protocol): لا يقوم التطبيق بالتخمين العشوائي أبداً، بل ينبهك بوضوح لوجود صنف غير واضح أو متشابه لفظياً (LASA) ليقوم الصيدلي بمراجعته وتأكيده.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question">
+            <span data-ar="هل أسعار الأدوية والبدائل في التطبيق محدثة؟" data-en="Are the medication prices and alternatives up to date?">هل أسعار الأدوية والبدائل في التطبيق محدثة؟</span>
+            <span class="faq-chevron">▼</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner" data-ar="نعم، يتم تحديث قاعدة البيانات بشكل دوري لتشمل أحدث قرارات التسعيرة الجبرية الموحدة وأسعار السوق في الصيدليات المصرية (2024–2026)، مع حساب سعر العبوة الكاملة وسعر الشريط الواحد وعرض البدائل التي تحتوي على نفس المادة الفعالة." data-en="Yes! Our database reflects the latest 2024–2026 Egyptian Drug Authority pricing updates, including full pack prices, single strip prices, and verified generic alternatives.">
+              نعم، يتم تحديث قاعدة البيانات بشكل دوري لتشمل أحدث قرارات التسعيرة الجبرية الموحدة وأسعار السوق في الصيدليات المصرية (2024–2026)، مع حساب سعر العبوة الكاملة وسعر الشريط الواحد وعرض البدائل التي تحتوي على نفس المادة الفعالة.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question">
+            <span data-ar="هل التطبيق متاح لهواتف الأندرويد والآيفون؟" data-en="Is the Gor3a app available on both Android and iOS?">هل التطبيق متاح لهواتف الأندرويد والآيفون؟</span>
+            <span class="faq-chevron">▼</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner" data-ar="نعم! تم تطوير تطبيق جرعة ليعمل بكفاءة عالية على كل من أجهزة Android عبر متجر Google Play وأجهزة iPhone عبر متجر App Store." data-en="Yes! Gor3a is available for both Android devices via Google Play and iPhone/iOS devices via the Apple App Store.">
+              نعم! تم تطوير تطبيق جرعة ليعمل بكفاءة عالية على كل من أجهزة Android عبر متجر Google Play وأجهزة iPhone عبر متجر App Store.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 9. Bottom Download CTA Banner (#download)                             -->
+  <!-- ===================================================================== -->
+  <section class="download-cta-section" id="download">
+    <div class="container">
+      <div class="download-cta-card reveal-on-scroll">
+        <div>
+          <span class="section-eyebrow" style="background: rgba(255, 255, 255, 0.16); color: #FFFFFF;" data-ar="📲 حمّل تطبيق جرعة مجاناً الآن" data-en="📲 DOWNLOAD GOR3A FREE TODAY">
+            📲 حمّل تطبيق جرعة مجاناً الآن
+          </span>
+          <h2 class="download-cta-title" data-ar="اجعل صيدليتك الذكية ومستشارك الدوائي في جيبك دائماً" data-en="Put Your Smart AI Prescription Assistant in Your Pocket">
+            اجعل صيدليتك الذكية ومستشارك الدوائي في جيبك دائماً
+          </h2>
+          <p class="download-cta-desc" data-ar="انضم لآلاف المستخدمين في مصر وابدأ في مسح الروشتات الطبية، معرفة التشخيص والبدائل الرسمية، وتنظيم مواعيد أدويتك بكل أمان." data-en="Join users across Egypt decoding handwritten prescriptions, checking official EDA drug prices, and managing family medication schedules safely.">
+            انضم لآلاف المستخدمين في مصر وابدأ في مسح الروشتات الطبية، معرفة التشخيص والبدائل الرسمية، وتنظيم مواعيد أدويتك بكل أمان.
+          </p>
+
+          <div class="store-buttons-group" style="margin-bottom: 0;">
+            <!-- Google Play -->
+            <a href="#download" class="store-btn" style="background: #0F172A;" data-open-download-modal="google-play">
+              <svg class="store-icon" viewBox="0 0 512 512" fill="currentColor">
+                <path fill="#4CAF50" d="M48 59.49v393a14.07 14.07 0 0 0 22.2 11.49L284 256 70.2 48A14.07 14.07 0 0 0 48 59.49z"/>
+                <path fill="#FFC107" d="M361.4 333.4 284 256l77.4-77.4 91.5 52.3c18.8 10.7 18.8 39.5 0 50.2l-91.5 52.3z"/>
+                <path fill="#2196F3" d="M70.2 48 284 256l77.4-77.4L95.7 26.8C83.8 20 69.5 29.8 70.2 48z"/>
+                <path fill="#F44336" d="M284 256 70.2 464c-.7 18.2 13.6 28 25.5 21.2l265.7-151.8L284 256z"/>
+              </svg>
+              <div class="store-btn-text">
+                <span class="store-btn-small" data-ar="متوفر على" data-en="GET IT ON">متوفر على</span>
+                <span class="store-btn-large">Google Play</span>
+              </div>
+            </a>
+
+            <!-- App Store -->
+            <a href="#download" class="store-btn" style="background: #FFFFFF; color: #0F172A;" data-open-download-modal="app-store">
+              <svg class="store-icon" viewBox="0 0 384 512" fill="#0F172A">
+                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+              </svg>
+              <div class="store-btn-text">
+                <span class="store-btn-small" style="color: #475569;" data-ar="حمّل من" data-en="Download on the">حمّل من</span>
+                <span class="store-btn-large" style="color: #0F172A;">App Store</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- QR Code Box -->
+        <div class="download-qr-box">
+          <div class="qr-svg-frame" title="امسح الكود لتحميل تطبيق جرعة">
+            <svg viewBox="0 0 120 120" width="124" height="124" fill="#0B2E2B">
+              <rect x="8" y="8" width="32" height="32" rx="4" fill="none" stroke="#00897B" stroke-width="6"/>
+              <rect x="18" y="18" width="12" height="12" rx="2" fill="#00897B"/>
+              <rect x="80" y="8" width="32" height="32" rx="4" fill="none" stroke="#00897B" stroke-width="6"/>
+              <rect x="90" y="18" width="12" height="12" rx="2" fill="#00897B"/>
+              <rect x="8" y="80" width="32" height="32" rx="4" fill="none" stroke="#00897B" stroke-width="6"/>
+              <rect x="18" y="90" width="12" height="12" rx="2" fill="#00897B"/>
+              <rect x="50" y="10" width="8" height="8" rx="1"/>
+              <rect x="62" y="18" width="8" height="16" rx="1"/>
+              <rect x="50" y="28" width="8" height="12" rx="1"/>
+              <rect x="10" y="50" width="14" height="8" rx="1"/>
+              <rect x="30" y="50" width="12" height="12" rx="1"/>
+              <rect x="50" y="48" width="24" height="24" rx="4" fill="#00897B"/>
+              <text x="62" y="64" text-anchor="middle" fill="#FFFFFF" font-size="10" font-weight="bold">جرعة</text>
+              <rect x="82" y="50" width="10" height="14" rx="1"/>
+              <rect x="98" y="56" width="12" height="8" rx="1"/>
+              <rect x="50" y="82" width="12" height="8" rx="1"/>
+              <rect x="68" y="78" width="8" height="18" rx="1"/>
+              <rect x="84" y="82" width="14" height="14" rx="2"/>
+              <rect x="102" y="96" width="10" height="14" rx="1"/>
+              <rect x="52" y="100" width="22" height="10" rx="1"/>
+            </svg>
+          </div>
+          <div style="font-weight: 800; font-size: 0.95rem; margin-bottom: 0.2rem;" data-ar="امسح الكود بكاميرا هاتفك" data-en="Scan QR with Your Phone">امسح الكود بكاميرا هاتفك</div>
+          <div style="font-size: 0.78rem; opacity: 0.85;" data-ar="للتحميل المباشر على Android و iOS" data-en="Direct download for Android & iOS">للتحميل المباشر على Android و iOS</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 10. Footer                                                            -->
+  <!-- ===================================================================== -->
+  <footer class="landing-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="#" class="nav-brand">
+            <img src="/static/logo.png" alt="Gor3a Logo" class="nav-logo">
+            <div class="nav-brand-text">
+              <div class="nav-brand-title" style="color: #FFFFFF;">
+                <span>جرعة</span>
+                <span class="brand-divider">|</span>
+                <span>Gor3a</span>
+              </div>
+              <span class="nav-brand-sub" style="color: #5EEAD4;">صحتك في أمان • AI PRESCRIPTION SCANNER</span>
+            </div>
+          </a>
+          <p class="footer-brand-desc" data-ar="المنصة الذكية الأولى لقراءة الروشتات الطبية المكتوبة بخط اليد في مصر ومطابقتها مع قاعدة بيانات هيئة الدواء المصرية الرسمية (25,098 مستحضر دوائي)." data-en="Egypt's premier AI-powered handwritten prescription scanner and official 25,098 EDA drug directory.">
+            المنصة الذكية الأولى لقراءة الروشتات الطبية المكتوبة بخط اليد في مصر ومطابقتها مع قاعدة بيانات هيئة الدواء المصرية الرسمية (25,098 مستحضر دوائي).
+          </p>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title" data-ar="التطبيق" data-en="Mobile App">التطبيق</h4>
+          <ul class="footer-links">
+            <li><a href="#features" data-ar="مميزات جرعة" data-en="App Features">مميزات جرعة</a></li>
+            <li><a href="#how-it-works" data-ar="كيف يعمل الماسح الذكي" data-en="How It Works">كيف يعمل الماسح الذكي</a></li>
+            <li><a href="#screens" data-ar="شاشات التطبيق" data-en="App Screenshots">شاشات التطبيق</a></li>
+            <li><a href="#download" data-ar="تحميل للأندرويد والآيفون" data-en="Download for Android & iOS">تحميل للأندرويد والآيفون</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title" data-ar="الخدمات الدوائية" data-en="Clinical Tools">الخدمات الدوائية</h4>
+          <ul class="footer-links">
+            <li><a href="/drugs" data-ar="💊 دليل الأدوية المصرية (25,098)" data-en="💊 EDA Drug Database (25,098)">💊 دليل الأدوية المصرية (25,098)</a></li>
+            <li><a href="/drugs?q=Augmentin" data-ar="البحث عن البدائل والأسعار" data-en="Generic Alternatives Search">البحث عن البدائل والأسعار</a></li>
+            <li><a href="#faq" data-ar="بروتوكول الأمان السريري" data-en="Clinical Safety Protocol">بروتوكول الأمان السريري</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title" data-ar="الإدارة والنظام" data-en="Administration">الإدارة والنظام</h4>
+          <ul class="footer-links">
+            <li><a href="/admin" data-ar="🔒 لوحة تحكم الإدارة (Admin Portal)" data-en="🔒 Admin Portal Dashboard">🔒 لوحة تحكم الإدارة (Admin Portal)</a></li>
+            <li><a href="/admin#scanner" data-ar="📷 فحص الروشتة (داخل لوحة الإدارة)" data-en="📷 Web Prescription Scanner (Admin)">📷 فحص الروشتة (داخل لوحة الإدارة)</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p data-ar="© 2026 Gor3a | جرعة — جميع الحقوق محفوظة. إخلاء مسؤولية طبي: التطبيق أداة مساعدة لقراءة الروشتات والمعلومات الدوائية ولا يغني عن استشارة الطبيب أو الصيدلي." data-en="© 2026 Gor3a | جرعة — All rights reserved. Always consult a licensed physician or pharmacist before taking or substituting medications.">
+          © 2026 Gor3a | جرعة — جميع الحقوق محفوظة. إخلاء مسؤولية طبي: التطبيق أداة مساعدة لقراءة الروشتات والمعلومات الدوائية ولا يغني عن استشارة الطبيب أو الصيدلي.
+        </p>
+      </div>
     </div>
   </footer>
 
-  <!-- ======================================================================= -->
-  <!-- Prescription Medication Detail & Clinical Diagnosis Modal               -->
-  <!-- ======================================================================= -->
-  <div id="medicationDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
-    <div class="modal-card medication-modal-card">
-      
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <div class="modal-title-group">
-          <div class="modal-badge-row">
-            <span class="badge badge-primary" id="medModalEdaId">EDA-REG</span>
-            <span class="badge badge-success" id="medModalStatusBadge">مستحضر معتمد</span>
-            <span class="badge badge-neutral" id="medModalDosageBadge">Tablet</span>
-          </div>
-          <h2 class="modal-commercial-en" id="medModalCommercialEn">Augmentin</h2>
-          <h3 class="modal-commercial-ar" id="medModalCommercialAr">أوجمنتين</h3>
-        </div>
-        <button type="button" id="closeMedModalBtn" class="modal-close-btn" aria-label="Close dialog">✕</button>
+  <!-- ===================================================================== -->
+  <!-- Modal 1: Store Download & QR Modal                                    -->
+  <!-- ===================================================================== -->
+  <div class="landing-modal-backdrop" id="downloadAppModal" role="dialog" aria-modal="true">
+    <div class="landing-modal-card">
+      <button type="button" class="modal-close-circle" id="closeDownloadModalBtn" aria-label="Close">✕</button>
+      <img src="/static/logo.png" alt="Gor3a Logo" style="width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 1rem; box-shadow: 0 8px 20px rgba(0, 137, 123, 0.3);">
+      <h3 id="modalStoreBadgeTitle" style="font-size: 1.25rem; font-weight: 900; color: var(--text-main); margin-bottom: 0.5rem;">
+        حمّل تطبيق جرعة (Gor3a) الآن
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;" data-ar="امسح رمز الاستجابة السريعة (QR) بكاميرا هاتفك أو اختر المتجر المناسب لجهازك لتحميل التطبيق." data-en="Scan the QR code below with your phone camera or choose your platform store.">
+        امسح رمز الاستجابة السريعة (QR) بكاميرا هاتفك أو اختر المتجر المناسب لجهازك لتحميل التطبيق.
+      </p>
+
+      <div class="qr-svg-frame" style="margin: 0 auto 1.5rem; border: 2px solid var(--border-teal);">
+        <svg viewBox="0 0 120 120" width="124" height="124" fill="#0B2E2B">
+          <rect x="8" y="8" width="32" height="32" rx="4" fill="none" stroke="#00897B" stroke-width="6"/>
+          <rect x="18" y="18" width="12" height="12" rx="2" fill="#00897B"/>
+          <rect x="80" y="8" width="32" height="32" rx="4" fill="none" stroke="#00897B" stroke-width="6"/>
+          <rect x="90" y="18" width="12" height="12" rx="2" fill="#00897B"/>
+          <rect x="8" y="80" width="32" height="32" rx="4" fill="none" stroke="#00897B" stroke-width="6"/>
+          <rect x="18" y="90" width="12" height="12" rx="2" fill="#00897B"/>
+          <rect x="50" y="48" width="24" height="24" rx="4" fill="#00897B"/>
+          <text x="62" y="64" text-anchor="middle" fill="#FFFFFF" font-size="10" font-weight="bold">جرعة</text>
+          <rect x="50" y="10" width="8" height="8" rx="1"/>
+          <rect x="62" y="18" width="8" height="16" rx="1"/>
+          <rect x="10" y="50" width="14" height="8" rx="1"/>
+          <rect x="82" y="50" width="10" height="14" rx="1"/>
+          <rect x="68" y="78" width="8" height="18" rx="1"/>
+          <rect x="84" y="82" width="14" height="14" rx="2"/>
+        </svg>
       </div>
 
-      <!-- Modal Body -->
-      <div class="modal-body">
-        
-        <!-- Top Row: Full Drug Package Visual + Quick Stats -->
-        <div class="med-modal-hero-grid">
-          <!-- Drug Image Container -->
-          <div class="med-modal-image-box">
-            <div class="med-image-frame">
-              <!-- Shimmer Loading Placeholder -->
-              <div id="medModalVisualSkeleton" class="shimmer-image-placeholder">
-                <div class="shimmer-spinner-icon"></div>
-                <span>جاري استدعاء صورة المستحضر...</span>
-              </div>
-              <img id="medModalImage" alt="صورة الدواء الرسمية" class="med-modal-main-img hidden">
-            </div>
-            <div class="med-image-caption">
-              <span>🇪🇬 صورة المستحضر والشكل الصيدلي المعتمد بهيئة الدواء المصرية</span>
-            </div>
-          </div>
-
-          <!-- Quick Drug Profile Highlights -->
-          <div class="med-modal-quick-info">
-            <div class="quick-info-card">
-              <span class="quick-info-label">المادة الفعالة (Active Substance):</span>
-              <span class="quick-info-val active-highlight" id="medModalActive">--</span>
-            </div>
-            <div class="quick-info-card">
-              <span class="quick-info-label">التركيز والشكل الصيدلي:</span>
-              <span class="quick-info-val" id="medModalStrengthForm">--</span>
-            </div>
-            <div class="quick-info-card">
-              <span class="quick-info-label">التصنيف الدوائي (Drug Class):</span>
-              <span class="quick-info-val" id="medModalCategory">--</span>
-            </div>
-            <div class="quick-info-card" id="medModalPricingCard">
-              <span class="quick-info-label">السعر في الصيدليات المصرية:</span>
-              <span class="quick-info-val price-highlight" id="medModalPrice">-- EGP</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Clinical Diagnosis & What It Treats -->
-        <div class="clinical-deep-dive-card">
-          <div class="deep-dive-header">
-            <h4>
-              <span>🩺</span> دواعي الاستعمال وتشخيص الطبيب المتوقع
-              <span class="en-sub">Clinical Indications & Probable Physician Diagnosis</span>
-            </h4>
-          </div>
-
-          <div class="deep-dive-grid">
-            <!-- Box 1: What It Treats / دواعي الاستعمال -->
-            <div class="deep-dive-box indication-highlight-box">
-              <div class="deep-dive-box-title">
-                <span class="box-icon">🎯</span>
-                <strong>ماذا يعالج هذا الدواء بالتفصيل؟</strong>
-              </div>
-              <p id="medModalWhatItTreats" class="deep-dive-text" style="white-space: pre-line;">--</p>
-            </div>
-
-            <!-- Box 2: Likely Diagnosis / تشخيص الطبيب واستنتاج مشكلة المريض -->
-            <div class="deep-dive-box diagnosis-highlight-box">
-              <div class="deep-dive-box-title">
-                <span class="box-icon">🔍</span>
-                <strong>تحليل تشخيص الطبيب (مشكلة المريض المتوقعة):</strong>
-              </div>
-              <p id="medModalLikelyDiagnosis" class="deep-dive-text">--</p>
-            </div>
-
-            <!-- Box 3: Mechanism / آلية العمل -->
-            <div class="deep-dive-box">
-              <div class="deep-dive-box-title">
-                <span class="box-icon">🔬</span>
-                <strong>كيف يعمل الدواء في الجسم؟ (آلية العمل)</strong>
-              </div>
-              <p id="medModalMechanism" class="deep-dive-text">--</p>
-            </div>
-
-            <!-- Box 4: Precautions / تنبيهات الأمان والاستخدام -->
-            <div class="deep-dive-box precautions-box">
-              <div class="deep-dive-box-title">
-                <span class="box-icon">⚠️</span>
-                <strong>إرشادات الاستخدام وتنبيهات هامة للمريض:</strong>
-              </div>
-              <p id="medModalPrecautions" class="deep-dive-text">--</p>
-            </div>
-          </div>
-
-          <!-- Altibbi Reference Link -->
-          <div style="margin-top: 10px; padding: 6px 12px; background: #E8F1F2; border: 1px solid #99F6E4; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
-            <a id="medModalAltibbiLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none; align-items: center; gap: 4px; font-size: 0.8rem; color: #00897B; font-weight: 700; text-decoration: none;">
-              🌐 عرض صفحة الدواء المعتمدة على موسوعة الطبي (Altibbi) ↗
-            </a>
-            <span style="font-size: 0.72rem; color: #64748b;">بيانات سريرية وصور معتمدة من الموسوعات الطبية وهيئة الدواء</span>
-          </div>
-        </div>
-
-        <!-- Prescription Context / تعليمات الروشتة المحددة -->
-        <div class="card rx-instructions-card">
-          <h4 class="spec-card-title">
-            <span>📋</span> الجرعة والتعليمات المقررة في الروشتة الحالية
-          </h4>
-          <div class="rx-instructions-grid">
-            <div class="rx-spec-item">
-              <span class="rx-spec-lbl">الجرعة المقررة:</span>
-              <span class="rx-spec-val" id="medModalDose">--</span>
-            </div>
-            <div class="rx-spec-item">
-              <span class="rx-spec-lbl">التكرار ومواعيد التناول:</span>
-              <span class="rx-spec-val" id="medModalFrequency">--</span>
-            </div>
-            <div class="rx-spec-item">
-              <span class="rx-spec-lbl">مدة العلاج (Duration):</span>
-              <span class="rx-spec-val" id="medModalDuration">--</span>
-            </div>
-            <div class="rx-spec-item full-width">
-              <span class="rx-spec-lbl">تعليمات الطبيب الكاملة:</span>
-              <span class="rx-spec-val highlight" id="medModalInstructions">--</span>
-            </div>
-            <div class="rx-spec-item full-width">
-              <span class="rx-spec-lbl">النص المكتوب بخط يد الطبيب (Verbatim):</span>
-              <span class="rx-spec-val code-font" id="medModalRawText">--</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="modal-footer">
-        <a href="#" id="medModalExploreAlternativesBtn" target="_blank" class="btn btn-secondary">
-          💊 فحص البدائل المتطابقة في دليل الأدوية (25,098)
+      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+        <a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer" class="btn-nav-cta" style="justify-content: center; padding: 0.75rem 1.25rem; font-size: 0.95rem;">
+          <span>Google Play (Android)</span>
         </a>
-        <button type="button" id="copyMedModalInfoBtn" class="btn btn-secondary">
-          📋 نسخ تفاصيل الدواء
-        </button>
-        <button type="button" id="closeMedModalBottomBtn" class="btn btn-primary">
-          إغلاق
-        </button>
+        <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer" class="icon-pill-btn" style="justify-content: center; height: 44px; font-size: 0.95rem;">
+          <span>App Store (iOS / iPhone)</span>
+        </a>
       </div>
-
     </div>
   </div>
 
-  <script src="/static/app.js?v=3.0"></script>
+  <!-- ===================================================================== -->
+  <!-- Modal 2: App Screen Lightbox Preview                                  -->
+  <!-- ===================================================================== -->
+  <div class="landing-modal-backdrop" id="screenLightboxModal" role="dialog" aria-modal="true">
+    <div class="landing-modal-card" style="max-width: 380px; padding: 1.25rem;">
+      <button type="button" class="modal-close-circle" id="closeLightboxBtn" aria-label="Close">✕</button>
+      <h4 id="lightboxScreenTitle" style="margin-bottom: 0.75rem; font-weight: 800; color: var(--text-main);">معاينة الشاشة</h4>
+      <div style="border-radius: 24px; overflow: hidden; border: 4px solid #0F172A; box-shadow: var(--shadow-lg); max-height: 75vh;">
+        <img id="lightboxScreenImg" src="/static/screens/2.jpeg" alt="Screen Preview" style="width: 100%; height: auto; object-fit: contain;">
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/landing.js?v=1.0"></script>
 </body>
 </html>

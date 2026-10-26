@@ -299,22 +299,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const pricing = item.pricing || {};
 
     const basePriceStr = pricing.registered_price_egp != null
-      ? `${pricing.registered_price_egp.toFixed(2)} EGP`
+      ? `${formatPrice(pricing.registered_price_egp)} EGP`
       : "Not Listed";
 
     const currentPriceStr = pricing.expected_price_current_egp != null
-      ? `${pricing.expected_price_current_egp.toFixed(2)} EGP`
+      ? `${formatPrice(pricing.expected_price_current_egp)} EGP`
       : "Not Listed";
 
     const priceRangeStr = (pricing.expected_price_min_egp != null && pricing.expected_price_max_egp != null)
-      ? `${pricing.expected_price_min_egp.toFixed(1)} - ${pricing.expected_price_max_egp.toFixed(1)} EGP`
+      ? `${formatPrice(pricing.expected_price_min_egp, 1)} - ${formatPrice(pricing.expected_price_max_egp, 1)} EGP`
       : "";
 
     const stripPriceHtml = pricing.expected_strip_price_egp != null
       ? `
         <div class="strip-price-row">
           <span>سعر الشريط المتوقع:</span>
-          <span class="strip-price-badge">~${pricing.expected_strip_price_egp.toFixed(2)} EGP</span>
+          <span class="strip-price-badge">~${formatPrice(pricing.expected_strip_price_egp)} EGP</span>
         </div>
       `
       : "";
@@ -573,15 +573,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Pricing
     modalBasePrice.textContent = pricing.registered_price_egp != null
-      ? `${pricing.registered_price_egp.toFixed(2)} EGP`
+      ? `${formatPrice(pricing.registered_price_egp)} EGP`
       : "Not Listed (غير مسعر)";
 
     modalCurrentPrice.textContent = pricing.expected_price_current_egp != null
-      ? `${pricing.expected_price_current_egp.toFixed(2)} EGP`
+      ? `${formatPrice(pricing.expected_price_current_egp)} EGP`
       : "Not Available";
 
     if (pricing.expected_price_min_egp != null && pricing.expected_price_max_egp != null) {
-      modalPriceRange.textContent = `Range: ${pricing.expected_price_min_egp.toFixed(1)} to ${pricing.expected_price_max_egp.toFixed(1)} EGP`;
+      modalPriceRange.textContent = `Range: ${formatPrice(pricing.expected_price_min_egp, 1)} to ${formatPrice(pricing.expected_price_max_egp, 1)} EGP`;
     } else {
       modalPriceRange.textContent = "";
     }
@@ -591,7 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : "EDA Regulatory Tier";
 
     if (pricing.expected_strip_price_egp != null) {
-      modalStripPrice.textContent = `${pricing.expected_strip_price_egp.toFixed(2)} EGP`;
+      modalStripPrice.textContent = `${formatPrice(pricing.expected_strip_price_egp)} EGP`;
       modalPackageDesc.textContent = pricing.package_description
         ? `${pricing.package_description}`
         : "سعر الشريط";
@@ -703,8 +703,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const d = item.drug;
     const p = item.pricing || {};
 
-    const baseStr = p.registered_price_egp != null ? `${p.registered_price_egp.toFixed(1)} EGP` : "--";
-    const currStr = p.expected_price_current_egp != null ? `${p.expected_price_current_egp.toFixed(1)} EGP` : "--";
+    const baseStr = p.registered_price_egp != null ? `${formatPrice(p.registered_price_egp, 1)} EGP` : "--";
+    const currStr = p.expected_price_current_egp != null ? `${formatPrice(p.expected_price_current_egp, 1)} EGP` : "--";
 
     return `
       <div class="alt-mini-card" data-drug-id="${escapeHtml(d.id)}" tabindex="0" title="Click to view ${escapeHtml(d.commercial_name_en)}">
@@ -911,6 +911,14 @@ document.addEventListener("DOMContentLoaded", () => {
     sortBySelect.value = "relevance";
 
     fetchDrugs();
+  }
+
+  function formatPrice(val, maxDecimals = 2) {
+    if (val == null || isNaN(val)) return "";
+    return Number(val).toLocaleString("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: maxDecimals,
+    });
   }
 
   function escapeHtml(str) {

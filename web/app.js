@@ -1037,32 +1037,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const benchmarkCasesGrid = document.getElementById("benchmarkCasesGrid");
   const benchCaseCount = document.getElementById("benchCaseCount");
 
-  tabLabBtn.addEventListener("click", () => switchTab("lab"));
-  tabBenchmarkBtn.addEventListener("click", () => switchTab("benchmark"));
+  if (tabLabBtn) tabLabBtn.addEventListener("click", () => switchTab("lab"));
+  if (tabBenchmarkBtn) tabBenchmarkBtn.addEventListener("click", () => switchTab("benchmark"));
   if (tabBilingualBtn) tabBilingualBtn.addEventListener("click", () => switchTab("bilingual"));
 
   function switchTab(tab) {
-    tabLabBtn.classList.remove("active");
-    tabBenchmarkBtn.classList.remove("active");
+    if (tabLabBtn) tabLabBtn.classList.remove("active");
+    if (tabBenchmarkBtn) tabBenchmarkBtn.classList.remove("active");
     if (tabBilingualBtn) tabBilingualBtn.classList.remove("active");
-    labView.classList.add("hidden");
-    benchmarkView.classList.add("hidden");
+    if (labView) labView.classList.add("hidden");
+    if (benchmarkView) benchmarkView.classList.add("hidden");
     if (bilingualView) bilingualView.classList.add("hidden");
 
     if (tab === "lab") {
-      tabLabBtn.classList.add("active");
-      labView.classList.remove("hidden");
-      phaseBadge.textContent = "PHASE 1 & 5 — RESEARCH LAB & EDA DATABASE";
+      if (tabLabBtn) tabLabBtn.classList.add("active");
+      if (labView) labView.classList.remove("hidden");
+      if (phaseBadge) phaseBadge.textContent = "PHASE 1 & 5 — RESEARCH LAB & EDA DATABASE";
     } else if (tab === "benchmark") {
-      tabBenchmarkBtn.classList.add("active");
-      benchmarkView.classList.remove("hidden");
-      phaseBadge.textContent = "PHASE 2 — MULTI-MODEL BENCHMARK";
+      if (tabBenchmarkBtn) tabBenchmarkBtn.classList.add("active");
+      if (benchmarkView) benchmarkView.classList.remove("hidden");
+      if (phaseBadge) phaseBadge.textContent = "PHASE 2 — MULTI-MODEL BENCHMARK";
       loadBenchmarkCases();
       loadBenchmarkResults();
     } else if (tab === "bilingual") {
       if (tabBilingualBtn) tabBilingualBtn.classList.add("active");
       if (bilingualView) bilingualView.classList.remove("hidden");
-      phaseBadge.textContent = "PHASE 3 & 5 — BILINGUAL ARABIC DATASET & TRAINING";
+      if (phaseBadge) phaseBadge.textContent = "PHASE 3 & 5 — BILINGUAL ARABIC DATASET & TRAINING";
       loadBilingualStats();
       loadBilingualCases();
     }
@@ -1129,7 +1129,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  runBenchmarkBtn.addEventListener("click", async () => {
+  if (runBenchmarkBtn) runBenchmarkBtn.addEventListener("click", async () => {
     const checked = Array.from(document.querySelectorAll('input[name="benchModel"]:checked'))
       .map(cb => {
         const parts = cb.value.split(":");

@@ -134,6 +134,10 @@ document.addEventListener("DOMContentLoaded", () => {
     adminDashboardView.classList.remove("hidden");
     adminHeaderActions.style.display = "flex";
     adminUserEmail.textContent = email || "basemads20@gmail.com";
+    if (window.location.hash === "#scanner" || window.location.hash === "#tabScanner") {
+      const scannerBtn = document.getElementById("adminScannerTabBtn");
+      if (scannerBtn) scannerBtn.click();
+    }
   }
 
   adminLoginForm.addEventListener("submit", async (e) => {
