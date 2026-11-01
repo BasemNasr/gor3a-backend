@@ -1,32 +1,14 @@
-Subject: Appeal / Explanation regarding Policy Rejection for App "جرعة - قراءة الروشتات والأدوية" (com.bn.gor3a)
+Dear Google Play Policy Team,
 
-Dear Google Play Policy Review Team,
+Regarding the rejection of "جرعة" (com.bn.gor3a) for Missing Source Link / Government Information:
 
-Thank you for your review and detailed feedback regarding our application "جرعة - قراءة الروشتات والأدوية" (Package name: com.bn.gor3a) in reference to the Misleading Claims (Government Information) policy.
+We have fully resolved the issue in our Main Store Listing (Full Description):
+1. Prominent Non-Government Disclaimer Added: Stated clearly at the top that Gor3a is an independent app by Basem Nasr and DOES NOT represent, nor is it affiliated with, the Egyptian Drug Authority (EDA) or any government entity.
+2. Official Source Link Provided: Added the official government link: https://www.edaegypt.gov.eg/
+3. App Content Form: Confirmed under "Government apps" that we do not represent a government entity.
+4. Live Terms & Disclaimer: Published at https://gor3a.vercel.app/terms
 
-We have thoroughly addressed the concern regarding the missing source link and government entity disclosure. Here is a summary of the corrective actions taken:
+All changes are saved in the listing. We kindly request approval of the app.
 
-1. Prominent Non-Government Entity Disclaimer Added:
-We have updated our app's Full Description (both Arabic and English) to prominently feature a clear disclaimer at the very top, explicitly stating that:
-- The app "Gor3a" (com.bn.gor3a) is an independent software application developed by an independent developer (Basem Nasr).
-- The app DOES NOT represent, nor is it affiliated with, authorized by, sponsored by, or endorsed by the Egyptian Drug Authority (EDA), the Egyptian Ministry of Health, or any other governmental agency.
-
-2. Clear, Accessible, and Functional Official Source Link Provided:
-We have clearly cited and provided the direct, functional official government URL from which public medication reference information is sourced:
-Official Source: https://www.edaegypt.gov.eg/ (Egyptian Drug Authority)
-
-3. App Content Government Declaration:
-In the Play Console under "App Content -> Government Apps", we have confirmed the selection that the app is NOT developed on behalf of or affiliated with a government entity.
-
-4. Medical Safety & Informational Purpose:
-We have reinforced that the application's AI OCR and medication reminder features are solely for personal organizational and informational assistance, and do not constitute medical diagnosis or prescribe treatments.
-
-We have updated the Full Description in our Google Play Store Listing accordingly and submitted the changes for your review. We kindly request the team to re-review and approve the update.
-
-Thank you for your guidance and support in keeping Google Play a safe and trusted ecosystem.
-
-Sincerely,
+Thank you,
 Basem Nasr
-Developer of Gor3a (com.bn.gor3a)
-Email: basemnasr@gmail.com (or your developer account email)
-Website: https://gor3a.vercel.app
