@@ -1,0 +1,1 @@
+AI prescription scanner, medicine directory, generics, and dosage reminders.

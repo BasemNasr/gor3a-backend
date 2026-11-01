@@ -1,0 +1,45 @@
+⚠️ IMPORTANT GOVERNMENT & MEDICAL DISCLAIMER:
+1. No Government Affiliation or Representation:
+"Gor3a" (جرعة) is an independent application developed by an independent developer (Basem Nasr). This app DOES NOT represent, and is NOT affiliated with, authorized by, sponsored by, or endorsed by any governmental agency, including the Egyptian Drug Authority (EDA) or the Egyptian Ministry of Health and Population.
+
+2. Official Source of Government Information:
+All pharmaceutical reference data, generic names, registration codes, and guideline retail prices provided in the app are collected from publicly accessible records published on the official website of the Egyptian Drug Authority (EDA):
+https://www.edaegypt.gov.eg/
+
+3. Medical Disclaimer:
+The information and AI-extracted data provided by Gor3a are strictly for informational, educational, and personal organizational purposes. This application is NOT a substitute for professional medical advice, clinical diagnosis, or medical prescription. Always consult a licensed physician or pharmacist before starting, changing, or discontinuing any medication.
+
+--------------------------------------------------
+
+Gor3a (جرعة) — Your Smart Medication Companion & Prescription Scanner
+
+Have trouble reading difficult handwritten prescriptions? Looking for affordable alternatives with the same active ingredients, or need a reliable daily reminder for your medication schedule?
+Gor3a combines multimodal clinical AI vision with a comprehensive Egyptian pharmaceutical database to make your health journey clearer, safer, and simpler.
+
+Key Features:
+
+📸 1. AI Prescription Scanner (Clinical Vision):
+• Snap a clear photo of any handwritten prescription with your camera.
+• Smart AI recognizes medication brand names, strengths, forms (tablets, syrups, drops, injections), and Arabic dosage instructions.
+• Clarifies complex medical shorthand into clear, actionable Arabic and English steps.
+
+🔍 2. Comprehensive Medicine Directory & Generics:
+• Search across 25,000+ Egyptian pharmaceuticals by brand or generic name.
+• Discover identical generic alternatives (Exact Generics) with the same active ingredient and strength to save on healthcare costs or when medicines are out of stock.
+• Review indications, mechanism of action, precautions, and manufacturer details.
+
+💰 3. Guideline Prices & Strip Breakdown:
+• Check indicative retail pack prices and automatic per-strip price calculations to manage your family's medication budget.
+
+⏰ 4. Smart Medication Reminders & Alarms:
+• Set up customized daily medication alarms tailored to your doctor's instructions (before/after meals, morning/evening).
+• Never miss a dose with clear, timely local alerts.
+
+☁️ 5. Secure Prescription History:
+• Organize and backup your past prescriptions in your private medical history.
+• Easily access past treatments to share with your consulting doctor during follow-ups.
+
+🔒 Privacy & Security:
+Your privacy is our utmost priority. All prescription data and personal notes are transmitted and stored using industry-standard encryption protocols.
+
+Download Gor3a today and take control of your medication safety!
