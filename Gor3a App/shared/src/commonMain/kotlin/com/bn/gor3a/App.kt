@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.bn.gor3a
 
 import androidx.compose.animation.Crossfade
