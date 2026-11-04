@@ -63,6 +63,7 @@ import com.bn.gor3a.core.camera.CameraPreview
 import com.bn.gor3a.core.camera.CameraPreviewController
 import com.bn.gor3a.core.camera.rememberImagePickerLauncher
 import com.bn.gor3a.core.localization.LocalStrings
+import com.bn.gor3a.core.quota.DeviceQuotaManager
 import com.bn.gor3a.core.theme.Gor3aBgDark
 import com.bn.gor3a.core.theme.Gor3aTealAccent
 import com.bn.gor3a.core.theme.Gor3aTealPrimary
@@ -145,6 +146,35 @@ fun ScannerScreen(
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
+
+                // Remaining Scans Quota Badge
+                val remainingScans = remember(state.isAnalyzing) {
+                    DeviceQuotaManager.getLocalScansRemaining()
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            if (remainingScans <= 1) Color(0xFFEF4444).copy(alpha = 0.25f)
+                            else Color(0xFF0F766E).copy(alpha = 0.35f)
+                        )
+                        .border(
+                            1.dp,
+                            if (remainingScans <= 1) Color(0xFFF87171).copy(alpha = 0.5f)
+                            else Color(0xFF2DD4BF).copy(alpha = 0.4f),
+                            RoundedCornerShape(20.dp)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "⚡ $remainingScans / 5 اليوم",
+                        color = if (remainingScans <= 1) Color(0xFFFCA5A5) else Color(0xFF99F6E4),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Mode Indicator Badge
                 Box(

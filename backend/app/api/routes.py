@@ -2,9 +2,10 @@ import os
 import json
 import logging
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, Response
 
+from ..config import settings
 from ..drugs.clinical_knowledge import get_clinical_knowledge
 from ..drugs.packaging_image import generate_drug_package_svg
 from ..drugs.web_enricher import web_enricher
@@ -12,6 +13,8 @@ from ..models.prescription import AnalysisResponse
 from ..providers.factory import list_available_providers
 from ..services.analyzer import PrescriptionAnalyzer
 from ..services.banner_service import EGYPTIAN_GOVERNORATES, banner_service
+from ..services.quota_service import quota_service
+from ..services.user_service import verify_user_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -358,22 +361,106 @@ async def get_drug_clinical_info(drug_id: str):
     )
 
 
+@router.get("/scans/quota", summary="Get Daily Prescription Scan Quota")
+async def get_scan_quota(
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    x_device_id: Optional[str] = Header(None, alias="X-Device-Id"),
+    device_id: Optional[str] = Query(None),
+):
+    """
+    Returns the daily scan quota status for the current user and device.
+    Max 5 scans per calendar day. Returns WhatsApp upgrade info if quota reached.
+    """
+    user_id = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ", 1)[1].strip()
+        verified = verify_user_token(token)
+        if verified:
+            user_id = verified[0]
+
+    client_ip = (
+        request.headers.get("x-forwarded-for", "")
+        or request.headers.get("x-real-ip", "")
+        or (request.client.host if request.client else "unknown_ip")
+    ).split(",")[0].strip()
+    effective_device_id = (device_id or x_device_id or f"legacy_ip_{client_ip}").strip()
+    status_info = quota_service.check_quota(user_id=user_id, device_id=effective_device_id)
+    return status_info
+
+
 @router.post(
     "/analyze",
     response_model=AnalysisResponse,
     summary="Analyze Handwritten Prescription Image",
 )
 async def analyze_prescription(
+    request: Request,
     file: UploadFile = File(..., description="Prescription image file (JPEG, PNG, WEBP)"),
     provider: Optional[str] = Form(None, description="Vision AI provider (gemini, openai, claude, mock)"),
     model: Optional[str] = Form(None, description="Specific model identifier"),
     pipeline_version: str = Form("v2", description="Pipeline version: 'v1' (vision only) or 'v2' (vision + EDA normalizer)"),
+    device_id: Optional[str] = Form(None, description="Client device unique identifier for anti-abuse tracking"),
+    x_device_id: Optional[str] = Header(None, alias="X-Device-Id", description="Device ID header"),
+    authorization: Optional[str] = Header(None, description="Bearer user token"),
 ):
     """
     Accepts an uploaded handwritten Egyptian medical prescription image,
-    runs OCR and clinical entity extraction through the selected vision AI provider,
-    and applies Egyptian Drug Authority (EDA) normalization in Pipeline V2.
+    enforces daily quota (max 5 scans/day), and supports smart backward compatibility
+    for legacy client versions while allowing immediate toggle to strict login mode.
     """
+    user_id = None
+    user_phone = None
+    is_authenticated = False
+
+    # 1. Validate Authentication Token if provided
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ", 1)[1].strip()
+        verified = verify_user_token(token)
+        if verified:
+            user_id, user_phone = verified
+            is_authenticated = True
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="جلسة الدخول غير صالحة أو منتهية. يرجى تسجيل الدخول مرة أخرى.",
+            )
+
+    # 2. Check Backward Compatibility for Legacy App Versions
+    client_ip = (
+        request.headers.get("x-forwarded-for", "")
+        or request.headers.get("x-real-ip", "")
+        or (request.client.host if request.client else "unknown_ip")
+    ).split(",")[0].strip()
+
+    if not is_authenticated:
+        if not settings.allow_legacy_guest_scans:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="يرجى تحديث التطبيق وتسجيل الدخول أولاً للتمكن من فحص الروشتة الطبية.",
+            )
+        # Legacy fallback: Track device by client IP to enforce the 5-scan quota without breaking the old app
+        effective_device_id = (device_id or x_device_id or f"legacy_ip_{client_ip}").strip()
+    else:
+        effective_device_id = (device_id or x_device_id or f"device_{user_phone}").strip()
+
+    # 3. Enforce Daily Quota (Anti-Abuse by User ID + Device ID)
+    quota_status = quota_service.check_quota(user_id=user_id, device_id=effective_device_id)
+
+    if not quota_status["allowed"]:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "error": "DAILY_QUOTA_EXCEEDED",
+                "message": quota_status["message"],
+                "scans_used": quota_status["scans_used"],
+                "max_scans": quota_status["max_scans"],
+                "whatsapp_number": quota_status["whatsapp_number"],
+                "whatsapp_link": quota_status["whatsapp_link"],
+            },
+        )
+
+    # 3. Validate File
     if not file:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -411,6 +498,10 @@ async def analyze_prescription(
                 provider_name=provider,
                 model_name=model,
             )
+
+        # 4. Record Successful Scan for Quota
+        quota_service.record_scan(user_id=user_id, device_id=effective_device_id)
+
         return response
     except ValueError as exc:
         logger.warning(f"Validation error in prescription analysis: {exc}")
@@ -424,6 +515,8 @@ async def analyze_prescription(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         )
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Unexpected error during prescription analysis")
         raise HTTPException(

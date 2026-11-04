@@ -8,6 +8,7 @@ from backend.app.drugs.repository import DrugRepository, drug_repository
 from backend.app.main import app
 from backend.app.services.normalizer import DrugNormalizer
 from backend.app.services.pipeline_v2 import PrescriptionPipelineV2
+from backend.app.services.user_service import create_user_token
 
 client = TestClient(app)
 
@@ -183,12 +184,15 @@ def test_api_analyze_v1_vs_v2():
     buf = io.BytesIO()
     img.save(buf, format="JPEG")
     img_bytes = buf.getvalue()
+    token = create_user_token("user_test_v1v2", "01088887777")
+    headers = {"Authorization": f"Bearer {token}", "X-Device-Id": "device_test_v1v2"}
 
     # Call with V2 (default)
     resp_v2 = client.post(
         "/api/analyze",
         data={"provider": "mock", "model": "mock-conservative-v1", "pipeline_version": "v2"},
         files={"file": ("rx.jpg", img_bytes, "image/jpeg")},
+        headers=headers,
     )
     assert resp_v2.status_code == 200
     v2_data = resp_v2.json()
@@ -201,6 +205,7 @@ def test_api_analyze_v1_vs_v2():
         "/api/analyze",
         data={"provider": "mock", "model": "mock-conservative-v1", "pipeline_version": "v1"},
         files={"file": ("rx.jpg", img_bytes, "image/jpeg")},
+        headers=headers,
     )
     assert resp_v1.status_code == 200
     v1_data = resp_v1.json()

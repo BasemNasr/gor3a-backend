@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -260,6 +260,54 @@ class SupabaseService:
                 return res.is_success
         except Exception as e:
             logger.warning(f"[Supabase] delete_banner exception: {e}")
+            return False
+
+    # --------------------------------------------------------------------------
+    # Daily Scans Quota Tracking
+    # --------------------------------------------------------------------------
+    def count_daily_scans(self, user_id: Optional[str], device_id: str, scan_date: str) -> Tuple[int, int]:
+        """
+        Returns (user_scan_count, device_scan_count) for the given date.
+        """
+        if not self.is_configured():
+            return 0, 0
+        user_count = 0
+        device_count = 0
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                # 1. Device count
+                res_dev = client.get(
+                    f"{self.url}/rest/v1/daily_scans?device_id=eq.{device_id}&scan_date=eq.{scan_date}&select=id",
+                    headers=self._headers(),
+                )
+                if res_dev.is_success:
+                    device_count = len(res_dev.json())
+
+                # 2. User count (if user_id provided)
+                if user_id:
+                    res_user = client.get(
+                        f"{self.url}/rest/v1/daily_scans?user_id=eq.{user_id}&scan_date=eq.{scan_date}&select=id",
+                        headers=self._headers(),
+                    )
+                    if res_user.is_success:
+                        user_count = len(res_user.json())
+        except Exception as e:
+            logger.warning(f"[Supabase] count_daily_scans exception: {e}")
+        return user_count, device_count
+
+    def insert_daily_scan(self, scan_record: Dict[str, Any]) -> bool:
+        if not self.is_configured():
+            return False
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                res = client.post(
+                    f"{self.url}/rest/v1/daily_scans",
+                    json=scan_record,
+                    headers=self._headers(),
+                )
+                return res.is_success
+        except Exception as e:
+            logger.warning(f"[Supabase] insert_daily_scan exception: {e}")
             return False
 
 

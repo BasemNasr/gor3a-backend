@@ -30,13 +30,17 @@ class PrescriptionRepositoryImpl(
         model: String?,
         pipelineVersion: String
     ): Result<PrescriptionAnalysisResult> {
+        val token = PlatformPreferences.getString("gor3a_user_auth_token", "").trim()
+        val deviceId = com.bn.gor3a.core.quota.DeviceQuotaManager.getOrCreateDeviceId()
         return try {
             val responseDto = apiClient.analyzePrescription(
                 imageBytes = imageBytes,
                 filename = filename,
                 provider = provider,
                 model = model,
-                pipelineVersion = pipelineVersion
+                pipelineVersion = pipelineVersion,
+                authToken = token.ifEmpty { null },
+                deviceId = deviceId
             )
             val domainResult = responseDto.toDomain()
             // If the AI found no medications or confidence is negligible, it's not a recognized prescription

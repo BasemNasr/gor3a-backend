@@ -2,6 +2,9 @@ package com.bn.gor3a.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bn.gor3a.core.quota.DeviceQuotaManager
+import com.bn.gor3a.data.remote.QuotaExceededException
+import com.bn.gor3a.data.remote.UnauthorizedScanException
 import com.bn.gor3a.domain.model.PrescriptionAnalysisResult
 import com.bn.gor3a.domain.usecase.AnalyzePrescriptionUseCase
 import kotlinx.coroutines.Job
@@ -22,6 +25,12 @@ sealed interface ScannerEffect {
     ) : ScannerEffect
     data class NavigateToUnrecognized(val message: String) : ScannerEffect
     data class ShowError(val message: String) : ScannerEffect
+    data class ShowQuotaExceeded(
+        val message: String,
+        val whatsappNumber: String = DeviceQuotaManager.WHATSAPP_NUMBER,
+        val whatsappLink: String = DeviceQuotaManager.WHATSAPP_LINK
+    ) : ScannerEffect
+    object RequireLogin : ScannerEffect
 }
 
 data class ScannerUiState(
@@ -110,6 +119,19 @@ class ScannerViewModel(
     }
 
     fun onImageCaptured(imageBytes: ByteArray, filename: String = "prescription.jpg") {
+        if (DeviceQuotaManager.isQuotaExceeded()) {
+            viewModelScope.launch {
+                _effects.emit(
+                    ScannerEffect.ShowQuotaExceeded(
+                        message = "لقد استنفدت الحد اليومي المسموح به (٥ فحوصات في اليوم). للحصول على عدد غير محدود من الفحوصات والنسخة الكاملة، يرجى التواصل معنا عبر واتساب.",
+                        whatsappNumber = DeviceQuotaManager.WHATSAPP_NUMBER,
+                        whatsappLink = DeviceQuotaManager.WHATSAPP_LINK
+                    )
+                )
+            }
+            return
+        }
+
         analysisJob?.cancel()
         _uiState.update {
             it.copy(
@@ -142,16 +164,20 @@ class ScannerViewModel(
                 pipelineVersion = "v2"
             )
 
-            // Resilient fallback if primary model experiences 503 high demand or temporary failure
+            // Resilient fallback if primary model experiences 503 high demand or temporary failure (NOT for Quota/Auth errors)
             if (result.isFailure) {
-                println("[ScannerViewModel] ⚠️ Primary model failed, falling back to gemini-3.5-flash-lite...")
-                result = analyzePrescriptionUseCase(
-                    imageBytes = imageBytes,
-                    filename = filename,
-                    provider = "gemini",
-                    model = "gemini-3.5-flash-lite",
-                    pipelineVersion = "v2"
-                )
+                val err = result.exceptionOrNull()
+                val isQuotaOrAuth = err is QuotaExceededException || err is UnauthorizedScanException
+                if (!isQuotaOrAuth) {
+                    println("[ScannerViewModel] ⚠️ Primary model failed, falling back to gemini-3.5-flash-lite...")
+                    result = analyzePrescriptionUseCase(
+                        imageBytes = imageBytes,
+                        filename = filename,
+                        provider = "gemini",
+                        model = "gemini-3.5-flash-lite",
+                        pipelineVersion = "v2"
+                    )
+                }
             }
 
             stepAnimationJob.join()
@@ -168,7 +194,19 @@ class ScannerViewModel(
                 }
             }.onFailure { err ->
                 _uiState.update { it.copy(isAnalyzing = false) }
-                _effects.emit(ScannerEffect.NavigateToUnrecognized(err.message ?: "عذراً، لم يتم التعرف على الروشتة"))
+                if (err is QuotaExceededException) {
+                    _effects.emit(
+                        ScannerEffect.ShowQuotaExceeded(
+                            message = err.messageText,
+                            whatsappNumber = err.whatsappNumber,
+                            whatsappLink = err.whatsappLink
+                        )
+                    )
+                } else if (err is UnauthorizedScanException) {
+                    _effects.emit(ScannerEffect.RequireLogin)
+                } else {
+                    _effects.emit(ScannerEffect.NavigateToUnrecognized(err.message ?: "عذراً، لم يتم التعرف على الروشتة"))
+                }
             }
         }
     }

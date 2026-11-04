@@ -6,20 +6,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.bn.gor3a.core.localization.AppLanguage
 import com.bn.gor3a.core.localization.Gor3aLocalizationProvider
 import com.bn.gor3a.core.navigation.PlatformBackHandler
 import com.bn.gor3a.core.preferences.PlatformPreferences
+import com.bn.gor3a.core.quota.DeviceQuotaManager
 import com.bn.gor3a.core.theme.Gor3aTheme
 import com.bn.gor3a.core.theme.LocalThemeIsDark
 import com.bn.gor3a.di.startGor3aKoin
 import com.bn.gor3a.data.mapper.toAnalysisResult
 import com.bn.gor3a.domain.model.PatientInfo
 import com.bn.gor3a.domain.model.PrescriptionAnalysisResult
+import com.bn.gor3a.presentation.components.AuthBottomSheet
+import com.bn.gor3a.presentation.components.QuotaExceededBottomSheet
 import com.bn.gor3a.presentation.navigation.Screen
 import com.bn.gor3a.presentation.screens.DrugExplorerScreen
 import com.bn.gor3a.presentation.screens.HistoryScreen
@@ -139,6 +144,22 @@ private fun AppNavigationContent() {
     val historyViewModel: HistoryViewModel = koinInject()
     val authViewModel: AuthViewModel = koinInject()
 
+    var showGlobalAuthSheet by remember { mutableStateOf(false) }
+    var showGlobalQuotaSheet by remember { mutableStateOf(false) }
+    var quotaSheetMessage by remember { mutableStateOf<String?>(null) }
+    val currentAuthUser by authViewModel.currentUser.collectAsState()
+
+    val safelyNavigateToScanner: () -> Unit = {
+        if (currentAuthUser == null) {
+            showGlobalAuthSheet = true
+        } else if (DeviceQuotaManager.isQuotaExceeded()) {
+            quotaSheetMessage = null
+            showGlobalQuotaSheet = true
+        } else {
+            navigateTo(Screen.Scanner)
+        }
+    }
+
     // Intercept hardware / gesture Back on Android
     PlatformBackHandler(enabled = backStack.size > 1 && currentScreen != Screen.Home) {
         if (currentScreen == Screen.ScanningAnimation || currentScreen == Screen.UnrecognizedPrescription) {
@@ -184,6 +205,19 @@ private fun AppNavigationContent() {
                     }
                     navigateTo(Screen.UnrecognizedPrescription)
                 }
+                is ScannerEffect.ShowQuotaExceeded -> {
+                    while (backStack.isNotEmpty() && backStack.lastOrNull() == Screen.ScanningAnimation) {
+                        backStack.removeAt(backStack.lastIndex)
+                    }
+                    quotaSheetMessage = effect.message
+                    showGlobalQuotaSheet = true
+                }
+                is ScannerEffect.RequireLogin -> {
+                    while (backStack.isNotEmpty() && backStack.lastOrNull() == Screen.ScanningAnimation) {
+                        backStack.removeAt(backStack.lastIndex)
+                    }
+                    showGlobalAuthSheet = true
+                }
             }
         }
     }
@@ -214,7 +248,7 @@ private fun AppNavigationContent() {
                     viewModel = homeViewModel,
                     authViewModel = authViewModel,
                     onNavigateToScanner = {
-                        navigateTo(Screen.Scanner)
+                        safelyNavigateToScanner()
                     },
                     onNavigateToSearch = {
                         navigateToTab(Screen.DrugExplorer)
@@ -352,7 +386,7 @@ private fun AppNavigationContent() {
                         navigateToTab(Screen.Reminders)
                     },
                     onNavigateToScanner = {
-                        navigateTo(Screen.Scanner)
+                        safelyNavigateToScanner()
                     },
                     onSelectPrescription = { rx ->
                         val analysisResult = rx.toAnalysisResult()
@@ -367,5 +401,19 @@ private fun AppNavigationContent() {
                 )
             }
         }
+    }
+
+    if (showGlobalAuthSheet) {
+        AuthBottomSheet(
+            viewModel = authViewModel,
+            onDismissRequest = { showGlobalAuthSheet = false }
+        )
+    }
+
+    if (showGlobalQuotaSheet) {
+        QuotaExceededBottomSheet(
+            onDismissRequest = { showGlobalQuotaSheet = false },
+            message = quotaSheetMessage
+        )
     }
 }

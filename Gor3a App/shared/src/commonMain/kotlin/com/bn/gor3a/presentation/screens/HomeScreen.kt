@@ -65,13 +65,16 @@ import com.bn.gor3a.core.localization.AppLanguage
 import com.bn.gor3a.core.localization.LocalAppLanguage
 import com.bn.gor3a.core.localization.LocalStrings
 import com.bn.gor3a.core.localization.localize
+import com.bn.gor3a.core.quota.DeviceQuotaManager
 import com.bn.gor3a.core.theme.Gor3aSafeGreen
 import com.bn.gor3a.core.theme.Gor3aTealDark
 import com.bn.gor3a.core.theme.Gor3aTealPrimary
 import com.bn.gor3a.domain.model.SavedPrescription
+import com.bn.gor3a.presentation.components.AuthBottomSheet
 import com.bn.gor3a.presentation.components.BottomNavBar
 import com.bn.gor3a.presentation.components.BottomTab
 import com.bn.gor3a.presentation.components.Gor3aSearchBar
+import com.bn.gor3a.presentation.components.QuotaExceededBottomSheet
 import com.bn.gor3a.presentation.components.ScanPrescriptionCtaCard
 import com.bn.gor3a.presentation.components.TopHeaderBar
 import com.bn.gor3a.presentation.viewmodel.HomeViewModel
@@ -94,6 +97,7 @@ fun HomeScreen(
     val currentLang = LocalAppLanguage.current
     val isArabic = currentLang.value == AppLanguage.ARABIC
     var showAuthSheet by remember { mutableStateOf(false) }
+    var showQuotaSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.currentUser?.governorate) {
         viewModel.loadBanners(state.currentUser?.governorate)
@@ -104,6 +108,22 @@ fun HomeScreen(
             viewModel = authViewModel,
             onDismissRequest = { showAuthSheet = false }
         )
+    }
+
+    if (showQuotaSheet) {
+        QuotaExceededBottomSheet(
+            onDismissRequest = { showQuotaSheet = false }
+        )
+    }
+
+    val handleScanClick = {
+        if (state.currentUser == null) {
+            showAuthSheet = true
+        } else if (DeviceQuotaManager.isQuotaExceeded()) {
+            showQuotaSheet = true
+        } else {
+            onNavigateToScanner()
+        }
     }
 
     Scaffold(
@@ -243,7 +263,7 @@ fun HomeScreen(
             // 3. Scan Hero Action CTA Card ("صوّر الروشتة الآن واكتشف علاجك")
             item {
                 ScanPrescriptionCtaCard(
-                    onScanClick = onNavigateToScanner
+                    onScanClick = handleScanClick
                 )
             }
 
@@ -280,7 +300,7 @@ fun HomeScreen(
             if (state.recentPrescriptions.isEmpty()) {
                 item {
                     HomeEmptyPrescriptionsCard(
-                        onScanNow = onNavigateToScanner
+                        onScanNow = handleScanClick
                     )
                 }
             } else {

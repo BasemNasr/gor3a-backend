@@ -1,5 +1,6 @@
 package com.bn.gor3a.data.remote
 
+import com.bn.gor3a.core.quota.DeviceQuotaManager
 import com.bn.gor3a.data.remote.dto.AdvancedSearchResponseDto
 import com.bn.gor3a.data.remote.dto.AnalysisResponseDto
 import com.bn.gor3a.data.remote.dto.AuthResponseDto
@@ -14,6 +15,7 @@ import com.bn.gor3a.data.remote.dto.HealthResponseDto
 import com.bn.gor3a.data.remote.dto.LoginRequestDto
 import com.bn.gor3a.data.remote.dto.PrescriptionsSyncRequestDto
 import com.bn.gor3a.data.remote.dto.ProfileResponseDto
+import com.bn.gor3a.data.remote.dto.QuotaResponseDto
 import com.bn.gor3a.data.remote.dto.RegisterRequestDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -36,6 +38,20 @@ import io.ktor.http.HttpHeaders
 import io.ktor.client.statement.bodyAsText
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+
+class QuotaExceededException(
+    val messageText: String,
+    val whatsappNumber: String = DeviceQuotaManager.WHATSAPP_NUMBER,
+    val whatsappLink: String = DeviceQuotaManager.WHATSAPP_LINK,
+    val scansUsed: Int = DeviceQuotaManager.MAX_DAILY_SCANS,
+    val maxScans: Int = DeviceQuotaManager.MAX_DAILY_SCANS
+) : Exception(messageText)
+
+class UnauthorizedScanException(
+    val messageText: String = "يرجى تسجيل الدخول أولاً للتمكن من فحص الروشتة الطبية."
+) : Exception(messageText)
 
 class Gor3aApiClient(
     val baseUrl: String = "https://gor3a-backend.vercel.app",
@@ -52,11 +68,18 @@ class Gor3aApiClient(
         filename: String = "prescription.jpg",
         provider: String? = "gemini",
         model: String? = "gemini-flash-lite-latest",
-        pipelineVersion: String = "v2"
+        pipelineVersion: String = "v2",
+        authToken: String? = null,
+        deviceId: String? = null
     ): AnalysisResponseDto {
-        println("[Gor3aApiClient] 🚀 POST $baseUrl/api/analyze (size=${imageBytes.size} bytes, filename=$filename, provider=$provider, model=$model)")
+        val effectiveDeviceId = (deviceId ?: DeviceQuotaManager.getOrCreateDeviceId()).trim()
+        println("[Gor3aApiClient] 🚀 POST $baseUrl/api/analyze (size=${imageBytes.size} bytes, filename=$filename, provider=$provider, model=$model, deviceId=$effectiveDeviceId, hasAuth=${!authToken.isNullOrBlank()})")
 
         val response = client.post("$baseUrl/api/analyze") {
+            if (!authToken.isNullOrBlank()) {
+                header(HttpHeaders.Authorization, "Bearer $authToken")
+            }
+            header("X-Device-Id", effectiveDeviceId)
             setBody(
                 MultiPartFormDataContent(
                     formData {
@@ -78,6 +101,7 @@ class Gor3aApiClient(
                             append("model", model)
                         }
                         append("pipeline_version", pipelineVersion)
+                        append("device_id", effectiveDeviceId)
                     }
                 )
             )
@@ -86,13 +110,59 @@ class Gor3aApiClient(
         val statusCode = response.status.value
         println("[Gor3aApiClient] 📥 Response status: $statusCode")
 
+        if (statusCode == 401) {
+            val errorBody = response.bodyAsText()
+            println("[Gor3aApiClient] 🔒 Authentication required: $errorBody")
+            throw UnauthorizedScanException()
+        }
+
+        if (statusCode == 429) {
+            val errorBody = response.bodyAsText()
+            println("[Gor3aApiClient] ⚠️ Daily quota exceeded: $errorBody")
+            var msg = "لقد استنفدت الحد اليومي المسموح به (٥ فحوصات في اليوم)."
+            var waNum = DeviceQuotaManager.WHATSAPP_NUMBER
+            var waLink = DeviceQuotaManager.WHATSAPP_LINK
+            try {
+                val jsonElem = Json.parseToJsonElement(errorBody)
+                val detailObj = jsonElem.jsonObject["detail"]?.jsonObject
+                if (detailObj != null) {
+                    msg = detailObj["message"]?.jsonPrimitive?.content ?: msg
+                    waNum = detailObj["whatsapp_number"]?.jsonPrimitive?.content ?: waNum
+                    waLink = detailObj["whatsapp_link"]?.jsonPrimitive?.content ?: waLink
+                }
+            } catch (ignored: Exception) {}
+            // Update local quota
+            DeviceQuotaManager.updateQuotaState(DeviceQuotaManager.MAX_DAILY_SCANS, null)
+            throw QuotaExceededException(
+                messageText = msg,
+                whatsappNumber = waNum,
+                whatsappLink = waLink
+            )
+        }
+
         if (statusCode !in 200..299) {
             val errorBody = response.bodyAsText()
             println("[Gor3aApiClient] ❌ Backend error response: $errorBody")
             throw IllegalStateException("خطأ من الخادم ($statusCode): $errorBody")
         }
 
+        // On success, record local scan count
+        DeviceQuotaManager.recordSuccessfulScan()
         return response.body()
+    }
+
+    suspend fun getScanQuota(token: String?, deviceId: String? = null): QuotaResponseDto {
+        val effectiveDeviceId = (deviceId ?: DeviceQuotaManager.getOrCreateDeviceId()).trim()
+        val response = client.get("$baseUrl/api/scans/quota") {
+            if (!token.isNullOrBlank()) {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            header("X-Device-Id", effectiveDeviceId)
+            parameter("device_id", effectiveDeviceId)
+        }
+        val quota: QuotaResponseDto = response.body()
+        DeviceQuotaManager.updateQuotaState(quota.scansUsed, quota.scanDate)
+        return quota
     }
 
     companion object {

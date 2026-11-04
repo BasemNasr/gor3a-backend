@@ -61,9 +61,22 @@ CREATE TABLE IF NOT EXISTS banners (
 CREATE INDEX IF NOT EXISTS idx_banners_active ON banners(is_active);
 CREATE INDEX IF NOT EXISTS idx_banners_order ON banners(display_order);
 
--- 4. Supabase Row Level Security (RLS) Settings
+-- 4. Daily Scans Quota Tracking (Anti-Abuse by User ID & Device ID)
+CREATE TABLE IF NOT EXISTS daily_scans (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64),
+    device_id VARCHAR(100) NOT NULL,
+    scan_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_scans_user_date ON daily_scans(user_id, scan_date);
+CREATE INDEX IF NOT EXISTS idx_daily_scans_device_date ON daily_scans(device_id, scan_date);
+
+-- 5. Supabase Row Level Security (RLS) Settings
 -- Allow backend serverless functions to read and write without policy blocks
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_prescriptions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE banners DISABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_scans DISABLE ROW LEVEL SECURITY;
 

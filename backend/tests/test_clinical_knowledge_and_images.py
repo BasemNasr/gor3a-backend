@@ -9,6 +9,7 @@ from backend.app.drugs.clinical_knowledge import (
 )
 from backend.app.drugs.packaging_image import generate_drug_package_svg
 from backend.app.main import app
+from backend.app.services.user_service import create_user_token
 
 client = TestClient(app)
 
@@ -138,8 +139,10 @@ def test_api_analyze_includes_clinical_indications_and_images():
     image_bytes = create_dummy_image_bytes()
     files = {"file": ("rx_test.jpg", image_bytes, "image/jpeg")}
     data = {"provider": "mock", "pipeline_version": "v2"}
+    token = create_user_token("user_test_clinical", "01077776666")
+    headers = {"Authorization": f"Bearer {token}", "X-Device-Id": "device_test_clinical"}
 
-    response = client.post("/api/analyze", files=files, data=data)
+    response = client.post("/api/analyze", files=files, data=data, headers=headers)
     assert response.status_code == 200
     res_data = response.json()
 

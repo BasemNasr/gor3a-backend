@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     debug: bool = Field(default=False, alias="DEBUG")
     cors_origins: str = Field(default="*", alias="CORS_ORIGINS")
 
+    # Quota & Migration Controls
+    allow_legacy_guest_scans: bool = Field(default=True, alias="ALLOW_LEGACY_GUEST_SCANS")
+
     # Paths
     prompt_path: str = Field(
         default="prompts/prescription_analysis_v1.txt",
