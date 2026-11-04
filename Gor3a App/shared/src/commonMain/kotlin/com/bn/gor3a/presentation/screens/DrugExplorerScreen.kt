@@ -16,7 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.bn.gor3a.core.localization.LocalStrings
+import com.bn.gor3a.core.localization.formatPrice
 import com.bn.gor3a.core.navigation.PlatformBackHandler
 import com.bn.gor3a.core.theme.Gor3aTealContainer
 import com.bn.gor3a.core.theme.Gor3aTealDark
@@ -223,7 +226,7 @@ fun DrugExplorerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${strings.sortByLabel}: ${if (state.selectedSort == "price_asc") strings.sortByPriceLow else if (state.selectedSort == "price_desc") strings.sortByPriceHigh else strings.sortByRelevance}",
+                        text = "${strings.sortByLabel} ${if (state.selectedSort == "price_asc") strings.sortByPriceLow else if (state.selectedSort == "price_desc") strings.sortByPriceHigh else strings.sortByRelevance}",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = Gor3aTealPrimary,
                             fontWeight = FontWeight.Bold,
@@ -255,11 +258,32 @@ fun DrugExplorerScreen(
                     )
                 }
             } else {
+                val listState = rememberLazyListState()
+                val hasMorePages = state.searchResult.hasNext || (state.searchResult.page < state.searchResult.totalPages)
+                val shouldLoadMore by remember {
+                    derivedStateOf {
+                        val layoutInfo = listState.layoutInfo
+                        val totalItemsCount = layoutInfo.totalItemsCount
+                        val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        totalItemsCount > 0 && lastVisibleItemIndex >= totalItemsCount - 5
+                    }
+                }
+
+                LaunchedEffect(shouldLoadMore, state.searchResult.results.size, state.isLoadingMore, hasMorePages) {
+                    if (shouldLoadMore && hasMorePages && !state.isLoading && !state.isLoadingMore) {
+                        viewModel.loadNextPage()
+                    }
+                }
+
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(state.searchResult.results) { drugCard ->
+                    itemsIndexed(
+                        items = state.searchResult.results,
+                        key = { index, item -> "${item.drug.id}_$index" }
+                    ) { _, drugCard ->
                         DrugExplorerRow(
                             drugCard = drugCard,
                             onClick = { viewModel.selectDrug(drugCard) },
@@ -269,6 +293,30 @@ fun DrugExplorerScreen(
                         )
                     }
 
+                    if (state.isLoadingMore || hasMorePages) {
+                        item(key = "pagination_footer_${state.searchResult.page}") {
+                            LaunchedEffect(state.searchResult.page, state.searchResult.results.size) {
+                                if (hasMorePages && !state.isLoading && !state.isLoadingMore) {
+                                    viewModel.loadNextPage()
+                                }
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (state.isLoadingMore) {
+                                    CircularProgressIndicator(
+                                        color = Gor3aTealPrimary,
+                                        modifier = Modifier.size(28.dp),
+                                        strokeWidth = 2.5.dp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
                     }
@@ -276,31 +324,35 @@ fun DrugExplorerScreen(
             }
         }
 
-        // Details Bottom Sheet if a drug is clicked
+        // Details Bottom Sheet if a drug is clicked (opens immediately with shimmer while loading)
+        val selectedCard = state.selectedDrugCard
         val details = state.selectedDrugDetails
-        if (details != null) {
+        val activeDrug = details?.drug ?: selectedCard?.drug
+        if (activeDrug != null) {
             PlatformBackHandler(enabled = true) {
                 viewModel.dismissDetails()
             }
+            val activePricing = details?.pricing ?: selectedCard?.pricing
             val med = ExtractedMedication(
-                rawText = details.drug.commercialNameEn,
-                name = details.drug.commercialNameEn,
-                commercialNameAr = details.drug.commercialNameAr,
-                activeIngredient = details.drug.genericName,
-                strength = details.drug.strength,
-                dosageForm = details.drug.dosageForm,
-                edaId = details.drug.id,
-                priceEgp = details.pricing?.expectedPriceCurrentEgp ?: details.drug.priceEgp,
-                clinicalIndication = details.drug.clinicalIndication,
-                likelyDiagnosis = details.drug.likelyDiagnosis,
-                imageUrl = details.drug.imageUrl
+                rawText = activeDrug.commercialNameEn,
+                name = activeDrug.commercialNameEn,
+                commercialNameAr = activeDrug.commercialNameAr,
+                activeIngredient = activeDrug.genericName,
+                strength = activeDrug.strength,
+                dosageForm = activeDrug.dosageForm,
+                edaId = activeDrug.id,
+                priceEgp = activePricing?.expectedPriceCurrentEgp ?: activeDrug.priceEgp,
+                clinicalIndication = activeDrug.clinicalIndication,
+                likelyDiagnosis = activeDrug.likelyDiagnosis,
+                imageUrl = activeDrug.imageUrl
             )
             DrugDetailBottomSheet(
                 medication = med,
                 details = details,
                 alternatives = state.selectedDrugAlternatives,
                 isLoading = state.isDetailsLoading,
-                onDismiss = { viewModel.dismissDetails() }
+                onDismiss = { viewModel.dismissDetails() },
+                onAlternativeClick = { viewModel.selectDrug(it) }
             )
         }
 
@@ -459,20 +511,14 @@ private fun DrugExplorerRow(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Price Column (Formatted without trailing .0, clean pill container)
+            // Price Column (Formatted with commas and without trailing .0, clean pill container)
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
             ) {
                 val price = pricing?.expectedPriceCurrentEgp ?: drug.priceEgp
                 if (price != null && price > 0) {
-                    val priceFormatted = if (price % 1.0 == 0.0) price.toLong().toString() else {
-                        val s = price.toString()
-                        if (s.contains('.')) {
-                            val parts = s.split('.')
-                            "${parts[0]}.${parts[1].take(2)}"
-                        } else s
-                    }
+                    val priceFormatted = formatPrice(price)
 
                     Box(
                         modifier = Modifier
@@ -508,16 +554,10 @@ private fun DrugExplorerRow(
 
                 val stripPrice = pricing?.expectedStripPriceEgp
                 if (stripPrice != null && stripPrice > 0) {
-                    val stripFormatted = if (stripPrice % 1.0 == 0.0) stripPrice.toLong().toString() else {
-                        val s = stripPrice.toString()
-                        if (s.contains('.')) {
-                            val parts = s.split('.')
-                            "${parts[0]}.${parts[1].take(2)}"
-                        } else s
-                    }
+                    val stripFormatted = formatPrice(stripPrice)
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "${strings.stripPriceLabel}: $stripFormatted ${strings.currencyEgp}",
+                        text = "${strings.stripPriceLabel} $stripFormatted ${strings.currencyEgp}",
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 9.sp

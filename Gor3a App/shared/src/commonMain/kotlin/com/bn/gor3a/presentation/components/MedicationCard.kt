@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.bn.gor3a.core.localization.LocalStrings
+import com.bn.gor3a.core.localization.formatPrice
 import com.bn.gor3a.core.theme.Gor3aAlertRed
 import com.bn.gor3a.core.theme.Gor3aSafeGreen
 import com.bn.gor3a.core.theme.Gor3aSafeGreenBg
@@ -151,7 +152,7 @@ fun MedicationCard(
                 val price = medication.priceEgp
                 if (price != null && price > 0) {
                     Text(
-                        text = "${strings.priceLabel} $price ${strings.currencyEgp}",
+                        text = "${strings.priceLabel} ${formatPrice(price)} ${strings.currencyEgp}",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = Gor3aTealDark,

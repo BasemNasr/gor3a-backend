@@ -32,6 +32,8 @@ env/
 .env.*.local
 *.pem
 *.key
+*.jks
+*.keystore
 
 # IDE & OS
 .vscode/
@@ -55,6 +57,7 @@ temp/
 # Mobile App Build Artifacts
 Gor3a App/.gradle/
 Gor3a App/**/build/
+Gor3a App/**/release/
 Gor3a App/.kotlin/
 Gor3a App/.idea/
 Gor3a App/local.properties
@@ -67,6 +70,7 @@ Gor3a.zip
 /Logo.png
 !web/logo.png
 /models/
+/Mobile Screens/
 newdataset arabic , english /
 notebooks/
 dataset/training_exports/

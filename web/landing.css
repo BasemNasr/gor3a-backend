@@ -530,6 +530,52 @@ img {
   font-family: 'Inter', 'Cairo', sans-serif;
 }
 
+/* Dimmed & Coming Soon State for iOS Store Button */
+.store-btn.store-btn-dimmed {
+  opacity: 0.55;
+  filter: grayscale(0.85);
+  cursor: not-allowed;
+  box-shadow: none !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  pointer-events: auto;
+}
+
+.store-btn.store-btn-dimmed:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.store-btn.store-btn-dimmed::after {
+  display: none !important;
+}
+
+[data-theme="dark"] .store-btn.store-btn-dimmed {
+  background: #1E293B !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.store-badge-soon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  margin-inline-start: auto;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.store-badge-soon-sm {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.45rem;
+}
+
 .qr-quick-btn {
   display: inline-flex;
   align-items: center;
@@ -1698,6 +1744,24 @@ img {
   transform: translateY(-2px);
 }
 
+.footer-store-btn-dimmed {
+  opacity: 0.48;
+  filter: grayscale(0.85);
+  cursor: not-allowed !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  pointer-events: auto;
+}
+
+.footer-store-btn-dimmed:hover {
+  transform: none !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.footer-store-btn-dimmed svg {
+  color: #94A3B8 !important;
+}
+
 .footer-store-btn svg {
   width: 22px;
   height: 22px;
@@ -2204,4 +2268,41 @@ img {
 .footer-bottom-links a:hover {
   opacity: 0.8;
   text-decoration: underline;
+}
+
+/* Toast Notification for coming soon iOS */
+.landing-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #FFFFFF;
+  border: 1px solid rgba(0, 137, 123, 0.4);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 99999;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 90vw;
+  text-align: center;
+}
+
+.landing-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.landing-toast-icon {
+  font-size: 1.15rem;
 }

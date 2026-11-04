@@ -31,8 +31,12 @@ class DrugRepositoryImpl(
             )
             Result.success(responseDto.toDomain())
         } catch (e: Exception) {
-            // Local fallback catalog for offline search
-            Result.success(searchFallbackCatalog(query, form))
+            if (page > 1) {
+                Result.failure(e)
+            } else {
+                // Local fallback catalog for offline search on initial page
+                Result.success(searchFallbackCatalog(query, form))
+            }
         }
     }
 

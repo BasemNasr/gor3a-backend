@@ -1,6 +1,43 @@
 package com.bn.gor3a.core.localization
 
+import kotlin.math.abs
+import kotlin.math.roundToLong
+
 typealias LocalizedStrings = Strings
+
+fun formatNumberWithCommas(value: Long): String {
+    val isNegative = value < 0
+    val digits = abs(value).toString()
+    val sb = StringBuilder()
+    val len = digits.length
+    for (i in 0 until len) {
+        if (i > 0 && (len - i) % 3 == 0) {
+            sb.append(',')
+        }
+        sb.append(digits[i])
+    }
+    return if (isNegative) "-$sb" else sb.toString()
+}
+
+fun formatNumberWithCommas(value: Int): String = formatNumberWithCommas(value.toLong())
+
+fun formatPrice(price: Double): String {
+    if (price.isNaN() || price.isInfinite()) return "0"
+    val roundedCents = (price * 100.0).roundToLong()
+    val isNegative = roundedCents < 0
+    val absCents = abs(roundedCents)
+    val wholePart = absCents / 100
+    val fracPart = (absCents % 100).toInt()
+
+    val formattedWhole = formatNumberWithCommas(wholePart)
+    val result = when {
+        fracPart == 0 -> formattedWhole
+        fracPart % 10 == 0 -> "$formattedWhole.${fracPart / 10}"
+        fracPart < 10 -> "$formattedWhole.0$fracPart"
+        else -> "$formattedWhole.$fracPart"
+    }
+    return if (isNegative && result != "0") "-$result" else result
+}
 
 data class Strings(
     val isArabic: Boolean,
@@ -220,7 +257,8 @@ data class Strings(
     val cameraAppNotFound: String
 ) {
     fun showingDrugs(current: Int, total: Int): String =
-        if (isArabic) "عرض $current من أصل $total دواء" else "Showing $current of $total medicines"
+        if (isArabic) "عرض ${formatNumberWithCommas(current)} من أصل ${formatNumberWithCommas(total)} دواء"
+        else "Showing ${formatNumberWithCommas(current)} of ${formatNumberWithCommas(total)} medicines"
 
     fun medCount(count: Int): String =
         if (isArabic) "$count دواء" else if (count == 1) "1 med" else "$count meds"
@@ -235,7 +273,7 @@ data class Strings(
         if (isArabic) "الأدوية المسجلة ($count):" else "Prescribed Medications ($count):"
 
     fun totalPrice(price: Double): String =
-        if (isArabic) "الإجمالي: $price $currencyEgp" else "Total: $price $currencyEgp"
+        if (isArabic) "الإجمالي: ${formatPrice(price)} $currencyEgp" else "Total: ${formatPrice(price)} $currencyEgp"
 
     fun formatTime(timeStr: String): String {
         val clean = timeStr.trim()
@@ -288,7 +326,7 @@ val ArabicStrings = Strings(
     confirmAndScanButton = "تأكيد وبدء الفحص الذكي ✓",
     retakePhotoButton = "إعادة التصوير ↺",
     prescriptionGuideBadge = "📋 تعليمات الروشتة",
-    liveScannerBadge = "📷 مسح مباشر",
+    liveScannerBadge = " مسح مباشر",
     
     // AI Analysis
     analyzingTitle = "جاري التحليل",
@@ -324,7 +362,7 @@ val ArabicStrings = Strings(
     viewAlternativesButton = "عرض البدائل والأسعار الرسمية",
     viewOriginalPrescriptionTitle = "عرض صورة الروشتة الأصلية",
     viewOriginalPrescriptionDesc = "اضغط لمعاينة وتكبير خط الطبيب الأصلي",
-    previewButton = "معاينة 🔍",
+    previewButton = "معاينة",
     medicalAdviceTitle = "🌿 نصائح وإرشادات طبية:",
     originalPrescriptionImageTitle = "صورة الروشتة الأصلية",
     resetZoomButton = "إعادة ضبط 🔄",

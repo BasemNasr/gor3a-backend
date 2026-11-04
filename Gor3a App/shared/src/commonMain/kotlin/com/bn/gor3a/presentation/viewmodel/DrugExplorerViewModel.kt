@@ -10,6 +10,8 @@ import com.bn.gor3a.domain.usecase.GetDrugAlternativesUseCase
 import com.bn.gor3a.domain.usecase.GetDrugDetailsUseCase
 import com.bn.gor3a.domain.usecase.SearchDrugsUseCase
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +24,9 @@ data class DrugExplorerUiState(
     val selectedForm: String = "الكل",
     val selectedSort: String = "relevance",
     val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
     val searchResult: DrugSearchResult = DrugSearchResult(),
+    val selectedDrugCard: DrugCardItem? = null,
     val selectedDrugDetails: DrugDetails? = null,
     val selectedDrugAlternatives: DrugAlternatives? = null,
     val isDetailsLoading: Boolean = false,
@@ -39,6 +43,8 @@ class DrugExplorerViewModel(
     val uiState: StateFlow<DrugExplorerUiState> = _uiState.asStateFlow()
 
     private var searchJob: Job? = null
+    private var loadMoreJob: Job? = null
+    private var detailsJob: Job? = null
 
     init {
         performSearch()
@@ -54,11 +60,7 @@ class DrugExplorerViewModel(
 
     fun onQueryChanged(newQuery: String) {
         _uiState.update { it.copy(query = newQuery) }
-        searchJob?.cancel()
-        searchJob = viewModelScope.launch {
-            delay(300) // 300ms debounce
-            performSearch()
-        }
+        performSearch(debounceMs = 300L)
     }
 
     fun selectFormFilter(form: String) {
@@ -71,9 +73,14 @@ class DrugExplorerViewModel(
         performSearch()
     }
 
-    private fun performSearch() {
-        _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
+    private fun performSearch(debounceMs: Long = 0L) {
+        searchJob?.cancel()
+        loadMoreJob?.cancel()
+        searchJob = viewModelScope.launch {
+            if (debounceMs > 0L) {
+                delay(debounceMs)
+            }
+            _uiState.update { it.copy(isLoading = true, isLoadingMore = false) }
             val currentState = _uiState.value
             val result = searchDrugsUseCase(
                 query = currentState.query,
@@ -84,32 +91,87 @@ class DrugExplorerViewModel(
             )
 
             result.onSuccess { data ->
-                _uiState.update { it.copy(searchResult = data, isLoading = false) }
+                _uiState.update { it.copy(searchResult = data, isLoading = false, isLoadingMore = false) }
             }.onFailure {
-                _uiState.update { it.copy(isLoading = false) }
+                _uiState.update { it.copy(isLoading = false, isLoadingMore = false) }
+            }
+        }
+    }
+
+    fun loadNextPage() {
+        val currentState = _uiState.value
+        val currentResult = currentState.searchResult
+        val hasMore = currentResult.hasNext || (currentResult.page < currentResult.totalPages)
+        if (currentState.isLoading || currentState.isLoadingMore || !hasMore) return
+
+        val nextPage = currentResult.page + 1
+        _uiState.update { it.copy(isLoadingMore = true) }
+
+        loadMoreJob = viewModelScope.launch {
+            val result = searchDrugsUseCase(
+                query = currentState.query,
+                form = currentState.selectedForm,
+                sortBy = currentState.selectedSort,
+                page = nextPage,
+                pageSize = currentResult.pageSize.takeIf { it > 0 } ?: 24
+            )
+
+            result.onSuccess { newData ->
+                _uiState.update { state ->
+                    val existingIds = state.searchResult.results.map { it.drug.id }.toSet()
+                    val uniqueNewItems = newData.results.filter { it.drug.id !in existingIds }
+                    val mergedResults = if (uniqueNewItems.isNotEmpty()) {
+                        state.searchResult.results + uniqueNewItems
+                    } else {
+                        state.searchResult.results + newData.results
+                    }
+                    state.copy(
+                        searchResult = newData.copy(
+                            results = mergedResults,
+                            hasNext = newData.hasNext && newData.results.isNotEmpty()
+                        ),
+                        isLoadingMore = false
+                    )
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isLoadingMore = false) }
             }
         }
     }
 
     fun selectDrug(drugItem: DrugCardItem) {
-        _uiState.update { it.copy(isDetailsLoading = true) }
-        viewModelScope.launch {
-            val detailsResult = getDrugDetailsUseCase(drugItem.drug.id)
-            val altsResult = getDrugAlternativesUseCase(drugItem.drug.id)
+        detailsJob?.cancel()
+        _uiState.update {
+            it.copy(
+                selectedDrugCard = drugItem,
+                selectedDrugDetails = null,
+                selectedDrugAlternatives = null,
+                isDetailsLoading = true
+            )
+        }
+        detailsJob = viewModelScope.launch {
+            coroutineScope {
+                val detailsDeferred = async { getDrugDetailsUseCase(drugItem.drug.id) }
+                val altsDeferred = async { getDrugAlternativesUseCase(drugItem.drug.id) }
+                val detailsResult = detailsDeferred.await()
+                val altsResult = altsDeferred.await()
 
-            _uiState.update {
-                it.copy(
-                    selectedDrugDetails = detailsResult.getOrNull(),
-                    selectedDrugAlternatives = altsResult.getOrNull(),
-                    isDetailsLoading = false
-                )
+                _uiState.update {
+                    it.copy(
+                        selectedDrugDetails = detailsResult.getOrNull(),
+                        selectedDrugAlternatives = altsResult.getOrNull(),
+                        isDetailsLoading = false
+                    )
+                }
             }
         }
     }
 
     fun dismissDetails() {
+        detailsJob?.cancel()
         _uiState.update {
             it.copy(
+                selectedDrugCard = null,
                 selectedDrugDetails = null,
                 selectedDrugAlternatives = null,
                 isDetailsLoading = false

@@ -1,5 +1,11 @@
 package com.bn.gor3a.presentation.screens
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,14 +25,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -35,12 +42,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.bn.gor3a.core.localization.LocalStrings
-import com.bn.gor3a.core.theme.Gor3aCardTint
+import com.bn.gor3a.core.localization.formatPrice
 import com.bn.gor3a.core.theme.Gor3aSafeGreen
 import com.bn.gor3a.core.theme.Gor3aSafeGreenBg
 import com.bn.gor3a.core.theme.Gor3aTealContainer
 import com.bn.gor3a.core.theme.Gor3aTealDark
 import com.bn.gor3a.core.theme.Gor3aTealPrimary
+import com.bn.gor3a.core.theme.LocalThemeIsDark
 import com.bn.gor3a.domain.model.DrugAlternatives
 import com.bn.gor3a.domain.model.DrugCardItem
 import com.bn.gor3a.domain.model.DrugDetails
@@ -54,6 +62,7 @@ fun DrugDetailBottomSheet(
     alternatives: DrugAlternatives?,
     isLoading: Boolean,
     onDismiss: () -> Unit,
+    onAlternativeClick: ((DrugCardItem) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalStrings.current
@@ -127,12 +136,7 @@ fun DrugDetailBottomSheet(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 if (isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Gor3aTealPrimary)
-                    }
+                    DrugDetailShimmerContent()
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -191,7 +195,7 @@ fun DrugDetailBottomSheet(
                                     ) {
                                         Text(text = strings.officialPriceLabel, fontSize = 12.sp)
                                         Text(
-                                            text = "${pricing?.registeredPriceEgp ?: medication.priceEgp ?: 0.0} ${strings.currencyEgp}",
+                                            text = "${formatPrice(pricing?.registeredPriceEgp ?: medication.priceEgp ?: 0.0)} ${strings.currencyEgp}",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp
                                         )
@@ -204,7 +208,7 @@ fun DrugDetailBottomSheet(
                                         ) {
                                             Text(text = strings.marketPriceLabel, fontSize = 12.sp, color = Gor3aTealPrimary)
                                             Text(
-                                                text = "${pricing.expectedPriceCurrentEgp} ${strings.currencyEgp}",
+                                                text = "${formatPrice(pricing.expectedPriceCurrentEgp)} ${strings.currencyEgp}",
                                                 fontWeight = FontWeight.Bold,
                                                 color = Gor3aTealPrimary,
                                                 fontSize = 13.sp
@@ -219,7 +223,7 @@ fun DrugDetailBottomSheet(
                                         ) {
                                             Text(text = strings.stripPriceLabel, fontSize = 12.sp)
                                             Text(
-                                                text = "${pricing.expectedStripPriceEgp} ${strings.currencyEgp}",
+                                                text = "${formatPrice(pricing.expectedStripPriceEgp)} ${strings.currencyEgp}",
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 12.sp
                                             )
@@ -299,7 +303,10 @@ fun DrugDetailBottomSheet(
                             }
 
                             items(exactGenerics) { alt ->
-                                AlternativeDrugRow(drugCard = alt)
+                                AlternativeDrugRow(
+                                    drugCard = alt,
+                                    onClick = onAlternativeClick?.let { callback -> { callback(alt) } }
+                                )
                             }
                         }
 
@@ -320,7 +327,10 @@ fun DrugDetailBottomSheet(
                             }
 
                             items(therapeutics) { alt ->
-                                AlternativeDrugRow(drugCard = alt)
+                                AlternativeDrugRow(
+                                    drugCard = alt,
+                                    onClick = onAlternativeClick?.let { callback -> { callback(alt) } }
+                                )
                             }
                         }
 
@@ -335,8 +345,271 @@ fun DrugDetailBottomSheet(
 }
 
 @Composable
+private fun DrugDetailShimmerContent() {
+    val isDark = LocalThemeIsDark.current.value
+    val transition = rememberInfiniteTransition()
+    val translateAnim by transition.animateFloat(
+        initialValue = -300f,
+        targetValue = 1100f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1150, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+
+    val shimmerColors = if (isDark) {
+        listOf(
+            Color(0xFF1E293B),
+            Color(0xFF334155),
+            Color(0xFF1E293B)
+        )
+    } else {
+        listOf(
+            Color(0xFFE2E8F0).copy(alpha = 0.75f),
+            Color(0xFFF1F5F9),
+            Color(0xFFE2E8F0).copy(alpha = 0.75f)
+        )
+    }
+
+    val shimmerBrush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset(x = translateAnim, y = translateAnim * 0.4f),
+        end = Offset(x = translateAnim + 320f, y = (translateAnim + 320f) * 0.4f)
+    )
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        userScrollEnabled = false
+    ) {
+        // 1. Shimmer Packaging Visual Card
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(shimmerBrush)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                        RoundedCornerShape(18.dp)
+                    )
+            )
+        }
+
+        // 2. Shimmer Pricing Breakdown Card
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+                    .padding(14.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Section title shimmer
+                    Box(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .height(15.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(shimmerBrush)
+                    )
+
+                    // Price Row 1
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(110.dp)
+                                .height(13.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(shimmerBrush)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(72.dp)
+                                .height(14.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(shimmerBrush)
+                        )
+                    }
+
+                    // Price Row 2
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(130.dp)
+                                .height(13.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(shimmerBrush)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(80.dp)
+                                .height(14.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(shimmerBrush)
+                        )
+                    }
+
+                    // Market note line
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .height(11.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(shimmerBrush)
+                    )
+                }
+            }
+        }
+
+        // 3. Shimmer Clinical Indications Card
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                    .padding(14.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .width(130.dp)
+                            .height(14.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(shimmerBrush)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.95f)
+                            .height(12.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(shimmerBrush)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.65f)
+                            .height(12.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(shimmerBrush)
+                    )
+                }
+            }
+        }
+
+        // 4. Shimmer Alternatives Section Header & Rows
+        item {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .width(170.dp)
+                        .height(15.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(shimmerBrush)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .width(220.dp)
+                        .height(11.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(shimmerBrush)
+                )
+            }
+        }
+
+        items(3) {
+            AlternativeDrugShimmerRow(shimmerBrush = shimmerBrush)
+        }
+    }
+}
+
+@Composable
+private fun AlternativeDrugShimmerRow(
+    shimmerBrush: Brush,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+            .padding(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Thumbnail placeholder
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(shimmerBrush)
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .height(13.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(shimmerBrush)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.4f)
+                        .height(11.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(shimmerBrush)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .width(64.dp)
+                        .height(20.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(shimmerBrush)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Price badge placeholder
+            Box(
+                modifier = Modifier
+                    .width(62.dp)
+                    .height(26.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(shimmerBrush)
+            )
+        }
+    }
+}
+
+@Composable
 private fun AlternativeDrugRow(
     drugCard: DrugCardItem,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalStrings.current
@@ -349,6 +622,7 @@ private fun AlternativeDrugRow(
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surface)
             .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .padding(12.dp)
     ) {
         Row(
@@ -417,13 +691,7 @@ private fun AlternativeDrugRow(
             // Price badge
             val price = pricing?.expectedPriceCurrentEgp ?: drug.priceEgp
             if (price != null && price > 0) {
-                val priceFormatted = if (price % 1.0 == 0.0) price.toLong().toString() else {
-                    val s = price.toString()
-                    if (s.contains('.')) {
-                        val parts = s.split('.')
-                        "${parts[0]}.${parts[1].take(2)}"
-                    } else s
-                }
+                val priceFormatted = formatPrice(price)
 
                 Box(
                     modifier = Modifier

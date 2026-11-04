@@ -12,6 +12,9 @@ import com.bn.gor3a.domain.model.encodeImageBase64
 import com.bn.gor3a.domain.usecase.GetDrugAlternativesUseCase
 import com.bn.gor3a.domain.usecase.GetDrugDetailsUseCase
 import com.bn.gor3a.domain.usecase.SavePrescriptionUseCase
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,6 +75,8 @@ class ResultsViewModel(
     private val _uiState = MutableStateFlow(ResultsUiState())
     val uiState: StateFlow<ResultsUiState> = _uiState.asStateFlow()
 
+    private var detailsJob: Job? = null
+
     fun setAnalysisResult(
         result: PrescriptionAnalysisResult,
         imageBytes: ByteArray? = null,
@@ -124,6 +129,7 @@ class ResultsViewModel(
     }
 
     fun selectMedicationForDetails(med: ExtractedMedication) {
+        detailsJob?.cancel()
         _uiState.update {
             it.copy(
                 selectedMedication = med,
@@ -133,22 +139,27 @@ class ResultsViewModel(
             )
         }
 
-        viewModelScope.launch {
+        detailsJob = viewModelScope.launch {
             val drugId = med.edaId ?: "EDA-DB-00001"
-            val detailsResult = getDrugDetailsUseCase(drugId)
-            val altsResult = getDrugAlternativesUseCase(drugId)
+            coroutineScope {
+                val detailsDeferred = async { getDrugDetailsUseCase(drugId) }
+                val altsDeferred = async { getDrugAlternativesUseCase(drugId) }
+                val detailsResult = detailsDeferred.await()
+                val altsResult = altsDeferred.await()
 
-            _uiState.update { state ->
-                state.copy(
-                    selectedDrugDetails = detailsResult.getOrNull(),
-                    selectedDrugAlternatives = altsResult.getOrNull(),
-                    isLoadingAlternatives = false
-                )
+                _uiState.update { state ->
+                    state.copy(
+                        selectedDrugDetails = detailsResult.getOrNull(),
+                        selectedDrugAlternatives = altsResult.getOrNull(),
+                        isLoadingAlternatives = false
+                    )
+                }
             }
         }
     }
 
     fun dismissMedicationDetails() {
+        detailsJob?.cancel()
         _uiState.update {
             it.copy(
                 selectedMedication = null,

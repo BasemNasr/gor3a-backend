@@ -337,4 +337,37 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.style.overflow = "";
     }
   });
+
+  // 9. Dimmed iOS Coming Soon Toast Notification
+  const iosButtons = document.querySelectorAll("[data-ios-tooltip]");
+  let toastEl = document.getElementById("iosToastNotification");
+  if (!toastEl) {
+    toastEl = document.createElement("div");
+    toastEl.id = "iosToastNotification";
+    toastEl.className = "landing-toast";
+    toastEl.setAttribute("role", "alert");
+    toastEl.setAttribute("aria-live", "polite");
+    document.body.appendChild(toastEl);
+  }
+
+  let toastTimer = null;
+  function showIosToast() {
+    const msg = currentLang === "ar"
+      ? "تطبيق Gor3a قيد المراجعة للآيفون وسيتوفر قريباً على App Store! يمكنك تحميل نسخة الأندرويد الآن من Google Play."
+      : "Gor3a for iOS is under review and coming soon to App Store! Download the Android version now from Google Play.";
+    toastEl.innerHTML = `<span class="landing-toast-icon">🍎</span><span>${msg}</span>`;
+    toastEl.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastEl.classList.remove("show");
+    }, 4500);
+  }
+
+  iosButtons.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showIosToast();
+    });
+  });
 });
