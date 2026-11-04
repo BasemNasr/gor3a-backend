@@ -299,7 +299,7 @@ private fun AuthRegisterView(
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        // Title & Cloud Reassurance Header + Dismiss Keyboard Button
+        // Title & Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -311,16 +311,16 @@ private fun AuthRegisterView(
                     .background(Gor3aTealPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("☁️", fontSize = 22.sp)
+                Text("👤", fontSize = 22.sp)
             }
             Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (isArabic) "إنشاء حسابك الطبي السحابي" else "Create Cloud Medical Account",
+                    text = if (isArabic) "إنشاء حساب جديد" else "Create New Account",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = Gor3aTealDark,
-                        fontSize = 17.sp
+                        fontSize = 18.sp
                     )
                 )
                 Text(
@@ -330,30 +330,6 @@ private fun AuthRegisterView(
                         fontSize = 11.sp
                     )
                 )
-            }
-            Spacer(modifier = Modifier.width(6.dp))
-            // Quick Hide Keyboard Chip (ideal for iPhone/Android numeric keypad)
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Gor3aTealPrimary.copy(alpha = 0.1f))
-                    .border(1.dp, Gor3aTealPrimary.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
-                    .clickable { onDismissKeyboard() }
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("⌨️", fontSize = 12.sp)
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        text = if (isArabic) "إخفاء" else "Hide",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Gor3aTealDark,
-                            fontSize = 11.sp
-                        )
-                    )
-                }
             }
         }
 
@@ -368,9 +344,9 @@ private fun AuthRegisterView(
         ) {
             Text(
                 text = if (isArabic)
-                    "✨ بفضل الحساب السحابي، لن تفقد روشتاتك أبداً حتى لو قمت بتغيير هاتفك أو إعادة تثبيت التطبيق."
+                    "✨ لن تفقد روشتاتك أبداً حتى لو قمت بتغيير هاتفك أو إعادة تثبيت التطبيق."
                 else
-                    "✨ With a cloud account, you will never lose your prescriptions even if you switch devices or reinstall the app.",
+                    "✨ You will never lose your prescriptions even if you switch devices or reinstall the app.",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = 12.sp,
                     color = Gor3aTealDark,
@@ -443,7 +419,7 @@ private fun AuthRegisterView(
         // Gender Selection (ذكر / أنثى)
         Column {
             Text(
-                text = if (isArabic) "الجنس 👤" else "Gender 👤",
+                text = if (isArabic) "الجنس" else "Gender",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -474,7 +450,7 @@ private fun AuthRegisterView(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = if (isArabic) "ذكر 👨" else "Male 👨",
+                            text = if (isArabic) "ذكر" else "Male",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = if (isMale) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isMale) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
@@ -507,7 +483,7 @@ private fun AuthRegisterView(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = if (isArabic) "أنثى 👩" else "Female 👩",
+                            text = if (isArabic) "أنثى" else "Female",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = if (isFemale) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isFemale) Gor3aTealPrimary else MaterialTheme.colorScheme.onSurface
@@ -525,7 +501,7 @@ private fun AuthRegisterView(
         // Governorate Dropdown Trigger
         Column {
             Text(
-                text = if (isArabic) "المحافظة 📍" else "Governorate 📍",
+                text = if (isArabic) "المحافظة" else "Governorate",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -612,7 +588,7 @@ private fun AuthRegisterView(
                 )
             } else {
                 Text(
-                    text = if (isArabic) "حفظ وإنشاء الحساب السحابي ☁️✓" else "Create & Save Cloud Account ☁️✓",
+                    text = if (isArabic) "إنشاء الحساب" else "Create Account",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -814,7 +790,7 @@ private fun AuthLoginView(
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Title + Dismiss Keyboard Button
+        // Title Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -845,30 +821,6 @@ private fun AuthLoginView(
                         fontSize = 12.sp
                     )
                 )
-            }
-            Spacer(modifier = Modifier.width(6.dp))
-            // Quick Hide Keyboard Chip
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Gor3aTealPrimary.copy(alpha = 0.1f))
-                    .border(1.dp, Gor3aTealPrimary.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
-                    .clickable { onDismissKeyboard() }
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("⌨️", fontSize = 12.sp)
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        text = if (isArabic) "إخفاء" else "Hide",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Gor3aTealDark,
-                            fontSize = 11.sp
-                        )
-                    )
-                }
             }
         }
 
@@ -959,7 +911,7 @@ private fun AuthLoginView(
                 )
             } else {
                 Text(
-                    text = if (isArabic) "تسجيل الدخول ومزامنة الروشتات 🔄" else "Sign In & Sync Prescriptions 🔄",
+                    text = if (isArabic) "تسجيل الدخول" else "Sign In",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -981,7 +933,7 @@ private fun AuthLoginView(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = if (isArabic) "إنشاء حساب سحابي جديد" else "Create New Cloud Account",
+                text = if (isArabic) "إنشاء حساب جديد" else "Create New Account",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.Bold,
                     color = Gor3aTealPrimary
@@ -1056,7 +1008,7 @@ private fun UserProfileView(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = if (isArabic) "☁️ الروشتات السحابية" else "☁️ Cloud Prescriptions",
+                    text = if (isArabic) "الروشتات المحفوظة" else "Saved Prescriptions",
                     style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
                 Text(
@@ -1070,7 +1022,7 @@ private fun UserProfileView(
             Box(modifier = Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = if (isArabic) "🔒 حالة الأمان" else "🔒 Security Status",
+                    text = if (isArabic) "حالة الأمان" else "Security Status",
                     style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
                 Text(
@@ -1096,7 +1048,7 @@ private fun UserProfileView(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = if (isArabic) "تسجيل الخروج من الحساب 🚪" else "Sign Out of Account 🚪",
+                text = if (isArabic) "تسجيل الخروج" else "Sign Out",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.error

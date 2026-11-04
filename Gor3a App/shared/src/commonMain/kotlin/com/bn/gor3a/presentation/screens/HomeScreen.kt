@@ -201,9 +201,9 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Text("☁️", fontSize = 16.sp)
+                                    Text("📋", fontSize = 16.sp)
                                     Text(
-                                        text = if (isArabic) "احفظ روشتاتك في ملفك الطبي السحابي" else "Save Prescriptions in Cloud",
+                                        text = if (isArabic) "احفظ روشتاتك في ملفك الطبي" else "Save Prescriptions to Your Profile",
                                         style = MaterialTheme.typography.titleSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,

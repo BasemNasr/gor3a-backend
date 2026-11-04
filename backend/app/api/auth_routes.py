@@ -108,7 +108,7 @@ async def register_user(payload: RegisterRequest):
             gender=payload.gender,
             age=payload.age,
         )
-        msg = "مرحباً بك مجدداً، تم تسجيل دخولك لحسابك بنجاح ✓" if is_existing else "تم إنشاء حسابك بنجاح وحفظ بياناتك سحابياً ☁️✓"
+        msg = "مرحباً بك مجدداً، تم تسجيل دخولك لحسابك بنجاح ✓" if is_existing else "تم إنشاء حسابك بنجاح ✓"
         return {
             "success": True,
             "message": msg,
