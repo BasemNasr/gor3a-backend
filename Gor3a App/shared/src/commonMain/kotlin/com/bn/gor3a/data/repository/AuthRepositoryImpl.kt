@@ -173,8 +173,10 @@ class AuthRepositoryImpl(
                 CoroutineScope(Dispatchers.IO).launch {
                     syncCloudPrescriptions(res.token)
                 }
+                Result.success(res)
+            } else {
+                Result.failure(Exception(res.displayMessage ?: "فشل إنشاء الحساب، يرجى المحاولة مرة أخرى"))
             }
-            Result.success(res)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -188,8 +190,12 @@ class AuthRepositoryImpl(
                 CoroutineScope(Dispatchers.IO).launch {
                     syncCloudPrescriptions(res.token)
                 }
+                Result.success(res)
+            } else if (res.requiresRegistration) {
+                Result.success(res)
+            } else {
+                Result.failure(Exception(res.displayMessage ?: "فشل تسجيل الدخول، يرجى المحاولة مرة أخرى"))
             }
-            Result.success(res)
         } catch (e: Exception) {
             Result.failure(e)
         }

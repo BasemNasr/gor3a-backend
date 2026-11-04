@@ -74,4 +74,47 @@ def test_user_service_sync_prescriptions_preserves_image_base64():
         assert synced[0]["image_url"] == "YWJjMTIz"
 
 
+def test_user_service_register_existing_user_smart_login():
+    with patch("backend.app.services.user_service.supabase_service") as mock_supa, \
+         patch.object(UserService, "_load"), \
+         patch.object(UserService, "_reload_if_needed"), \
+         patch.object(UserService, "_save_users"):
+        mock_supa.is_configured.return_value = False
+        svc = UserService()
+
+        # 1. Register brand new user
+        user, token, is_existing = svc.register_user(
+            phone="01011112222",
+            password="securePassword123",
+            name="دكتور تجريبي",
+            governorate="الجيزة",
+            gender="male"
+        )
+        assert is_existing is False
+        assert user["phone"] == "01011112222"
+        assert user["name"] == "دكتور تجريبي"
+        assert token is not None
+
+        # 2. Register again with same phone and matching password -> seamless login!
+        user2, token2, is_existing2 = svc.register_user(
+            phone="01011112222",
+            password="securePassword123",
+            name="دكتور تجريبي",
+            governorate="الجيزة",
+            gender="male"
+        )
+        assert is_existing2 is True
+        assert user2["id"] == user["id"]
+        assert token2 is not None
+
+        # 3. Register with same phone and wrong password -> raises ValueError
+        with pytest.raises(ValueError, match="رقم الهاتف مسجل مسبقاً بالفعل"):
+            svc.register_user(
+                phone="01011112222",
+                password="wrongPassword!",
+                name="دكتور تجريبي",
+            )
+
+
+
 

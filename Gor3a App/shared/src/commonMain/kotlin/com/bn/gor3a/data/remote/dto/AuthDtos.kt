@@ -37,12 +37,17 @@ data class LoginRequestDto(
 data class AuthResponseDto(
     @SerialName("success") val success: Boolean = false,
     @SerialName("is_new_user") val isNewUser: Boolean = false,
+    @SerialName("is_existing") val isExisting: Boolean = false,
     @SerialName("requires_registration") val requiresRegistration: Boolean = false,
     @SerialName("message") val message: String? = null,
+    @SerialName("detail") val detail: String? = null,
     @SerialName("token") val token: String? = null,
     @SerialName("user") val user: UserDto? = null,
     @SerialName("phone") val phone: String? = null
-)
+) {
+    val displayMessage: String?
+        get() = message ?: detail
+}
 
 @Serializable
 data class ProfileResponseDto(

@@ -111,12 +111,19 @@ class AuthViewModel(
             )
             result.fold(
                 onSuccess = { res ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = null,
-                        successMessage = res.message ?: (if (isArabic) "تم إنشاء الحساب بنجاح ✓" else "Account created successfully ✓")
-                    )
-                    onSuccess()
+                    if (res.success && res.user != null) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = null,
+                            successMessage = res.displayMessage ?: (if (isArabic) "تم إنشاء الحساب بنجاح ✓" else "Account created successfully ✓")
+                        )
+                        onSuccess()
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = res.displayMessage ?: (if (isArabic) "فشل التسجيل، يرجى التأكد من البيانات والمحاولة مجدداً" else "Registration failed, please try again")
+                        )
+                    }
                 },
                 onFailure = { err ->
                     _uiState.value = _uiState.value.copy(
@@ -160,11 +167,15 @@ class AuthViewModel(
                     _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = null)
                     if (res.requiresRegistration) {
                         onRequiresRegistration(normPhone)
-                    } else {
+                    } else if (res.success && res.user != null) {
                         _uiState.value = _uiState.value.copy(
-                            successMessage = res.message ?: (if (isArabic) "أهلاً بك مجدداً ✓" else "Welcome back ✓")
+                            successMessage = res.displayMessage ?: (if (isArabic) "أهلاً بك مجدداً ✓" else "Welcome back ✓")
                         )
                         onSuccess()
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = res.displayMessage ?: (if (isArabic) "تعذر تسجيل الدخول، يرجى التأكد من البيانات والمحاولة ثانية" else "Login failed, please check your credentials and try again")
+                        )
                     }
                 },
                 onFailure = { err ->

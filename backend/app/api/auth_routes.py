@@ -96,10 +96,11 @@ async def get_current_user(
 async def register_user(payload: RegisterRequest):
     """
     Registers a new mobile app user with strict Egyptian phone validation, password hashing, and gender.
+    If already registered with matching credentials, seamlessly logs the user in.
     Returns secure long-lived token and user profile.
     """
     try:
-        user, token = user_service.register_user(
+        user, token, is_existing = user_service.register_user(
             phone=payload.phone,
             password=payload.password,
             name=payload.name,
@@ -107,11 +108,14 @@ async def register_user(payload: RegisterRequest):
             gender=payload.gender,
             age=payload.age,
         )
+        msg = "مرحباً بك مجدداً، تم تسجيل دخولك لحسابك بنجاح ✓" if is_existing else "تم إنشاء حسابك بنجاح وحفظ بياناتك سحابياً ☁️✓"
         return {
             "success": True,
-            "message": "تم إنشاء حسابك بنجاح وحفظ بياناتك سحابياً ☁️✓",
+            "message": msg,
+            "detail": msg,
             "token": token,
             "user": user,
+            "is_existing": is_existing,
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -127,9 +131,11 @@ async def login_user(payload: LoginRequest):
             phone=payload.phone,
             password=payload.password,
         )
+        msg = f"مرحباً بك {user.get('name', '')} في جرعة ✓"
         return {
             "success": True,
-            "message": f"مرحباً بك {user.get('name', '')} في جرعة ✓",
+            "message": msg,
+            "detail": msg,
             "token": token,
             "user": user,
         }

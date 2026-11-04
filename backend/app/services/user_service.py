@@ -255,9 +255,11 @@ class UserService:
         governorate: str = "القاهرة",
         gender: str = "male",
         age: Optional[int] = None,
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> Tuple[Dict[str, Any], str, bool]:
         """
         Registers a new user with strict Egyptian phone validation, password hashing, and gender.
+        If the phone already exists, verifies password and logs in seamlessly.
+        Returns (user_dict, token, is_existing).
         """
         self._reload_if_needed()
         if not is_valid_egyptian_phone(phone):
@@ -271,10 +273,52 @@ class UserService:
 
         norm_phone = normalize_phone(phone)
         existing = next((u for u in self._users if u.get("phone") == norm_phone), None)
-        if existing:
-            raise ValueError("رقم الهاتف مسجل مسبقاً بالفعل، يرجى تسجيل الدخول")
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-        now_iso = datetime.datetime.utcnow().isoformat() + "Z"
+        if existing:
+            # Smart Seamless Login: if account already exists, check password
+            stored_hash = existing.get("password_hash")
+            stored_salt = existing.get("password_salt")
+            if stored_hash and stored_salt:
+                if verify_password(password.strip(), stored_hash, stored_salt):
+                    existing["last_login_at"] = now_iso
+                    if name and name.strip() and not existing.get("name"):
+                        existing["name"] = name.strip()
+                    if governorate and governorate.strip() and not existing.get("governorate"):
+                        existing["governorate"] = governorate.strip()
+                    self._save_users()
+                    if supabase_service.is_configured():
+                        supabase_service.update_user(existing["id"], {
+                            "last_login_at": now_iso,
+                            "name": existing.get("name"),
+                            "governorate": existing.get("governorate"),
+                        })
+                    token = create_user_token(existing["id"], norm_phone)
+                    return sanitize_user(existing), token, True
+                else:
+                    raise ValueError("رقم الهاتف مسجل مسبقاً بالفعل، يرجى تسجيل الدخول أو إدخال كلمة المرور الصحيحة")
+            else:
+                # Legacy account without password -> set password and log in
+                pwd_hash, pwd_salt = hash_password(password.strip())
+                existing["password_hash"] = pwd_hash
+                existing["password_salt"] = pwd_salt
+                existing["last_login_at"] = now_iso
+                if name and name.strip():
+                    existing["name"] = name.strip()
+                if governorate and governorate.strip():
+                    existing["governorate"] = governorate.strip()
+                self._save_users()
+                if supabase_service.is_configured():
+                    supabase_service.update_user(existing["id"], {
+                        "password_hash": pwd_hash,
+                        "password_salt": pwd_salt,
+                        "last_login_at": now_iso,
+                        "name": existing.get("name"),
+                        "governorate": existing.get("governorate"),
+                    })
+                token = create_user_token(existing["id"], norm_phone)
+                return sanitize_user(existing), token, True
+
         new_id = f"usr-{uuid.uuid4().hex[:10]}"
         pwd_hash, pwd_salt = hash_password(password.strip())
 
@@ -302,7 +346,7 @@ class UserService:
         if supabase_service.is_configured():
             supabase_service.insert_user(new_user)
         token = create_user_token(new_id, norm_phone)
-        return sanitize_user(new_user), token
+        return sanitize_user(new_user), token, False
 
     def login_user(
         self,

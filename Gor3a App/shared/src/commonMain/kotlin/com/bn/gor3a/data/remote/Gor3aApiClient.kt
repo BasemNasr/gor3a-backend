@@ -38,6 +38,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.client.statement.bodyAsText
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -237,6 +239,38 @@ class Gor3aApiClient(
         }
     }
 
+    private val jsonSerializer = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        coerceInputValues = true
+    }
+
+    private fun extractErrorMessage(bodyText: String, defaultMsg: String): String {
+        return try {
+            val jsonElem = jsonSerializer.parseToJsonElement(bodyText)
+            val obj = jsonElem.jsonObject
+            val detailElem = obj["detail"]
+            if (detailElem != null) {
+                if (detailElem is JsonPrimitive) {
+                    val content = detailElem.content
+                    if (content.isNotBlank()) return content
+                } else if (detailElem is JsonArray) {
+                    val msgs = detailElem.mapNotNull {
+                        try {
+                            it.jsonObject["msg"]?.jsonPrimitive?.content
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+                    if (msgs.isNotEmpty()) return msgs.joinToString(", ")
+                }
+            }
+            obj["message"]?.jsonPrimitive?.content ?: defaultMsg
+        } catch (_: Exception) {
+            defaultMsg
+        }
+    }
+
     // =========================================================================
     // Auth & Cloud User Methods
     // =========================================================================
@@ -248,7 +282,7 @@ class Gor3aApiClient(
         gender: String = "male",
         age: Int? = null
     ): AuthResponseDto {
-        return client.post("$baseUrl/api/auth/register") {
+        val response = client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequestDto(
@@ -260,20 +294,49 @@ class Gor3aApiClient(
                     age = age
                 )
             )
-        }.body()
+        }
+        val statusCode = response.status.value
+        val responseBody = response.bodyAsText()
+        if (statusCode !in 200..299) {
+            val errorMsg = extractErrorMessage(responseBody, "فشل إنشاء الحساب ($statusCode)")
+            throw Exception(errorMsg)
+        }
+        val dto = jsonSerializer.decodeFromString<AuthResponseDto>(responseBody)
+        if (!dto.success) {
+            throw Exception(dto.displayMessage ?: "فشل إنشاء الحساب")
+        }
+        return dto
     }
 
     suspend fun loginUser(phone: String, password: String): AuthResponseDto {
-        return client.post("$baseUrl/api/auth/login") {
+        val response = client.post("$baseUrl/api/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequestDto(phone = phone, password = password))
-        }.body()
+        }
+        val statusCode = response.status.value
+        val responseBody = response.bodyAsText()
+        if (statusCode !in 200..299) {
+            val errorMsg = extractErrorMessage(responseBody, "فشل تسجيل الدخول ($statusCode)")
+            throw Exception(errorMsg)
+        }
+        val dto = jsonSerializer.decodeFromString<AuthResponseDto>(responseBody)
+        if (!dto.success && !dto.requiresRegistration) {
+            throw Exception(dto.displayMessage ?: "فشل تسجيل الدخول")
+        }
+        return dto
     }
 
     suspend fun getCurrentUser(token: String): ProfileResponseDto {
-        return client.get("$baseUrl/api/auth/me") {
+        val response = client.get("$baseUrl/api/auth/me") {
             header(HttpHeaders.Authorization, "Bearer $token")
-        }.body()
+        }
+        val statusCode = response.status.value
+        val responseBody = response.bodyAsText()
+        if (statusCode !in 200..299) {
+            val errorMsg = extractErrorMessage(responseBody, "فشل استرجاع بيانات الحساب ($statusCode)")
+            throw Exception(errorMsg)
+        }
+        return jsonSerializer.decodeFromString<ProfileResponseDto>(responseBody)
     }
 
     suspend fun getGovernorates(): List<String> {
