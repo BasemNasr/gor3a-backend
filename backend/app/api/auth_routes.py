@@ -15,16 +15,16 @@ router = APIRouter(prefix="", tags=["auth"])
 # Pydantic Schemas
 # ==============================================================================
 class RegisterRequest(BaseModel):
-    phone: str = Field(..., min_length=10, max_length=15, description="Egyptian Mobile (01xxxxxxxxx)")
+    phone: str = Field(..., min_length=7, max_length=20, description="Mobile number (Egyptian or International)")
     password: str = Field(..., min_length=6, max_length=100, description="User Password (min 6 characters)")
     name: str = Field(..., min_length=2, max_length=100, description="Full Name")
-    governorate: str = Field(default="القاهرة", description="Egyptian Governorate")
+    governorate: str = Field(default="القاهرة", description="Egyptian Governorate or Outside Egypt")
     gender: str = Field(default="male", pattern="^(male|female)$", description="Gender: male or female")
     age: Optional[int] = Field(default=None, ge=1, le=120)
 
 
 class LoginRequest(BaseModel):
-    phone: str = Field(..., min_length=10, max_length=15, description="Egyptian Mobile (01xxxxxxxxx)")
+    phone: str = Field(..., min_length=7, max_length=20, description="Mobile number (Egyptian or International)")
     password: str = Field(..., min_length=1, max_length=100, description="User Password")
 
 

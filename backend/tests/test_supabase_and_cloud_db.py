@@ -115,6 +115,19 @@ def test_user_service_register_existing_user_smart_login():
                 name="دكتور تجريبي",
             )
 
+        # 4. Register with International phone number (+966 for Saudi Arabia)
+        intl_user, intl_token, intl_existing = svc.register_user(
+            phone="+966501234567",
+            password="securePassword123",
+            name="د. محمد الشمري",
+            governorate="خارج مصر",
+            gender="male"
+        )
+        assert intl_existing is False
+        assert intl_user["phone"] == "+966501234567"
+        assert intl_user["governorate"] == "خارج مصر"
+        assert intl_token is not None
+
 
 
 

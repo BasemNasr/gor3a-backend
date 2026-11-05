@@ -40,7 +40,7 @@ class AuthViewModel(
     }
 
     companion object {
-        fun normalizeEgyptianPhone(phone: String): String {
+        fun normalizePhone(phone: String): String {
             var p = phone.trim().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
             p = p.map { c ->
                 when (c) {
@@ -52,15 +52,31 @@ class AuthViewModel(
 
             if (p.startsWith("+20")) p = "0" + p.removePrefix("+20")
             else if (p.startsWith("0020")) p = "0" + p.removePrefix("0020")
-            else if (p.startsWith("20") && p.length == 12) p = "0" + p.removePrefix("20")
+            else if (p.startsWith("20") && p.length == 12 && p[2] == '1') p = "0" + p.removePrefix("20")
+            else if (!p.startsWith("0") && p.length == 10 && p[0] == '1') p = "0" + p
+
+            if (Regex("^01[0125][0-9]{8}$").matches(p)) {
+                return p
+            }
+
+            if (p.startsWith("00")) {
+                p = "+" + p.removePrefix("00")
+            } else if (!p.startsWith("+") && !p.startsWith("0") && p.length >= 8) {
+                p = "+$p"
+            }
 
             return p
         }
 
-        fun isValidEgyptianPhone(phone: String): Boolean {
-            val norm = normalizeEgyptianPhone(phone)
-            return Regex("^01[0125][0-9]{8}$").matches(norm)
+        fun isValidPhone(phone: String): Boolean {
+            val norm = normalizePhone(phone)
+            if (Regex("^01[0125][0-9]{8}$").matches(norm)) return true
+            if (Regex("^\\+[1-9][0-9]{6,14}$").matches(norm)) return true
+            return false
         }
+
+        fun normalizeEgyptianPhone(phone: String): String = normalizePhone(phone)
+        fun isValidEgyptianPhone(phone: String): Boolean = isValidPhone(phone)
     }
 
     fun register(
@@ -73,13 +89,13 @@ class AuthViewModel(
         isArabic: Boolean = true,
         onSuccess: () -> Unit = {}
     ) {
-        val normPhone = normalizeEgyptianPhone(phone)
-        if (!isValidEgyptianPhone(normPhone)) {
+        val normPhone = normalizePhone(phone)
+        if (!isValidPhone(normPhone)) {
             _uiState.value = _uiState.value.copy(
                 errorMessage = if (isArabic)
-                    "يرجى إدخال رقم هاتف محمول مصري صحيح (مثال: 01012345678 أو 011 أو 012 أو 015)"
+                    "يرجى إدخال رقم هاتف صحيح (مثال: 01012345678 أو دولي يبدأ بـ +)"
                 else
-                    "Please enter a valid Egyptian mobile number (e.g. 01012345678, 011, 012, or 015)"
+                    "Please enter a valid phone number (e.g. 01012345678 or international with +)"
             )
             return
         }
@@ -142,13 +158,13 @@ class AuthViewModel(
         onSuccess: () -> Unit = {},
         onRequiresRegistration: (String) -> Unit = {}
     ) {
-        val normPhone = normalizeEgyptianPhone(phone)
-        if (!isValidEgyptianPhone(normPhone)) {
+        val normPhone = normalizePhone(phone)
+        if (!isValidPhone(normPhone)) {
             _uiState.value = _uiState.value.copy(
                 errorMessage = if (isArabic)
-                    "يرجى إدخال رقم هاتف محمول مصري صحيح يبدأ بـ 010 أو 011 أو 012 أو 015"
+                    "يرجى إدخال رقم هاتف صحيح (مثال: 01012345678 أو دولي يبدأ بـ +)"
                 else
-                    "Please enter a valid Egyptian mobile starting with 010, 011, 012, or 015"
+                    "Please enter a valid phone number (e.g. 01012345678 or international with +)"
             )
             return
         }

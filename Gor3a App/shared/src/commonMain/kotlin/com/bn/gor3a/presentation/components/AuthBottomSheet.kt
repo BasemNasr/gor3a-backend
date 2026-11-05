@@ -101,6 +101,7 @@ fun getGovDisplayName(gov: String, isArabic: Boolean): String {
         "شمال سيناء" -> "North Sinai"
         "جنوب سيناء" -> "South Sinai"
         "البحر الأحمر" -> "Red Sea"
+        "خارج مصر" -> "Outside Egypt"
         else -> gov
     }
 }
@@ -207,7 +208,7 @@ fun AuthBottomSheet(
                         age = ageInput,
                         isArabic = isArabic,
                         governorates = uiState.governorates.ifEmpty {
-                            listOf("القاهرة", "الجيزة", "الإسكندرية", "الدقهلية", "الشرقية", "المنوفية", "القليوبية", "الغربية", "البحيرة", "دمياط", "بورسعيد", "الإسماعيلية", "السويس", "كفر الشيخ", "الفيوم", "بني سويف", "المنيا", "أسيوط", "سوهاج", "قنا", "الأقصر", "أسوان")
+                            listOf("القاهرة", "الجيزة", "الإسكندرية", "الدقهلية", "الشرقية", "المنوفية", "القليوبية", "الغربية", "البحيرة", "دمياط", "بورسعيد", "الإسماعيلية", "السويس", "كفر الشيخ", "الفيوم", "بني سويف", "المنيا", "أسيوط", "سوهاج", "قنا", "الأقصر", "أسوان", "شمال سيناء", "جنوب سيناء", "البحر الأحمر", "مطروح", "الوادي الجديد", "خارج مصر")
                         },
                         isLoading = uiState.isLoading,
                         errorMessage = uiState.errorMessage,
@@ -359,8 +360,8 @@ private fun AuthRegisterView(
         OutlinedTextField(
             value = phone,
             onValueChange = onPhoneChange,
-            label = { Text(if (isArabic) "رقم الهاتف المحمول (01xxxxxxxxx)" else "Egyptian Mobile Number (01xxxxxxxxx)") },
-            placeholder = { Text(if (isArabic) "مثال: 01012345678" else "e.g. 01012345678") },
+            label = { Text(if (isArabic) "رقم الهاتف (محلي أو دولي)" else "Phone Number (Local or Intl)") },
+            placeholder = { Text(if (isArabic) "مثال: 01012345678 أو 966501234567+" else "e.g. 01012345678 or +966...") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -828,8 +829,8 @@ private fun AuthLoginView(
         OutlinedTextField(
             value = phone,
             onValueChange = onPhoneChange,
-            label = { Text(if (isArabic) "رقم الهاتف المحمول (01xxxxxxxxx)" else "Egyptian Mobile Number (01xxxxxxxxx)") },
-            placeholder = { Text(if (isArabic) "مثال: 01012345678" else "e.g. 01012345678") },
+            label = { Text(if (isArabic) "رقم الهاتف (محلي أو دولي)" else "Phone Number (Local or Intl)") },
+            placeholder = { Text(if (isArabic) "مثال: 01012345678 أو 966501234567+" else "e.g. 01012345678 or +966...") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),

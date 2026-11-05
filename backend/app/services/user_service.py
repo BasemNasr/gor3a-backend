@@ -26,32 +26,52 @@ TMP_PRESCRIPTIONS_PATH = Path("/tmp/user_prescriptions.json")
 
 def normalize_phone(phone: str) -> str:
     """
-    Normalizes Egyptian mobile phone numbers to canonical 01xxxxxxxxx format.
-    Handles +20, 0020, 20 prefixes and spacing.
+    Normalizes Egyptian mobile phone numbers to canonical 01xxxxxxxxx format,
+    and international numbers to canonical +<country_code><number> format.
+    Handles +20, 0020, 20 prefixes, spaces, and dashes.
     """
-    clean = re.sub(r"[\s\-\(\)\+]", "", phone.strip())
-    if clean.startswith("0020"):
+    clean = re.sub(r"[\s\-\(\)]", "", phone.strip())
+    # Handle Egyptian numbers
+    if clean.startswith("+20"):
+        clean = "0" + clean[3:]
+    elif clean.startswith("0020"):
         clean = "0" + clean[4:]
-    elif clean.startswith("20") and len(clean) >= 12:
+    elif clean.startswith("20") and len(clean) == 12 and clean[2] == "1":
         clean = "0" + clean[2:]
-    elif clean.startswith("0") is False and len(clean) == 10:
+    elif clean.startswith("0") is False and len(clean) == 10 and clean[0] == "1":
         clean = "0" + clean
 
     # Ensure starts with 01 and has 11 digits
     if re.match(r"^01[0125][0-9]{8}$", clean):
         return clean
+
+    # Handle international formats
+    if clean.startswith("00"):
+        clean = "+" + clean[2:]
+    elif not clean.startswith("+") and not clean.startswith("0") and len(clean) >= 8:
+        clean = "+" + clean
+
     return clean
 
 
 EGYPTIAN_PHONE_REGEX = re.compile(r"^01[0125][0-9]{8}$")
+INTERNATIONAL_PHONE_REGEX = re.compile(r"^\+[1-9][0-9]{6,14}$")
 
 
-def is_valid_egyptian_phone(phone: str) -> bool:
-    """Checks whether the phone is a valid Egyptian mobile number (Vodafone, Orange, Etisalat, WE)."""
+def is_valid_phone(phone: str) -> bool:
+    """Checks whether the phone is a valid Egyptian or International mobile number."""
     if not phone:
         return False
-    clean = normalize_phone(phone)
-    return bool(EGYPTIAN_PHONE_REGEX.match(clean))
+    norm = normalize_phone(phone)
+    if EGYPTIAN_PHONE_REGEX.match(norm):
+        return True
+    if INTERNATIONAL_PHONE_REGEX.match(norm):
+        return True
+    return False
+
+
+# Backward compatibility alias
+is_valid_egyptian_phone = is_valid_phone
 
 
 def hash_password(password: str, salt: Optional[str] = None) -> Tuple[str, str]:
@@ -262,8 +282,8 @@ class UserService:
         Returns (user_dict, token, is_existing).
         """
         self._reload_if_needed()
-        if not is_valid_egyptian_phone(phone):
-            raise ValueError("يرجى إدخال رقم هاتف محمول مصري صحيح (مثال: 01012345678 أو 011 أو 012 أو 015)")
+        if not is_valid_phone(phone):
+            raise ValueError("يرجى إدخال رقم هاتف صحيح (مثال: 01012345678 أو دولي يبدأ بـ +)")
 
         if not password or len(password.strip()) < 6:
             raise ValueError("يجب أن تتكون كلمة المرور من 6 أحرف أو أرقام على الأقل")
@@ -357,8 +377,8 @@ class UserService:
         Logs in user verifying phone and password.
         """
         self._reload_if_needed()
-        if not is_valid_egyptian_phone(phone):
-            raise ValueError("رقم الهاتف المحمول غير صحيح، يرجى إدخال رقم مصري يبدأ بـ 010 أو 011 أو 012 أو 015")
+        if not is_valid_phone(phone):
+            raise ValueError("رقم الهاتف غير صحيح، يرجى إدخال رقم هاتف مصري أو دولي يبدأ بـ +")
 
         if not password:
             raise ValueError("يرجى إدخال كلمة المرور")

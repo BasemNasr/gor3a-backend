@@ -39,6 +39,7 @@ EGYPTIAN_GOVERNORATES = [
     "قنا",
     "الأقصر",
     "أسوان",
+    "خارج مصر",
 ]
 
 DEFAULT_BANNERS_PATH = PROJECT_ROOT / "dataset" / "banners" / "banners.json"
