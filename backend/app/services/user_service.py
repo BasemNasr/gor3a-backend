@@ -626,17 +626,48 @@ class UserService:
     def get_all_users_for_admin(self) -> List[Dict[str, Any]]:
         """Returns all registered mobile app users with calculated stats for Admin."""
         self._reload_if_needed()
+        from .quota_service import quota_service
         results = []
         for u in sorted(self._users, key=lambda x: x.get("created_at", ""), reverse=True):
             user_data = sanitize_user(u)
             user_data["prescriptions_count"] = self.count_user_prescriptions(u["id"])
+            user_data["daily_limit"] = int(u.get("daily_limit") or 5)
+            scan_stats = quota_service.get_user_scan_stats(u["id"])
+            user_data["today_scans"] = scan_stats["today_scans"]
+            user_data["month_scans"] = scan_stats["month_scans"]
             results.append(user_data)
         return results
 
+    def update_user_daily_limit(self, user_id: str, new_limit: int) -> Optional[Dict[str, Any]]:
+        """Updates the daily scan limit for a specific user."""
+        self._reload_if_needed()
+        user = next((u for u in self._users if u.get("id") == user_id), None)
+        if not user:
+            return None
+
+        clean_limit = max(1, min(1000, int(new_limit)))
+        user["daily_limit"] = clean_limit
+        user["updated_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        self._save_users()
+
+        # Attempt to update in Supabase (gracefully ignores if column not present yet)
+        if supabase_service.is_configured():
+            try:
+                supabase_service.update_user(user_id, {"daily_limit": clean_limit})
+            except Exception as e:
+                logger.warning(f"Could not persist daily_limit to Supabase: {e}")
+
+        user_copy = sanitize_user(user)
+        user_copy["daily_limit"] = clean_limit
+        return user_copy
+
     def get_stats(self) -> Dict[str, Any]:
         self._reload_if_needed()
+        from .quota_service import quota_service
         total_users = len(self._users)
         total_rxs = len(self._prescriptions)
+
+        global_scan_stats = quota_service.get_global_scan_stats()
 
         gov_counts: Dict[str, int] = {}
         for u in self._users:
@@ -650,6 +681,8 @@ class UserService:
         return {
             "total_users": total_users,
             "total_prescriptions": total_rxs,
+            "total_scans_today": global_scan_stats["today_scans"],
+            "total_scans_month": global_scan_stats["month_scans"],
             "top_governorate": top_gov,
             "governorates_distribution": gov_counts,
         }

@@ -77,6 +77,19 @@ class QuotaService:
         except Exception as e:
             logger.warning(f"Failed to persist daily scans locally: {e}")
 
+    def get_user_daily_limit(self, user_id: Optional[str]) -> int:
+        """Returns the user-specific daily scan limit if set, otherwise the default (5)."""
+        if not user_id:
+            return DAILY_SCAN_LIMIT
+        try:
+            from .user_service import user_service
+            user = user_service.get_user_by_id(user_id)
+            if user and user.get("daily_limit") is not None:
+                return max(1, int(user["daily_limit"]))
+        except Exception:
+            pass
+        return DAILY_SCAN_LIMIT
+
     def check_quota(
         self,
         user_id: Optional[str],
@@ -84,7 +97,7 @@ class QuotaService:
     ) -> Dict[str, Any]:
         """
         Validates whether the user and device are permitted to perform another prescription scan.
-        If either user_id OR device_id has reached 5 scans today, quota is exceeded.
+        If either user_id OR device_id has reached the allowed daily scans, quota is exceeded.
         """
         today = get_egypt_today_date()
         clean_device = (device_id or "").strip()
@@ -116,15 +129,18 @@ class QuotaService:
         user_count = max(user_count, local_u_cnt)
         device_count = max(device_count, local_d_cnt)
 
+        # Look up custom limit for this user (default 5)
+        max_limit = self.get_user_daily_limit(user_id)
+
         # The effective used scans is the higher of user or device (anti-abuse)
         effective_used = max(user_count, device_count)
-        is_exceeded = effective_used >= DAILY_SCAN_LIMIT
-        scans_remaining = max(0, DAILY_SCAN_LIMIT - effective_used)
+        is_exceeded = effective_used >= max_limit
+        scans_remaining = max(0, max_limit - effective_used)
 
         return {
             "allowed": not is_exceeded,
             "scans_used": effective_used,
-            "max_scans": DAILY_SCAN_LIMIT,
+            "max_scans": max_limit,
             "scans_remaining": scans_remaining,
             "scan_date": today,
             "user_id": user_id,
@@ -132,12 +148,53 @@ class QuotaService:
             "whatsapp_number": WHATSAPP_NUMBER,
             "whatsapp_link": WHATSAPP_LINK,
             "message": (
-                "لقد استنفدت الحد اليومي المسموح به (٥ فحوصات في اليوم). "
+                f"لقد استنفدت الحد اليومي المسموح به ({max_limit} فحوصات في اليوم). "
                 "إذا كنت ترغب في فحص عدد غير محدود من الروشتات وتفعيل النسخة الكاملة، "
                 f"يرجى التواصل معنا عبر واتساب على الرقم {WHATSAPP_NUMBER}."
             )
             if is_exceeded
             else "الكوتا اليومية متاحة.",
+        }
+
+    def get_user_scan_stats(self, user_id: str) -> Dict[str, int]:
+        """Returns today and current month scan counts for a specific user."""
+        self._load_local_scans()
+        today = get_egypt_today_date()
+        month_prefix = today[:7]
+
+        today_count = 0
+        month_count = 0
+        for s in self._local_scans:
+            if s.get("user_id") == user_id:
+                s_date = str(s.get("scan_date") or "")
+                if s_date == today:
+                    today_count += 1
+                if s_date.startswith(month_prefix):
+                    month_count += 1
+
+        return {
+            "today_scans": today_count,
+            "month_scans": month_count,
+        }
+
+    def get_global_scan_stats(self) -> Dict[str, int]:
+        """Returns overall scans used today and this month across all users."""
+        self._load_local_scans()
+        today = get_egypt_today_date()
+        month_prefix = today[:7]
+
+        today_count = 0
+        month_count = 0
+        for s in self._local_scans:
+            s_date = str(s.get("scan_date") or "")
+            if s_date == today:
+                today_count += 1
+            if s_date.startswith(month_prefix):
+                month_count += 1
+
+        return {
+            "today_scans": today_count,
+            "month_scans": month_count,
         }
 
     def record_scan(self, user_id: Optional[str], device_id: str) -> None:

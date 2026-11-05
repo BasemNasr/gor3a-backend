@@ -145,5 +145,166 @@
     "device_id": "device_quota_test_eab9e765",
     "scan_date": "2026-11-05",
     "created_at": "2026-11-05T09:27:40.331716+00:00"
+  },
+  {
+    "id": "scan_e9352b7598664a46",
+    "user_id": null,
+    "device_id": "legacy_ip_testclient",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T11:52:06.126475+00:00"
+  },
+  {
+    "id": "scan_671f1fd0c19b4365",
+    "user_id": "user_test_valid",
+    "device_id": "device_test_valid_1",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T11:52:06.295963+00:00"
+  },
+  {
+    "id": "scan_631c4cbdbce749c5",
+    "user_id": "user_quota_test_072335cc",
+    "device_id": "device_quota_test_35a9cce2",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T11:52:06.390266+00:00"
+  },
+  {
+    "id": "scan_70812bfc1c6f4035",
+    "user_id": "user_quota_test_072335cc",
+    "device_id": "device_quota_test_35a9cce2",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T11:52:06.390886+00:00"
+  },
+  {
+    "id": "scan_dd30f6e65af844e5",
+    "user_id": "user_quota_test_072335cc",
+    "device_id": "device_quota_test_35a9cce2",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T11:52:06.391277+00:00"
+  },
+  {
+    "id": "scan_3defcbca41ca481f",
+    "user_id": "user_quota_test_072335cc",
+    "device_id": "device_quota_test_35a9cce2",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T11:52:06.391657+00:00"
+  },
+  {
+    "id": "scan_df0bd0952cf64c8b",
+    "user_id": "user_quota_test_072335cc",
+    "device_id": "device_quota_test_35a9cce2",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T11:52:06.392035+00:00"
+  },
+  {
+    "id": "scan_1ed8e0775d344802",
+    "user_id": null,
+    "device_id": "legacy_ip_testclient",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:14.660223+00:00"
+  },
+  {
+    "id": "scan_5a951c38e11743c7",
+    "user_id": "user_test_valid",
+    "device_id": "device_test_valid_1",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:14.828366+00:00"
+  },
+  {
+    "id": "scan_9150daed29134661",
+    "user_id": "user_quota_test_086d6c05",
+    "device_id": "device_quota_test_38204341",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:14.872047+00:00"
+  },
+  {
+    "id": "scan_0d66d63ffcfd4156",
+    "user_id": "user_quota_test_086d6c05",
+    "device_id": "device_quota_test_38204341",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:14.872742+00:00"
+  },
+  {
+    "id": "scan_4a87d3fa73444b5f",
+    "user_id": "user_quota_test_086d6c05",
+    "device_id": "device_quota_test_38204341",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:14.873165+00:00"
+  },
+  {
+    "id": "scan_1e1e0a1e2b284619",
+    "user_id": "user_quota_test_086d6c05",
+    "device_id": "device_quota_test_38204341",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:14.873564+00:00"
+  },
+  {
+    "id": "scan_3ccd4ec365224c03",
+    "user_id": "user_quota_test_086d6c05",
+    "device_id": "device_quota_test_38204341",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:14.873984+00:00"
+  },
+  {
+    "id": "scan_21add47af2ca410b",
+    "user_id": "user_test_v1v2",
+    "device_id": "device_test_v1v2",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:15.610885+00:00"
+  },
+  {
+    "id": "scan_18ced9279c174725",
+    "user_id": "user_test_v1v2",
+    "device_id": "device_test_v1v2",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:00:15.770665+00:00"
+  },
+  {
+    "id": "scan_27531f81efa74d6d",
+    "user_id": null,
+    "device_id": "legacy_ip_testclient",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:05:23.411004+00:00"
+  },
+  {
+    "id": "scan_8281c2621e5a46db",
+    "user_id": "user_test_valid",
+    "device_id": "device_test_valid_1",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:05:23.580051+00:00"
+  },
+  {
+    "id": "scan_4727a003e66c4ef4",
+    "user_id": "user_quota_test_d9f24487",
+    "device_id": "device_quota_test_f84c36e3",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:05:23.626604+00:00"
+  },
+  {
+    "id": "scan_018458a14fd34bed",
+    "user_id": "user_quota_test_d9f24487",
+    "device_id": "device_quota_test_f84c36e3",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:05:23.627224+00:00"
+  },
+  {
+    "id": "scan_07057bdccdd84d2d",
+    "user_id": "user_quota_test_d9f24487",
+    "device_id": "device_quota_test_f84c36e3",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:05:23.627694+00:00"
+  },
+  {
+    "id": "scan_8161dc5d89a74083",
+    "user_id": "user_quota_test_d9f24487",
+    "device_id": "device_quota_test_f84c36e3",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:05:23.628338+00:00"
+  },
+  {
+    "id": "scan_0e8f8f84dfb94a61",
+    "user_id": "user_quota_test_d9f24487",
+    "device_id": "device_quota_test_f84c36e3",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T12:05:23.628831+00:00"
   }
 ]

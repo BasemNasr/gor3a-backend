@@ -1437,6 +1437,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const statUsersTotal = document.getElementById("statUsersTotal");
   const statTopGov = document.getElementById("statTopGov");
   const statCloudRxsTotal = document.getElementById("statCloudRxsTotal");
+  const statScansToday = document.getElementById("statScansToday");
+  const statScansMonth = document.getElementById("statScansMonth");
 
   const usersTableBody = document.getElementById("usersTableBody");
   const usersEmptyState = document.getElementById("usersEmptyState");
@@ -1462,6 +1464,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (statUsersTotal) statUsersTotal.textContent = (stats.total_users || 0).toLocaleString();
       if (statTopGov) statTopGov.textContent = stats.top_governorate || "القاهرة";
       if (statCloudRxsTotal) statCloudRxsTotal.textContent = (stats.total_prescriptions || 0).toLocaleString();
+      if (statScansToday) statScansToday.textContent = (stats.total_scans_today || 0).toLocaleString();
+      if (statScansMonth) statScansMonth.textContent = (stats.total_scans_month || 0).toLocaleString();
 
       renderUsersTable(usersList);
     } catch (err) {
@@ -1520,6 +1524,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const avatarLetter = (user.name || "م").trim().charAt(0);
       const rxsCount = user.prescriptions_count || 0;
+      const dailyLimit = user.daily_limit !== undefined ? user.daily_limit : 5;
+      const todayScans = user.today_scans || 0;
+      const monthScans = user.month_scans || 0;
+      const isLimitReached = todayScans >= dailyLimit;
 
       tr.innerHTML = `
         <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${idx + 1}</td>
@@ -1545,6 +1553,27 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="gov-pill-tag" style="background: #f1f5f9; color: #334155; font-weight: 600;">
             📍 ${escapeHtml(user.governorate || "القاهرة")}
           </span>
+        </td>
+        <td style="text-align: center;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.25rem 0.65rem; border-radius: 999px; background: #f0fdfa; border: 1px solid #99f6e4;">
+            <span style="font-weight: 800; color: #0f766e; font-size: 0.9rem;">${dailyLimit}</span>
+            <span style="font-size: 0.75rem; color: #0d9488; font-weight: 600;">فحص/يوم</span>
+            <button type="button" class="btn btn-xs" style="padding: 2px 6px; font-size: 0.75rem; background: #ffffff; color: #0f766e; border: 1px solid #99f6e4; cursor: pointer; border-radius: 6px; margin-right: 2px;" onclick="window.editUserLimit('${user.id}', '${escapeHtml(user.name || '')}', ${dailyLimit})" title="تعديل الحد اليومي">
+              ✏️
+            </button>
+          </div>
+        </td>
+        <td style="text-align: center;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+            <span style="display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: ${isLimitReached ? '#fee2e2' : '#f0fdf4'}; color: ${isLimitReached ? '#b91c1c' : '#15803d'}; border: 1px solid ${isLimitReached ? '#fecaca' : '#bbf7d0'};">
+              <span>اليوم:</span>
+              <span>${todayScans} / ${dailyLimit}</span>
+              ${isLimitReached ? '⚠️' : ''}
+            </span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+              الشهر: ${monthScans} فحص
+            </span>
+          </div>
         </td>
         <td style="text-align: center;">
           <span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.65rem; border-radius: 999px; background: ${rxsCount > 0 ? '#ecfdf5' : '#f8fafc'}; color: ${rxsCount > 0 ? '#047857' : '#94a3b8'}; font-weight: 700; font-size: 0.85rem; border: 1px solid ${rxsCount > 0 ? '#a7f3d0' : '#e2e8f0'};">
@@ -1578,11 +1607,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  window.editUserLimit = async function(userId, userName, currentLimit) {
+    if (!adminToken) return;
+    const input = prompt(`تعديل الحد اليومي لفحص الروشتات للمستخدم: ${userName || 'المستخدم'}\n(الحد الافتراضي 5 فحوصات يومياً):`, currentLimit);
+    if (input === null) return;
+    const newLimit = parseInt(input.trim(), 10);
+    if (isNaN(newLimit) || newLimit < 1 || newLimit > 1000) {
+      alert("يرجى إدخال رقم صحيح وموجب بين 1 و 1000");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/limit`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ daily_limit: newLimit }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const u = usersList.find((x) => x.id === userId);
+        if (u) {
+          u.daily_limit = newLimit;
+        }
+        renderUsersTable(usersList);
+        showToast(`تم تحديث الحد اليومي لـ ${userName || ''} إلى ${newLimit} فحص/يوم بنجاح ✓`);
+      } else {
+        alert(data.detail || data.message || "فشل تحديث الحد اليومي");
+      }
+    } catch (err) {
+      alert("تعذر الاتصال بالسيرفر لتحديث الحد اليومي");
+    }
+  };
+
   window.deleteUserAccount = async function(userId) {
     if (!adminToken) return;
     const user = usersList.find((u) => u.id === userId);
     const userName = user ? user.name : "هذا المستخدم";
-    if (!confirm(`هل أنت متأكد من رغبتك في حذف حساب ${userName} وروشتاته السحابية نهائياً؟`)) {
+    if (!confirm(`هل أنت متأكد من رغبتك في حذف حساب ${userName} وروشتاته المحفوظة نهائياً؟`)) {
       return;
     }
 

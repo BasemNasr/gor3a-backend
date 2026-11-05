@@ -148,6 +148,10 @@ class BannerReorderRequest(BaseModel):
     orders: List[BannerOrderItem]
 
 
+class UpdateUserLimitRequest(BaseModel):
+    daily_limit: int = Field(..., ge=1, le=1000, description="الحد اليومي لعدد الفحوصات المسموح بها")
+
+
 # ==============================================================================
 # Endpoints
 # ==============================================================================
@@ -478,6 +482,24 @@ async def admin_get_users(admin_email: str = Depends(get_current_admin)):
     }
 
 
+@router.put("/users/{user_id}/limit")
+async def admin_update_user_limit(
+    user_id: str,
+    payload: UpdateUserLimitRequest,
+    admin_email: str = Depends(get_current_admin),
+):
+    """Admin can update the daily scan quota limit for a specific user."""
+    updated_user = user_service.update_user_daily_limit(user_id, payload.daily_limit)
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="المستخدم غير موجود")
+
+    return {
+        "success": True,
+        "message": f"تم تحديث الحد اليومي للمستخدم {updated_user.get('name', '')} إلى {payload.daily_limit} فحص/يوم ✓",
+        "user": updated_user,
+    }
+
+
 @router.delete("/users/{user_id}")
 async def admin_delete_user(
     user_id: str,
@@ -495,5 +517,5 @@ async def admin_delete_user(
 
     return {
         "success": True,
-        "message": "تم حذف حساب المستخدم وروشتاته السحابية بنجاح 🗑️",
+        "message": "تم حذف حساب المستخدم وروشتاته المحفوظة بنجاح 🗑️",
     }
