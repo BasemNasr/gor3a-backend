@@ -151,6 +151,9 @@ fun ScannerScreen(
                 val remainingScans = remember(state.isAnalyzing) {
                     DeviceQuotaManager.getLocalScansRemaining()
                 }
+                val maxDailyScans = remember(state.isAnalyzing) {
+                    DeviceQuotaManager.getMaxDailyScans()
+                }
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -167,7 +170,7 @@ fun ScannerScreen(
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "⚡ $remainingScans / 5 اليوم",
+                        text = "⚡ $remainingScans / $maxDailyScans اليوم",
                         color = if (remainingScans <= 1) Color(0xFFFCA5A5) else Color(0xFF99F6E4),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold

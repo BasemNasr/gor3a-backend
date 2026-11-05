@@ -90,8 +90,9 @@ fun QuotaExceededBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 2. Title
+            val maxLimit = DeviceQuotaManager.getMaxDailyScans()
             Text(
-                text = "وصلت للحد الأقصى اليومي (٥ روشتات)",
+                text = "وصلت للحد الأقصى اليومي ($maxLimit روشتات)",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E293B),
@@ -102,7 +103,7 @@ fun QuotaExceededBottomSheet(
 
             // 3. Explanation Description
             Text(
-                text = message ?: "لقد استنفدت الفحوصات المتاحة لهذا اليوم على هذا الجهاز وحسابك (٥ من ٥). يتجدد الرصيد المجاني تلقائياً في بداية اليوم التالي.",
+                text = message ?: "لقد استنفدت الفحوصات المتاحة لهذا اليوم على هذا الجهاز وحسابك ($maxLimit من $maxLimit). يتجدد الرصيد المجاني تلقائياً في بداية اليوم التالي.",
                 fontSize = 14.sp,
                 color = Color(0xFF64748B),
                 lineHeight = 22.sp,

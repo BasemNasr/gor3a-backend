@@ -1,6 +1,7 @@
 package com.bn.gor3a.data.repository
 
 import com.bn.gor3a.core.preferences.PlatformPreferences
+import com.bn.gor3a.core.quota.DeviceQuotaManager
 import com.bn.gor3a.data.local.LocalPrescriptionDataSource
 import com.bn.gor3a.data.remote.Gor3aApiClient
 import com.bn.gor3a.data.remote.dto.AuthResponseDto
@@ -64,6 +65,8 @@ class AuthRepositoryImpl(
                         if (res.success && res.user != null) {
                             saveSession(savedToken, res.user)
                         }
+                        // Sync current quota & daily limit from server
+                        apiClient.getScanQuota(savedToken)
                     } catch (e: Exception) {
                         println("[AuthRepositoryImpl] Background profile refresh failed: ${e.message}")
                     }
@@ -172,6 +175,7 @@ class AuthRepositoryImpl(
                 saveSession(res.token, res.user)
                 CoroutineScope(Dispatchers.IO).launch {
                     syncCloudPrescriptions(res.token)
+                    try { apiClient.getScanQuota(res.token) } catch (_: Exception) {}
                 }
                 Result.success(res)
             } else {
@@ -189,6 +193,7 @@ class AuthRepositoryImpl(
                 saveSession(res.token, res.user)
                 CoroutineScope(Dispatchers.IO).launch {
                     syncCloudPrescriptions(res.token)
+                    try { apiClient.getScanQuota(res.token) } catch (_: Exception) {}
                 }
                 Result.success(res)
             } else if (res.requiresRegistration) {
@@ -223,6 +228,7 @@ class AuthRepositoryImpl(
 
         PlatformPreferences.setString(PREF_KEY_TOKEN, "")
         PlatformPreferences.setString(PREF_KEY_USER, "")
+        DeviceQuotaManager.resetToDefaultLimit()
     }
 
     override suspend fun getGovernorates(): List<String> {

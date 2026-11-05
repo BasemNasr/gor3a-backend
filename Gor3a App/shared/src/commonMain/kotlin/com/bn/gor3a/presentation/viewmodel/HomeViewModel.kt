@@ -42,6 +42,7 @@ class HomeViewModel(
         observeReminders()
         observeAuth()
         loadBanners()
+        syncQuota()
     }
 
     private fun observeAuth() {
@@ -49,7 +50,20 @@ class HomeViewModel(
             _uiState.update { it.copy(currentUser = user) }
             // Reload banners tailored to user's governorate
             loadBanners(user?.governorate)
+            syncQuota()
         }?.launchIn(viewModelScope)
+    }
+
+    fun syncQuota() {
+        viewModelScope.launch {
+            try {
+                val token = authRepository?.authToken?.value
+                val client = apiClient ?: Gor3aApiClient()
+                client.getScanQuota(token)
+            } catch (e: Exception) {
+                println("[HomeViewModel] syncQuota error: ${e.message}")
+            }
+        }
     }
 
     fun loadBanners(governorate: String? = null) {

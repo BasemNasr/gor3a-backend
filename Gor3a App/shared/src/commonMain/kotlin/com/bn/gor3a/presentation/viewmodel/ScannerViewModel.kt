@@ -120,10 +120,11 @@ class ScannerViewModel(
 
     fun onImageCaptured(imageBytes: ByteArray, filename: String = "prescription.jpg") {
         if (DeviceQuotaManager.isQuotaExceeded()) {
+            val maxLimit = DeviceQuotaManager.getMaxDailyScans()
             viewModelScope.launch {
                 _effects.emit(
                     ScannerEffect.ShowQuotaExceeded(
-                        message = "لقد استنفدت الحد اليومي المسموح به (٥ فحوصات في اليوم). للحصول على عدد غير محدود من الفحوصات والنسخة الكاملة، يرجى التواصل معنا عبر واتساب.",
+                        message = "لقد استنفدت الحد اليومي المسموح به ($maxLimit فحوصات في اليوم). للحصول على عدد غير محدود من الفحوصات والنسخة الكاملة، يرجى التواصل معنا عبر واتساب.",
                         whatsappNumber = DeviceQuotaManager.WHATSAPP_NUMBER,
                         whatsappLink = DeviceQuotaManager.WHATSAPP_LINK
                     )

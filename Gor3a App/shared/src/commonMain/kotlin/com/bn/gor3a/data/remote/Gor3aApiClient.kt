@@ -47,8 +47,8 @@ class QuotaExceededException(
     val messageText: String,
     val whatsappNumber: String = DeviceQuotaManager.WHATSAPP_NUMBER,
     val whatsappLink: String = DeviceQuotaManager.WHATSAPP_LINK,
-    val scansUsed: Int = DeviceQuotaManager.MAX_DAILY_SCANS,
-    val maxScans: Int = DeviceQuotaManager.MAX_DAILY_SCANS
+    val scansUsed: Int = DeviceQuotaManager.DEFAULT_MAX_DAILY_SCANS,
+    val maxScans: Int = DeviceQuotaManager.DEFAULT_MAX_DAILY_SCANS
 ) : Exception(messageText)
 
 class UnauthorizedScanException(
@@ -121,9 +121,11 @@ class Gor3aApiClient(
         if (statusCode == 429) {
             val errorBody = response.bodyAsText()
             println("[Gor3aApiClient] ⚠️ Daily quota exceeded: $errorBody")
-            var msg = "لقد استنفدت الحد اليومي المسموح به (٥ فحوصات في اليوم)."
+            var msg = "لقد استنفدت الحد اليومي المسموح به (${DeviceQuotaManager.getMaxDailyScans()} فحوصات في اليوم)."
             var waNum = DeviceQuotaManager.WHATSAPP_NUMBER
             var waLink = DeviceQuotaManager.WHATSAPP_LINK
+            var maxScansServer: Int? = null
+            var scansUsedServer: Int? = null
             try {
                 val jsonElem = Json.parseToJsonElement(errorBody)
                 val detailObj = jsonElem.jsonObject["detail"]?.jsonObject
@@ -131,14 +133,20 @@ class Gor3aApiClient(
                     msg = detailObj["message"]?.jsonPrimitive?.content ?: msg
                     waNum = detailObj["whatsapp_number"]?.jsonPrimitive?.content ?: waNum
                     waLink = detailObj["whatsapp_link"]?.jsonPrimitive?.content ?: waLink
+                    maxScansServer = detailObj["max_scans"]?.jsonPrimitive?.content?.toIntOrNull()
+                    scansUsedServer = detailObj["scans_used"]?.jsonPrimitive?.content?.toIntOrNull()
                 }
             } catch (ignored: Exception) {}
-            // Update local quota
-            DeviceQuotaManager.updateQuotaState(DeviceQuotaManager.MAX_DAILY_SCANS, null)
+            // Update local quota with server-provided limits
+            val effMax = maxScansServer ?: DeviceQuotaManager.getMaxDailyScans()
+            val effUsed = scansUsedServer ?: effMax
+            DeviceQuotaManager.updateQuotaState(effUsed, null, effMax)
             throw QuotaExceededException(
                 messageText = msg,
                 whatsappNumber = waNum,
-                whatsappLink = waLink
+                whatsappLink = waLink,
+                scansUsed = effUsed,
+                maxScans = effMax
             )
         }
 
@@ -163,7 +171,7 @@ class Gor3aApiClient(
             parameter("device_id", effectiveDeviceId)
         }
         val quota: QuotaResponseDto = response.body()
-        DeviceQuotaManager.updateQuotaState(quota.scansUsed, quota.scanDate)
+        DeviceQuotaManager.updateQuotaState(quota.scansUsed, quota.scanDate, quota.maxScans)
         return quota
     }
 

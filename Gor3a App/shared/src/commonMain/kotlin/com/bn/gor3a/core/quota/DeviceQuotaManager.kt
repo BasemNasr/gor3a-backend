@@ -6,7 +6,9 @@ object DeviceQuotaManager {
     private const val KEY_DEVICE_ID = "gor3a_persistent_device_uuid"
     private const val KEY_LOCAL_SCANS_COUNT = "gor3a_daily_scans_count"
     private const val KEY_LOCAL_SCANS_DATE = "gor3a_daily_scans_date"
+    private const val KEY_MAX_DAILY_SCANS = "gor3a_max_daily_scans"
 
+    const val DEFAULT_MAX_DAILY_SCANS = 5
     const val MAX_DAILY_SCANS = 5
     const val WHATSAPP_NUMBER = "+201064290486"
     const val WHATSAPP_LINK = (
@@ -16,7 +18,7 @@ object DeviceQuotaManager {
 
     /**
      * Retrieves or generates a permanent device identifier that is never cleared on user logout.
-     * Prevents bypassing the 5-scan daily limit by logging out and creating another account.
+     * Prevents bypassing the daily limit by logging out and creating another account.
      */
     fun getOrCreateDeviceId(): String {
         val existing = PlatformPreferences.getString(KEY_DEVICE_ID, "")
@@ -31,13 +33,19 @@ object DeviceQuotaManager {
         return generated
     }
 
+    fun getMaxDailyScans(): Int {
+        val saved = PlatformPreferences.getString(KEY_MAX_DAILY_SCANS, "").toIntOrNull()
+        return if (saved != null && saved > 0) saved else DEFAULT_MAX_DAILY_SCANS
+    }
+
     fun getLocalScansUsed(): Int {
         return PlatformPreferences.getString(KEY_LOCAL_SCANS_COUNT, "0").toIntOrNull() ?: 0
     }
 
     fun getLocalScansRemaining(): Int {
         val used = getLocalScansUsed()
-        return (MAX_DAILY_SCANS - used).coerceAtLeast(0)
+        val maxLimit = getMaxDailyScans()
+        return (maxLimit - used).coerceAtLeast(0)
     }
 
     fun isQuotaExceeded(): Boolean {
@@ -46,16 +54,24 @@ object DeviceQuotaManager {
 
     fun recordSuccessfulScan() {
         val currentUsed = getLocalScansUsed()
-        val newUsed = (currentUsed + 1).coerceAtMost(MAX_DAILY_SCANS)
+        val maxLimit = getMaxDailyScans()
+        val newUsed = (currentUsed + 1).coerceAtMost(maxLimit)
         PlatformPreferences.setString(KEY_LOCAL_SCANS_COUNT, newUsed.toString())
     }
 
-    fun updateQuotaState(scansUsed: Int, date: String?) {
+    fun updateQuotaState(scansUsed: Int, date: String?, maxScans: Int? = null) {
         val storedDate = PlatformPreferences.getString(KEY_LOCAL_SCANS_DATE, "")
         if (date != null && date != storedDate) {
             // New day in Egypt: reset date and sync
             PlatformPreferences.setString(KEY_LOCAL_SCANS_DATE, date)
         }
         PlatformPreferences.setString(KEY_LOCAL_SCANS_COUNT, scansUsed.toString())
+        if (maxScans != null && maxScans > 0) {
+            PlatformPreferences.setString(KEY_MAX_DAILY_SCANS, maxScans.toString())
+        }
+    }
+
+    fun resetToDefaultLimit() {
+        PlatformPreferences.setString(KEY_MAX_DAILY_SCANS, DEFAULT_MAX_DAILY_SCANS.toString())
     }
 }
