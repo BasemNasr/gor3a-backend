@@ -14,10 +14,14 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT,
     password_salt TEXT,
     prescriptions_count INT DEFAULT 0,
+    daily_limit INT DEFAULT 5,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     last_login_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration for existing installations:
+ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_limit INT DEFAULT 5;
 
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 CREATE INDEX IF NOT EXISTS idx_users_governorate ON users(governorate);

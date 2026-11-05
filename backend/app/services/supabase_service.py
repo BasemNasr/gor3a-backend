@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple
@@ -308,6 +309,56 @@ class SupabaseService:
                 return res.is_success
         except Exception as e:
             logger.warning(f"[Supabase] insert_daily_scan exception: {e}")
+            return False
+
+    # --------------------------------------------------------------------------
+    # Cloud Config & User Limits Persistence
+    # --------------------------------------------------------------------------
+    def fetch_user_limits_config(self) -> Dict[str, int]:
+        """Fetches custom user daily limits from Supabase config row."""
+        if not self.is_configured():
+            return {}
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                res = client.get(
+                    f"{self.url}/rest/v1/banners?id=eq.config_user_daily_limits&select=action_target",
+                    headers=self._headers(),
+                )
+                if res.is_success:
+                    rows = res.json()
+                    if rows and rows[0].get("action_target"):
+                        loaded = json.loads(rows[0]["action_target"])
+                        if isinstance(loaded, dict):
+                            return {str(k): int(v) for k, v in loaded.items()}
+        except Exception as e:
+            logger.warning(f"[Supabase] fetch_user_limits_config exception: {e}")
+        return {}
+
+    def save_user_limits_config(self, limits_map: Dict[str, int]) -> bool:
+        """Upserts custom user daily limits to Supabase config row."""
+        if not self.is_configured():
+            return False
+        try:
+            payload = {
+                "id": "config_user_daily_limits",
+                "title": "Config User Daily Limits",
+                "subtitle": "System configuration for user daily scan limits",
+                "image_url": "https://gor3a.app/config",
+                "action_type": "none",
+                "action_target": json.dumps(limits_map),
+                "is_active": False,
+                "target_type": "all",
+                "display_order": 9999,
+            }
+            with httpx.Client(timeout=self.timeout) as client:
+                res = client.post(
+                    f"{self.url}/rest/v1/banners",
+                    headers={**self._headers(), "Prefer": "resolution=merge-duplicates"},
+                    json=payload,
+                )
+                return res.is_success
+        except Exception as e:
+            logger.warning(f"[Supabase] save_user_limits_config exception: {e}")
             return False
 
 

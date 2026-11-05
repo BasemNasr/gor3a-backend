@@ -306,5 +306,138 @@
     "device_id": "device_quota_test_f84c36e3",
     "scan_date": "2026-11-05",
     "created_at": "2026-11-05T12:05:23.628831+00:00"
+  },
+  {
+    "id": "scan_7368f46c86454211",
+    "user_id": null,
+    "device_id": "legacy_ip_testclient",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:12:06.867280+00:00"
+  },
+  {
+    "id": "scan_61f883a42c094c9f",
+    "user_id": "user_test_valid",
+    "device_id": "device_test_valid_1",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:12:07.040583+00:00"
+  },
+  {
+    "id": "scan_e4f46bde21334329",
+    "user_id": "user_quota_test_d0e21874",
+    "device_id": "device_quota_test_9f1a58ed",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:12:07.129092+00:00"
+  },
+  {
+    "id": "scan_f3f48bacbc9e4e4e",
+    "user_id": "user_quota_test_d0e21874",
+    "device_id": "device_quota_test_9f1a58ed",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:12:07.129796+00:00"
+  },
+  {
+    "id": "scan_941f9dfc0f4e4922",
+    "user_id": "user_quota_test_d0e21874",
+    "device_id": "device_quota_test_9f1a58ed",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:12:07.130366+00:00"
+  },
+  {
+    "id": "scan_ec988473330044c0",
+    "user_id": "user_quota_test_d0e21874",
+    "device_id": "device_quota_test_9f1a58ed",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:12:07.130932+00:00"
+  },
+  {
+    "id": "scan_1d04223792f24620",
+    "user_id": "user_quota_test_d0e21874",
+    "device_id": "device_quota_test_9f1a58ed",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:12:07.131499+00:00"
+  },
+  {
+    "id": "scan_903ba2dc6d6b40fd",
+    "user_id": "user_quota_test_dafc888a",
+    "device_id": "device_quota_test_baa13bb8",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:14:19.527638+00:00"
+  },
+  {
+    "id": "scan_90739b3faa494899",
+    "user_id": "user_quota_test_dafc888a",
+    "device_id": "device_quota_test_baa13bb8",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:14:19.528736+00:00"
+  },
+  {
+    "id": "scan_fa3339437257429b",
+    "user_id": "user_quota_test_dafc888a",
+    "device_id": "device_quota_test_baa13bb8",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:14:19.529359+00:00"
+  },
+  {
+    "id": "scan_1553e58acbc4485a",
+    "user_id": "user_quota_test_dafc888a",
+    "device_id": "device_quota_test_baa13bb8",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:14:19.529946+00:00"
+  },
+  {
+    "id": "scan_13f1395dbac24ddf",
+    "user_id": "user_quota_test_dafc888a",
+    "device_id": "device_quota_test_baa13bb8",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:14:19.530524+00:00"
+  },
+  {
+    "id": "scan_1c023794e1794b34",
+    "user_id": null,
+    "device_id": "legacy_ip_10.0.ee.b0",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:16:44.350487+00:00"
+  },
+  {
+    "id": "scan_9ed019a28dea455c",
+    "user_id": "user_test_mock_ae0894",
+    "device_id": "device_test_mock_9eaadd",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:16:44.521421+00:00"
+  },
+  {
+    "id": "scan_658544f761f34f0e",
+    "user_id": "user_quota_test_bd299260",
+    "device_id": "device_quota_test_703aca18",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:16:44.569888+00:00"
+  },
+  {
+    "id": "scan_53e8ffe5bad6461d",
+    "user_id": "user_quota_test_bd299260",
+    "device_id": "device_quota_test_703aca18",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:16:44.570905+00:00"
+  },
+  {
+    "id": "scan_eea6ab79a47345a2",
+    "user_id": "user_quota_test_bd299260",
+    "device_id": "device_quota_test_703aca18",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:16:44.571757+00:00"
+  },
+  {
+    "id": "scan_d2c769268b664e87",
+    "user_id": "user_quota_test_bd299260",
+    "device_id": "device_quota_test_703aca18",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:16:44.572812+00:00"
+  },
+  {
+    "id": "scan_4b01fbe51b774907",
+    "user_id": "user_quota_test_bd299260",
+    "device_id": "device_quota_test_703aca18",
+    "scan_date": "2026-11-05",
+    "created_at": "2026-11-05T14:16:44.573802+00:00"
   }
 ]

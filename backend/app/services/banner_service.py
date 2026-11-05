@@ -175,6 +175,8 @@ class BannerService:
         inactive = 0
 
         for b in self._banners:
+            if b.get("id", "").startswith("config_"):
+                continue
             if not b.get("is_active", True):
                 inactive += 1
             elif self._is_expired(b, today_str):
@@ -195,6 +197,8 @@ class BannerService:
         today_str = datetime.date.today().isoformat()
         results = []
         for b in sorted(self._banners, key=lambda x: (x.get("display_order", 999), x.get("id", ""))):
+            if b.get("id", "").startswith("config_"):
+                continue
             item = dict(b)
             is_expired = self._is_expired(b, today_str)
             is_pending = self._is_not_started(b, today_str)
@@ -227,6 +231,8 @@ class BannerService:
         gov_normalized = governorate.strip() if governorate else ""
 
         for b in self._banners:
+            if b.get("id", "").startswith("config_"):
+                continue
             # Must be active
             if not b.get("is_active", True):
                 continue

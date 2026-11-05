@@ -142,14 +142,28 @@ class UserService:
     def __init__(self):
         self._users: List[Dict[str, Any]] = []
         self._prescriptions: List[Dict[str, Any]] = []
+        self._user_limits: Dict[str, int] = {}
         self._load()
 
     def _reload_if_needed(self):
         """Ensures memory reflects latest state in serverless environments."""
         if supabase_service.is_configured():
             cloud_users = supabase_service.fetch_all_users()
+            cloud_limits = supabase_service.fetch_user_limits_config()
+            if cloud_limits:
+                self._user_limits.update(cloud_limits)
+
             if cloud_users is not None:
+                for u in cloud_users:
+                    uid = u.get("id")
+                    if u.get("daily_limit") is not None:
+                        self._user_limits[uid] = int(u["daily_limit"])
+                    elif uid in self._user_limits:
+                        u["daily_limit"] = self._user_limits[uid]
+                    else:
+                        u["daily_limit"] = 5
                 self._users = cloud_users
+
             cloud_rxs = supabase_service.fetch_all_prescriptions()
             if cloud_rxs is not None:
                 self._prescriptions = cloud_rxs
@@ -180,6 +194,14 @@ class UserService:
             try:
                 with open(user_path, "r", encoding="utf-8") as f:
                     self._users = json.load(f)
+                for u in self._users:
+                    uid = u.get("id")
+                    if u.get("daily_limit") is not None:
+                        self._user_limits[uid] = int(u["daily_limit"])
+                    elif uid in self._user_limits:
+                        u["daily_limit"] = self._user_limits[uid]
+                    else:
+                        u["daily_limit"] = 5
                 logger.info(f"Loaded {len(self._users)} users from {user_path}")
             except Exception as e:
                 logger.warning(f"Failed to load users from {user_path}: {e}")
@@ -477,6 +499,7 @@ class UserService:
         if user:
             user_copy = sanitize_user(user)
             user_copy["prescriptions_count"] = self.count_user_prescriptions(user_id)
+            user_copy["daily_limit"] = int(self._user_limits.get(user_id) or user.get("daily_limit") or 5)
             return user_copy
         return None
 
@@ -631,7 +654,7 @@ class UserService:
         for u in sorted(self._users, key=lambda x: x.get("created_at", ""), reverse=True):
             user_data = sanitize_user(u)
             user_data["prescriptions_count"] = self.count_user_prescriptions(u["id"])
-            user_data["daily_limit"] = int(u.get("daily_limit") or 5)
+            user_data["daily_limit"] = int(self._user_limits.get(u["id"]) or u.get("daily_limit") or 5)
             scan_stats = quota_service.get_user_scan_stats(u["id"])
             user_data["today_scans"] = scan_stats["today_scans"]
             user_data["month_scans"] = scan_stats["month_scans"]
@@ -647,15 +670,23 @@ class UserService:
 
         clean_limit = max(1, min(1000, int(new_limit)))
         user["daily_limit"] = clean_limit
+        self._user_limits[user_id] = clean_limit
         user["updated_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
         self._save_users()
 
-        # Attempt to update in Supabase (gracefully ignores if column not present yet)
+        # Persist to cloud
         if supabase_service.is_configured():
+            # 1. Save to cloud config row so it persists across all serverless invocations & refreshes
+            supabase_service.save_user_limits_config(self._user_limits)
+            # 2. Also try native column update in case users table has daily_limit column
             try:
                 supabase_service.update_user(user_id, {"daily_limit": clean_limit})
             except Exception as e:
-                logger.warning(f"Could not persist daily_limit to Supabase: {e}")
+                logger.warning(f"Could not persist daily_limit column to Supabase: {e}")
+
+        user_copy = sanitize_user(user)
+        user_copy["daily_limit"] = clean_limit
+        return user_copy
 
         user_copy = sanitize_user(user)
         user_copy["daily_limit"] = clean_limit

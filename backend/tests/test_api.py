@@ -40,15 +40,16 @@ def test_analyze_legacy_compatibility_and_strict_toggle():
     image_bytes = create_dummy_image_bytes()
     files = {"file": ("rx_test.jpg", image_bytes, "image/jpeg")}
     data = {"provider": "mock"}
+    random_ip = f"10.0.{uuid.uuid4().hex[:2]}.{uuid.uuid4().hex[:2]}"
 
     # 1. When legacy compatibility is enabled (True) -> old app works!
     settings.allow_legacy_guest_scans = True
-    res_legacy = client.post("/api/analyze", files=files, data=data)
+    res_legacy = client.post("/api/analyze", files=files, data=data, headers={"X-Forwarded-For": random_ip})
     assert res_legacy.status_code == 200
 
     # 2. When legacy compatibility is disabled (False) -> strictly requires login 401
     settings.allow_legacy_guest_scans = False
-    res_strict = client.post("/api/analyze", files=files, data=data)
+    res_strict = client.post("/api/analyze", files=files, data=data, headers={"X-Forwarded-For": random_ip})
     assert res_strict.status_code == 401
     assert "تسجيل الدخول" in res_strict.json()["detail"]
 
@@ -60,8 +61,10 @@ def test_analyze_with_mock_provider():
     image_bytes = create_dummy_image_bytes()
     files = {"file": ("rx_test.jpg", image_bytes, "image/jpeg")}
     data = {"provider": "mock"}
-    token = create_user_token("user_test_valid", "01099998888")
-    headers = {"Authorization": f"Bearer {token}", "X-Device-Id": "device_test_valid_1"}
+    uid = f"user_test_mock_{uuid.uuid4().hex[:6]}"
+    token = create_user_token(uid, "01099998888")
+    dev_id = f"device_test_mock_{uuid.uuid4().hex[:6]}"
+    headers = {"Authorization": f"Bearer {token}", "X-Device-Id": dev_id}
 
     response = client.post("/api/analyze", files=files, data=data, headers=headers)
     assert response.status_code == 200
@@ -77,8 +80,10 @@ def test_analyze_with_mock_provider():
 def test_analyze_invalid_file():
     files = {"file": ("bad.txt", b"plain text is not an image", "text/plain")}
     data = {"provider": "mock"}
-    token = create_user_token("user_test_valid", "01099998888")
-    headers = {"Authorization": f"Bearer {token}", "X-Device-Id": "device_test_valid_2"}
+    uid = f"user_test_inv_{uuid.uuid4().hex[:8]}"
+    token = create_user_token(uid, "01099998888")
+    dev_id = f"device_test_inv_{uuid.uuid4().hex[:8]}"
+    headers = {"Authorization": f"Bearer {token}", "X-Device-Id": dev_id}
 
     response = client.post("/api/analyze", files=files, data=data, headers=headers)
     assert response.status_code == 400
