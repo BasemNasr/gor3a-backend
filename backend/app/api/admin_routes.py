@@ -514,6 +514,13 @@ async def admin_delete_user(
     user_service._save_users()
     user_service._prescriptions = [p for p in user_service._prescriptions if p.get("user_id") != user_id]
     user_service._save_prescriptions()
+    if user_id in user_service._user_limits:
+        user_service._user_limits.pop(user_id, None)
+        user_service._save_limits_to_disk()
+        if supabase_service.is_configured():
+            supabase_service.save_user_limits_config(user_service._user_limits)
+    if supabase_service.is_configured():
+        supabase_service.delete_user(user_id)
 
     return {
         "success": True,

@@ -21,7 +21,17 @@ class SupabaseService:
             or os.environ.get("SUPABASE_ANON_KEY")
             or ""
         )
-        self.timeout = 8.0
+        self.timeout = 15.0
+        self._http_client: Optional[httpx.Client] = None
+
+    def _get_client(self) -> httpx.Client:
+        if self._http_client is None or self._http_client.is_closed:
+            self._http_client = httpx.Client(
+                timeout=self.timeout,
+                follow_redirects=True,
+                limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+            )
+        return self._http_client
 
     def is_configured(self) -> bool:
         """Returns True if Supabase credentials are provided in environment."""
@@ -42,14 +52,14 @@ class SupabaseService:
         if not self.is_configured():
             return None
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.get(
-                    f"{self.url}/rest/v1/users?select=*",
-                    headers=self._headers(),
-                )
-                if res.is_success:
-                    return res.json()
-                logger.warning(f"[Supabase] fetch_all_users failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.get(
+                f"{self.url}/rest/v1/users?select=*",
+                headers=self._headers(),
+            )
+            if res.is_success:
+                return res.json()
+            logger.warning(f"[Supabase] fetch_all_users failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] fetch_all_users exception: {e}")
         return None
@@ -58,15 +68,15 @@ class SupabaseService:
         if not self.is_configured():
             return False
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.post(
-                    f"{self.url}/rest/v1/users",
-                    json=user,
-                    headers=self._headers(),
-                )
-                if res.is_success:
-                    return True
-                logger.warning(f"[Supabase] insert_user failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.post(
+                f"{self.url}/rest/v1/users",
+                json=user,
+                headers=self._headers(),
+            )
+            if res.is_success:
+                return True
+            logger.warning(f"[Supabase] insert_user failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] insert_user exception: {e}")
         return False
@@ -75,15 +85,15 @@ class SupabaseService:
         if not self.is_configured():
             return False
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.patch(
-                    f"{self.url}/rest/v1/users?id=eq.{user_id}",
-                    json=updates,
-                    headers=self._headers(),
-                )
-                if res.is_success:
-                    return True
-                logger.warning(f"[Supabase] update_user failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.patch(
+                f"{self.url}/rest/v1/users?id=eq.{user_id}",
+                json=updates,
+                headers=self._headers(),
+            )
+            if res.is_success:
+                return True
+            logger.warning(f"[Supabase] update_user failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] update_user exception: {e}")
         return False
@@ -92,12 +102,12 @@ class SupabaseService:
         if not self.is_configured():
             return False
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.delete(
-                    f"{self.url}/rest/v1/users?id=eq.{user_id}",
-                    headers=self._headers(),
-                )
-                return res.is_success
+            client = self._get_client()
+            res = client.delete(
+                f"{self.url}/rest/v1/users?id=eq.{user_id}",
+                headers=self._headers(),
+            )
+            return res.is_success
         except Exception as e:
             logger.warning(f"[Supabase] delete_user exception: {e}")
             return False
@@ -109,14 +119,14 @@ class SupabaseService:
         if not self.is_configured():
             return None
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.get(
-                    f"{self.url}/rest/v1/user_prescriptions?select=*",
-                    headers=self._headers(),
-                )
-                if res.is_success:
-                    return res.json()
-                logger.warning(f"[Supabase] fetch_all_prescriptions failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.get(
+                f"{self.url}/rest/v1/user_prescriptions?select=*",
+                headers=self._headers(),
+            )
+            if res.is_success:
+                return res.json()
+            logger.warning(f"[Supabase] fetch_all_prescriptions failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] fetch_all_prescriptions exception: {e}")
         return None
@@ -127,15 +137,15 @@ class SupabaseService:
         try:
             headers = self._headers()
             headers["Prefer"] = "resolution=merge-duplicates,return=representation"
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.post(
-                    f"{self.url}/rest/v1/user_prescriptions",
-                    json=rx,
-                    headers=headers,
-                )
-                if res.is_success:
-                    return True
-                logger.warning(f"[Supabase] upsert_prescription failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.post(
+                f"{self.url}/rest/v1/user_prescriptions",
+                json=rx,
+                headers=headers,
+            )
+            if res.is_success:
+                return True
+            logger.warning(f"[Supabase] upsert_prescription failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] upsert_prescription exception: {e}")
         return False
@@ -144,12 +154,12 @@ class SupabaseService:
         if not self.is_configured():
             return False
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.delete(
-                    f"{self.url}/rest/v1/user_prescriptions?id=eq.{rx_id}&user_id=eq.{user_id}",
-                    headers=self._headers(),
-                )
-                return res.is_success
+            client = self._get_client()
+            res = client.delete(
+                f"{self.url}/rest/v1/user_prescriptions?id=eq.{rx_id}&user_id=eq.{user_id}",
+                headers=self._headers(),
+            )
+            return res.is_success
         except Exception as e:
             logger.warning(f"[Supabase] delete_prescription exception: {e}")
             return False
@@ -181,14 +191,14 @@ class SupabaseService:
         if not self.is_configured():
             return None
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.get(
-                    f"{self.url}/rest/v1/banners?select=*&order=display_order.asc",
-                    headers=self._headers(),
-                )
-                if res.is_success:
-                    return res.json()
-                logger.warning(f"[Supabase] fetch_all_banners failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.get(
+                f"{self.url}/rest/v1/banners?select=*&order=display_order.asc",
+                headers=self._headers(),
+            )
+            if res.is_success:
+                return res.json()
+            logger.warning(f"[Supabase] fetch_all_banners failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] fetch_all_banners exception: {e}")
         return None
@@ -198,15 +208,15 @@ class SupabaseService:
             return False
         try:
             payload = self._clean_banner(banner)
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.post(
-                    f"{self.url}/rest/v1/banners",
-                    json=payload,
-                    headers=self._headers(),
-                )
-                if res.is_success:
-                    return True
-                logger.warning(f"[Supabase] insert_banner failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.post(
+                f"{self.url}/rest/v1/banners",
+                json=payload,
+                headers=self._headers(),
+            )
+            if res.is_success:
+                return True
+            logger.warning(f"[Supabase] insert_banner failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] insert_banner exception: {e}")
         return False
@@ -218,15 +228,15 @@ class SupabaseService:
             payload = self._clean_banner(banner)
             headers = self._headers()
             headers["Prefer"] = "resolution=merge-duplicates,return=representation"
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.post(
-                    f"{self.url}/rest/v1/banners",
-                    json=payload,
-                    headers=headers,
-                )
-                if res.is_success:
-                    return True
-                logger.warning(f"[Supabase] upsert_banner failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.post(
+                f"{self.url}/rest/v1/banners",
+                json=payload,
+                headers=headers,
+            )
+            if res.is_success:
+                return True
+            logger.warning(f"[Supabase] upsert_banner failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] upsert_banner exception: {e}")
         return False
@@ -236,15 +246,15 @@ class SupabaseService:
             return False
         try:
             payload = self._clean_banner(updates)
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.patch(
-                    f"{self.url}/rest/v1/banners?id=eq.{banner_id}",
-                    json=payload,
-                    headers=self._headers(),
-                )
-                if res.is_success:
-                    return True
-                logger.warning(f"[Supabase] update_banner failed: {res.status_code} - {res.text}")
+            client = self._get_client()
+            res = client.patch(
+                f"{self.url}/rest/v1/banners?id=eq.{banner_id}",
+                json=payload,
+                headers=self._headers(),
+            )
+            if res.is_success:
+                return True
+            logger.warning(f"[Supabase] update_banner failed: {res.status_code} - {res.text}")
         except Exception as e:
             logger.warning(f"[Supabase] update_banner exception: {e}")
         return False
@@ -253,12 +263,12 @@ class SupabaseService:
         if not self.is_configured():
             return False
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.delete(
-                    f"{self.url}/rest/v1/banners?id=eq.{banner_id}",
-                    headers=self._headers(),
-                )
-                return res.is_success
+            client = self._get_client()
+            res = client.delete(
+                f"{self.url}/rest/v1/banners?id=eq.{banner_id}",
+                headers=self._headers(),
+            )
+            return res.is_success
         except Exception as e:
             logger.warning(f"[Supabase] delete_banner exception: {e}")
             return False
@@ -275,23 +285,23 @@ class SupabaseService:
         user_count = 0
         device_count = 0
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                # 1. Device count
-                res_dev = client.get(
-                    f"{self.url}/rest/v1/daily_scans?device_id=eq.{device_id}&scan_date=eq.{scan_date}&select=id",
+            client = self._get_client()
+            # 1. Device count
+            res_dev = client.get(
+                f"{self.url}/rest/v1/daily_scans?device_id=eq.{device_id}&scan_date=eq.{scan_date}&select=id",
+                headers=self._headers(),
+            )
+            if res_dev.is_success:
+                device_count = len(res_dev.json())
+
+            # 2. User count (if user_id provided)
+            if user_id:
+                res_user = client.get(
+                    f"{self.url}/rest/v1/daily_scans?user_id=eq.{user_id}&scan_date=eq.{scan_date}&select=id",
                     headers=self._headers(),
                 )
-                if res_dev.is_success:
-                    device_count = len(res_dev.json())
-
-                # 2. User count (if user_id provided)
-                if user_id:
-                    res_user = client.get(
-                        f"{self.url}/rest/v1/daily_scans?user_id=eq.{user_id}&scan_date=eq.{scan_date}&select=id",
-                        headers=self._headers(),
-                    )
-                    if res_user.is_success:
-                        user_count = len(res_user.json())
+                if res_user.is_success:
+                    user_count = len(res_user.json())
         except Exception as e:
             logger.warning(f"[Supabase] count_daily_scans exception: {e}")
         return user_count, device_count
@@ -300,13 +310,13 @@ class SupabaseService:
         if not self.is_configured():
             return False
         try:
-            with httpx.Client(timeout=self.timeout) as client:
-                res = client.post(
-                    f"{self.url}/rest/v1/daily_scans",
-                    json=scan_record,
-                    headers=self._headers(),
-                )
-                return res.is_success
+            client = self._get_client()
+            res = client.post(
+                f"{self.url}/rest/v1/daily_scans",
+                json=scan_record,
+                headers=self._headers(),
+            )
+            return res.is_success
         except Exception as e:
             logger.warning(f"[Supabase] insert_daily_scan exception: {e}")
             return False
@@ -318,8 +328,9 @@ class SupabaseService:
         """Fetches custom user daily limits from Supabase config row."""
         if not self.is_configured():
             return {}
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
+        for attempt in range(2):
+            try:
+                client = self._get_client()
                 res = client.get(
                     f"{self.url}/rest/v1/banners?id=eq.config_user_daily_limits&select=action_target",
                     headers=self._headers(),
@@ -330,36 +341,43 @@ class SupabaseService:
                         loaded = json.loads(rows[0]["action_target"])
                         if isinstance(loaded, dict):
                             return {str(k): int(v) for k, v in loaded.items()}
-        except Exception as e:
-            logger.warning(f"[Supabase] fetch_user_limits_config exception: {e}")
+                    return {}
+            except Exception as e:
+                logger.warning(f"[Supabase] fetch_user_limits_config exception (attempt {attempt+1}): {e}")
+                if attempt == 0:
+                    time.sleep(0.2)
         return {}
 
     def save_user_limits_config(self, limits_map: Dict[str, int]) -> bool:
         """Upserts custom user daily limits to Supabase config row."""
         if not self.is_configured():
             return False
-        try:
-            payload = {
-                "id": "config_user_daily_limits",
-                "title": "Config User Daily Limits",
-                "subtitle": "System configuration for user daily scan limits",
-                "image_url": "https://gor3a.app/config",
-                "action_type": "none",
-                "action_target": json.dumps(limits_map),
-                "is_active": False,
-                "target_type": "all",
-                "display_order": 9999,
-            }
-            with httpx.Client(timeout=self.timeout) as client:
+        for attempt in range(2):
+            try:
+                payload = {
+                    "id": "config_user_daily_limits",
+                    "title": "Config User Daily Limits",
+                    "subtitle": "System configuration for user daily scan limits",
+                    "image_url": "https://gor3a.app/config",
+                    "action_type": "none",
+                    "action_target": json.dumps(limits_map),
+                    "is_active": False,
+                    "target_type": "all",
+                    "display_order": 9999,
+                }
+                client = self._get_client()
                 res = client.post(
-                    f"{self.url}/rest/v1/banners",
+                    f"{self.url}/rest/v1/banners?on_conflict=id",
                     headers={**self._headers(), "Prefer": "resolution=merge-duplicates"},
                     json=payload,
                 )
-                return res.is_success
-        except Exception as e:
-            logger.warning(f"[Supabase] save_user_limits_config exception: {e}")
-            return False
+                if res.is_success:
+                    return True
+            except Exception as e:
+                logger.warning(f"[Supabase] save_user_limits_config exception (attempt {attempt+1}): {e}")
+                if attempt == 0:
+                    time.sleep(0.2)
+        return False
 
 
 # Global singleton instance

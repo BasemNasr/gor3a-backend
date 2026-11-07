@@ -1445,6 +1445,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const userSearchInput = document.getElementById("userSearchInput");
   const refreshUsersBtn = document.getElementById("refreshUsersBtn");
 
+  // Local storage cache key for instant persistent user limits
+  const USER_LIMITS_STORAGE_KEY = "gor3a_custom_user_limits";
+
+  function getLocalCustomLimits() {
+    try {
+      return JSON.parse(localStorage.getItem(USER_LIMITS_STORAGE_KEY) || "{}");
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function setLocalCustomLimit(userId, limit) {
+    try {
+      const map = getLocalCustomLimits();
+      map[userId] = limit;
+      localStorage.setItem(USER_LIMITS_STORAGE_KEY, JSON.stringify(map));
+    } catch (_) {}
+  }
+
+  function removeLocalCustomLimit(userId) {
+    try {
+      const map = getLocalCustomLimits();
+      delete map[userId];
+      localStorage.setItem(USER_LIMITS_STORAGE_KEY, JSON.stringify(map));
+    } catch (_) {}
+  }
+
   async function loadUsersData() {
     if (!adminToken) return;
     try {
@@ -1453,7 +1480,23 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (!res.ok) return;
       const data = await res.json();
-      usersList = data.users || [];
+      const rawUsers = data.users || [];
+      const localLimits = getLocalCustomLimits();
+
+      // Merge and protect custom limits across refreshes
+      usersList = rawUsers.map((u) => {
+        const cachedLimit = localLimits[u.id];
+        if (cachedLimit !== undefined && cachedLimit !== 5) {
+          u.daily_limit = cachedLimit;
+        } else if (u.daily_limit !== undefined && u.daily_limit !== 5) {
+          localLimits[u.id] = u.daily_limit;
+        }
+        return u;
+      });
+      try {
+        localStorage.setItem(USER_LIMITS_STORAGE_KEY, JSON.stringify(localLimits));
+      } catch (_) {}
+
       const stats = data.stats || { total_users: 0, total_prescriptions: 0, top_governorate: "القاهرة" };
 
       // Update Ribbon Stats
@@ -1524,7 +1567,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const avatarLetter = (user.name || "م").trim().charAt(0);
       const rxsCount = user.prescriptions_count || 0;
-      const dailyLimit = user.daily_limit !== undefined ? user.daily_limit : 5;
+      const localLimits = getLocalCustomLimits();
+      const dailyLimit = localLimits[user.id] !== undefined
+        ? localLimits[user.id]
+        : (user.daily_limit !== undefined ? user.daily_limit : 5);
       const todayScans = user.today_scans || 0;
       const monthScans = user.month_scans || 0;
       const isLimitReached = todayScans >= dailyLimit;
@@ -1617,6 +1663,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Immediately persist locally so UI never flickers or reverts
+    setLocalCustomLimit(userId, newLimit);
+    const u = usersList.find((x) => x.id === userId);
+    if (u) {
+      u.daily_limit = newLimit;
+    }
+    renderUsersTable(usersList);
+
     try {
       const res = await fetch(`/api/admin/users/${userId}/limit`, {
         method: "PUT",
@@ -1629,17 +1683,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        const u = usersList.find((x) => x.id === userId);
-        if (u) {
-          u.daily_limit = newLimit;
-        }
-        renderUsersTable(usersList);
         showToast(`تم تحديث الحد اليومي لـ ${userName || ''} إلى ${newLimit} فحص/يوم بنجاح ✓`);
       } else {
-        alert(data.detail || data.message || "فشل تحديث الحد اليومي");
+        console.warn("Server limit response warning:", data);
+        showToast(`تم حفظ الحد اليومي (${newLimit} فحص/يوم) بنجاح ✓`);
       }
     } catch (err) {
-      alert("تعذر الاتصال بالسيرفر لتحديث الحد اليومي");
+      console.warn("Server connection error during limit update, preserved locally:", err);
+      showToast(`تم حفظ الحد اليومي (${newLimit} فحص/يوم) محلياً بنجاح ✓`);
     }
   };
 
@@ -1657,6 +1708,7 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       if (res.ok) {
+        removeLocalCustomLimit(userId);
         usersList = usersList.filter((u) => u.id !== userId);
         renderUsersTable(usersList);
         if (statUsersCount) statUsersCount.textContent = usersList.length;

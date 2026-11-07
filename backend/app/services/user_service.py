@@ -23,6 +23,9 @@ TMP_USERS_PATH = Path("/tmp/users.json")
 DEFAULT_PRESCRIPTIONS_PATH = PROJECT_ROOT / "dataset" / "users" / "user_prescriptions.json"
 TMP_PRESCRIPTIONS_PATH = Path("/tmp/user_prescriptions.json")
 
+DEFAULT_LIMITS_PATH = PROJECT_ROOT / "dataset" / "users" / "user_limits.json"
+TMP_LIMITS_PATH = Path("/tmp/user_limits.json")
+
 
 def normalize_phone(phone: str) -> str:
     """
@@ -143,16 +146,57 @@ class UserService:
         self._users: List[Dict[str, Any]] = []
         self._prescriptions: List[Dict[str, Any]] = []
         self._user_limits: Dict[str, int] = {}
+        self._last_reload_time: float = 0.0
         self._load()
 
-    def _reload_if_needed(self):
-        """Ensures memory reflects latest state in serverless environments."""
+    def _load_limits_from_disk(self):
+        limit_path = None
+        if TMP_LIMITS_PATH.exists():
+            limit_path = TMP_LIMITS_PATH
+        elif DEFAULT_LIMITS_PATH.exists():
+            limit_path = DEFAULT_LIMITS_PATH
+
+        if limit_path:
+            try:
+                with open(limit_path, "r", encoding="utf-8") as f:
+                    disk_limits = json.load(f)
+                    if isinstance(disk_limits, dict):
+                        for k, v in disk_limits.items():
+                            if k not in self._user_limits:
+                                self._user_limits[str(k)] = int(v)
+            except Exception as e:
+                logger.warning(f"Failed to load user limits from {limit_path}: {e}")
+
+    def _save_limits_to_disk(self):
+        try:
+            DEFAULT_LIMITS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(DEFAULT_LIMITS_PATH, "w", encoding="utf-8") as f:
+                json.dump(self._user_limits, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+        try:
+            TMP_LIMITS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(TMP_LIMITS_PATH, "w", encoding="utf-8") as f:
+                json.dump(self._user_limits, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    def _reload_if_needed(self, force: bool = False):
+        """Ensures memory reflects latest state in serverless environments with 5s cache throttle."""
+        now = time.time()
+        if not force and (now - self._last_reload_time < 5.0):
+            return
+
         if supabase_service.is_configured():
-            cloud_users = supabase_service.fetch_all_users()
             cloud_limits = supabase_service.fetch_user_limits_config()
             if cloud_limits:
                 self._user_limits.update(cloud_limits)
+                self._save_limits_to_disk()
+            else:
+                self._load_limits_from_disk()
 
+            cloud_users = supabase_service.fetch_all_users()
             if cloud_users is not None:
                 for u in cloud_users:
                     uid = u.get("id")
@@ -167,8 +211,10 @@ class UserService:
             cloud_rxs = supabase_service.fetch_all_prescriptions()
             if cloud_rxs is not None:
                 self._prescriptions = cloud_rxs
+            self._last_reload_time = now
             return
 
+        self._load_limits_from_disk()
         if TMP_USERS_PATH.exists():
             try:
                 with open(TMP_USERS_PATH, "r", encoding="utf-8") as f:
@@ -182,6 +228,7 @@ class UserService:
                     self._prescriptions = json.load(f)
             except Exception:
                 pass
+        self._last_reload_time = now
 
     def _load_users_from_disk(self):
         user_path = None
@@ -228,11 +275,26 @@ class UserService:
             self._prescriptions = []
 
     def _load(self):
-        """Loads users and cloud prescriptions from Supabase or persistent files."""
+        """Loads users, limits, and cloud prescriptions from Supabase or persistent files."""
+        self._load_limits_from_disk()
+        if supabase_service.is_configured():
+            cloud_limits = supabase_service.fetch_user_limits_config()
+            if cloud_limits:
+                self._user_limits.update(cloud_limits)
+                self._save_limits_to_disk()
+
         # 1. Users
         if supabase_service.is_configured():
             cloud_users = supabase_service.fetch_all_users()
             if cloud_users is not None:
+                for u in cloud_users:
+                    uid = u.get("id")
+                    if u.get("daily_limit") is not None:
+                        self._user_limits[uid] = int(u["daily_limit"])
+                    elif uid in self._user_limits:
+                        u["daily_limit"] = self._user_limits[uid]
+                    else:
+                        u["daily_limit"] = 5
                 self._users = cloud_users
                 logger.info(f"Loaded {len(self._users)} users from Supabase Cloud DB")
                 self._save_users()
@@ -252,6 +314,7 @@ class UserService:
                 self._load_prescriptions_from_disk()
         else:
             self._load_prescriptions_from_disk()
+        self._last_reload_time = time.time()
 
     def _save_users(self) -> bool:
         """Saves users to disk and /tmp."""
@@ -673,6 +736,7 @@ class UserService:
         self._user_limits[user_id] = clean_limit
         user["updated_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
         self._save_users()
+        self._save_limits_to_disk()
 
         # Persist to cloud
         if supabase_service.is_configured():
@@ -683,10 +747,6 @@ class UserService:
                 supabase_service.update_user(user_id, {"daily_limit": clean_limit})
             except Exception as e:
                 logger.warning(f"Could not persist daily_limit column to Supabase: {e}")
-
-        user_copy = sanitize_user(user)
-        user_copy["daily_limit"] = clean_limit
-        return user_copy
 
         user_copy = sanitize_user(user)
         user_copy["daily_limit"] = clean_limit
