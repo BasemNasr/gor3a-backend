@@ -227,3 +227,21 @@ async def delete_cloud_prescription(
         "success": True,
         "message": "تم حذف الروشتة من السحابة بنجاح 🗑️",
     }
+
+
+@router.delete("/auth/account")
+async def delete_account(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    """
+    Permanently deletes user account and all associated cloud data.
+    Required by Apple App Store Review Guideline 5.1.1(v).
+    """
+    user_id = current_user["id"]
+    deleted = user_service.delete_user(user_id)
+    if not deleted:
+        raise HTTPException(status_code=400, detail="تعذر حذف الحساب أو الحساب غير موجود")
+    return {
+        "success": True,
+        "message": "تم حذف الحساب وكافة البيانات المرتبطة به نهائياً بنجاح ✓",
+    }

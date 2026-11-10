@@ -172,3 +172,37 @@ def test_serve_mobile_screens_static():
         res = client.get(f"/static/screens/{screen_file}")
         assert res.status_code == 200
         assert len(res.content) > 1000
+
+
+def test_delete_account_endpoint():
+    # Register a temporary user
+    temp_phone = "01055556666"
+    reg_resp = client.post(
+        "/api/auth/register",
+        json={
+            "phone": temp_phone,
+            "password": "Password123!",
+            "name": "Temp Delete User",
+            "governorate": "القاهرة",
+            "gender": "male",
+            "age": 25,
+        },
+    )
+    assert reg_resp.status_code == 200
+    token = reg_resp.json()["token"]
+
+    # Delete the account
+    del_resp = client.delete(
+        "/api/auth/account",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert del_resp.status_code == 200
+    assert del_resp.json()["success"] is True
+
+    # Ensure login fails after deletion
+    login_resp = client.post(
+        "/api/auth/login",
+        json={"phone": temp_phone, "password": "Password123!"},
+    )
+    assert login_resp.status_code == 400
+

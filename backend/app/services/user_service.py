@@ -706,6 +706,20 @@ class UserService:
             return True
         return False
 
+    def delete_user(self, user_id: str) -> bool:
+        """Permanently deletes a user and all their cloud prescriptions (Apple Guideline 5.1.1(v))."""
+        self._reload_if_needed()
+        before_count = len(self._users)
+        self._users = [u for u in self._users if u.get("id") != user_id]
+        self._prescriptions = [p for p in self._prescriptions if p.get("user_id") != user_id]
+        if len(self._users) < before_count:
+            self._save_users()
+            self._save_prescriptions()
+            if supabase_service.is_configured():
+                supabase_service.delete_user(user_id)
+            return True
+        return False
+
     # --------------------------------------------------------------------------
     # Admin Panel Methods
     # --------------------------------------------------------------------------
