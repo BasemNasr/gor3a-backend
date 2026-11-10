@@ -231,6 +231,20 @@ class AuthRepositoryImpl(
         DeviceQuotaManager.resetToDefaultLimit()
     }
 
+    override suspend fun deleteAccount(): Result<Unit> {
+        val token = _authToken.value
+        return try {
+            if (token != null) {
+                apiClient.deleteAccount(token)
+            }
+            logout()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            logout()
+            Result.failure(e)
+        }
+    }
+
     override suspend fun getGovernorates(): List<String> {
         return apiClient.getGovernorates()
     }

@@ -17,6 +17,7 @@ import com.bn.gor3a.data.remote.dto.PrescriptionsSyncRequestDto
 import com.bn.gor3a.data.remote.dto.ProfileResponseDto
 import com.bn.gor3a.data.remote.dto.QuotaResponseDto
 import com.bn.gor3a.data.remote.dto.RegisterRequestDto
+import com.bn.gor3a.data.remote.dto.SimpleAuthResponseDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
@@ -381,6 +382,12 @@ class Gor3aApiClient(
 
     suspend fun deleteCloudPrescription(token: String, prescriptionId: String): CloudPrescriptionsResponseDto {
         return client.delete("$baseUrl/api/prescriptions/sync/$prescriptionId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }.body()
+    }
+
+    suspend fun deleteAccount(token: String): SimpleAuthResponseDto {
+        return client.delete("$baseUrl/api/auth/account") {
             header(HttpHeaders.Authorization, "Bearer $token")
         }.body()
     }

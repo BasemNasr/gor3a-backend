@@ -89,3 +89,9 @@ data class CloudPrescriptionsResponseDto(
     @SerialName("message") val message: String? = null,
     @SerialName("prescriptions") val prescriptions: List<CloudPrescriptionItemDto> = emptyList()
 )
+
+@Serializable
+data class SimpleAuthResponseDto(
+    @SerialName("success") val success: Boolean = false,
+    @SerialName("message") val message: String? = null
+)

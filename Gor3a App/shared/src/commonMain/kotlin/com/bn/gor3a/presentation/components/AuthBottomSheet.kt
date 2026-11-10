@@ -25,6 +25,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -34,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -188,6 +192,11 @@ fun AuthBottomSheet(
                             isArabic = isArabic,
                             onLogout = {
                                 viewModel.logout()
+                                passwordInput = ""
+                                mode = AuthMode.REGISTER
+                            },
+                            onDeleteAccount = {
+                                viewModel.deleteAccount()
                                 passwordInput = ""
                                 mode = AuthMode.REGISTER
                             },
@@ -950,6 +959,7 @@ private fun UserProfileView(
     user: UserDto,
     isArabic: Boolean,
     onLogout: () -> Unit,
+    onDeleteAccount: () -> Unit,
     onClose: () -> Unit
 ) {
     val genderLabel = if (user.gender == "female") {
@@ -1043,7 +1053,7 @@ private fun UserProfileView(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
                 .clickable { onLogout() }
                 .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center
@@ -1052,9 +1062,80 @@ private fun UserProfileView(
                 text = if (isArabic) "تسجيل الخروج" else "Sign Out",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             )
+        }
+
+        // Apple App Store Guideline 5.1.1(v): Account Deletion (Visible on iOS only)
+        val isApple = com.bn.gor3a.getPlatform().name.contains("iOS", ignoreCase = true)
+        if (isApple) {
+            var showDeleteDialog by remember { mutableStateOf(false) }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.7f), RoundedCornerShape(14.dp))
+                    .clickable { showDeleteDialog = true }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (isArabic) "حذف الحساب والبيانات نهائياً" else "Delete Account & Data",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                )
+            }
+
+            if (showDeleteDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteDialog = false },
+                    title = {
+                        Text(
+                            text = if (isArabic) "حذف الحساب نهائياً" else "Delete Account Permanently",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = if (isArabic)
+                                "هل أنت متأكد من رغبتك في حذف حسابك وكافة الروشتات والبيانات المسجلة نهائياً؟ هذا الإجراء فوري ولا يمكن التراجع عنه وفقاً لمعايير الخصوصية لآبل."
+                            else
+                                "Are you sure you want to permanently delete your account and all associated prescriptions? This action is immediate and cannot be undone.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showDeleteDialog = false
+                                onDeleteAccount()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text(
+                                text = if (isArabic) "تأكيد الحذف" else "Confirm Delete",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteDialog = false }) {
+                            Text(
+                                text = if (isArabic) "إلغاء" else "Cancel",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                )
+            }
         }
 
         // Close Button

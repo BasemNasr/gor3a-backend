@@ -211,6 +211,14 @@ class AuthViewModel(
         }
     }
 
+    fun deleteAccount() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            authRepository.deleteAccount()
+            _uiState.value = AuthUiState(governorates = _uiState.value.governorates)
+        }
+    }
+
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(errorMessage = null, successMessage = null)
     }

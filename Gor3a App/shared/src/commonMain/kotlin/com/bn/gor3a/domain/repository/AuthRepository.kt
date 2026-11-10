@@ -21,5 +21,6 @@ interface AuthRepository {
     suspend fun login(phone: String, password: String): Result<AuthResponseDto>
     suspend fun refreshProfile(): Result<UserDto>
     suspend fun logout()
+    suspend fun deleteAccount(): Result<Unit>
     suspend fun getGovernorates(): List<String>
 }
