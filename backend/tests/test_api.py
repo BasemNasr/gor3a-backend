@@ -206,3 +206,16 @@ def test_delete_account_endpoint():
     )
     assert login_resp.status_code == 400
 
+
+def test_apple_review_demo_account_flexible_login():
+    demo_phone = "01000000000"
+    for pwd in ["AppleReview2026", "AppleReview2026!", "applereview2026"]:
+        resp = client.post(
+            "/api/auth/login",
+            json={"phone": demo_phone, "password": pwd},
+        )
+        assert resp.status_code == 200, f"Failed for {pwd}: {resp.text}"
+        assert resp.json()["success"] is True
+        assert resp.json()["user"]["phone"] == demo_phone
+
+
