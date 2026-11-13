@@ -405,9 +405,214 @@
   padding: 0 0.5rem;
 }
 
-/* API Key Card */
+/* API Key Card & Keys Pool */
 .api-key-card {
   max-width: 680px;
+}
+
+.gemini-pool-card {
+  max-width: 100%;
+}
+
+.smart-failover-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgba(0, 137, 123, 0.08), rgba(38, 166, 154, 0.12));
+  border: 1px solid rgba(0, 137, 123, 0.25);
+  border-radius: var(--radius-md);
+  padding: 1.15rem;
+  margin-bottom: 1.25rem;
+}
+
+.failover-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  background: rgba(0, 137, 123, 0.15);
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #00897B;
+}
+
+.failover-body {
+  flex: 1;
+}
+
+.failover-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.failover-desc {
+  margin: 0;
+  font-size: 0.825rem;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.gemini-keys-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.gemini-key-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.gemini-key-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.gemini-key-card.is-primary {
+  border-color: rgba(0, 137, 123, 0.5);
+  background: linear-gradient(180deg, rgba(232, 241, 242, 0.4) 0%, #ffffff 100%);
+}
+
+.gemini-key-card.is-rate-limited {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: linear-gradient(180deg, rgba(254, 243, 199, 0.35) 0%, #ffffff 100%);
+}
+
+.gemini-key-card.is-exhausted {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: linear-gradient(180deg, rgba(254, 226, 226, 0.35) 0%, #ffffff 100%);
+}
+
+.key-card-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.key-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.key-label-text {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.key-masked-box {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  direction: ltr;
+  text-align: left;
+  color: #00897b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.key-status-msg {
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.4;
+  background: rgba(241, 245, 249, 0.7);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border-right: 3px solid #94a3b8;
+}
+
+.gemini-key-card.is-primary .key-status-msg {
+  border-right-color: #00897b;
+}
+
+.gemini-key-card.is-rate-limited .key-status-msg {
+  border-right-color: #f59e0b;
+  color: #b45309;
+}
+
+.gemini-key-card.is-exhausted .key-status-msg {
+  border-right-color: #ef4444;
+  color: #b91c1c;
+}
+
+.key-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 0.35rem 0 0.25rem 0;
+}
+
+.key-progress-bar {
+  height: 100%;
+  background: #10b981;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.key-progress-bar.warning {
+  background: #f59e0b;
+}
+
+.key-progress-bar.danger {
+  background: #ef4444;
+}
+
+.key-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.775rem;
+  color: #64748b;
+}
+
+.key-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.65rem;
+  border-top: 1px dashed #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.add-key-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+
+.add-key-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary);
+  font-weight: 700;
 }
 
 .key-card-header {

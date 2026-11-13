@@ -83,6 +83,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const apiKeySuccessAlert = document.getElementById("apiKeySuccessAlert");
   const apiKeyErrorAlert = document.getElementById("apiKeyErrorAlert");
 
+  // Gemini Multi-Key Pool Elements
+  const newKeyLabelInput = document.getElementById("newKeyLabelInput");
+  const newKeyDailyLimitInput = document.getElementById("newKeyDailyLimitInput");
+  const refreshKeysPoolBtn = document.getElementById("refreshKeysPoolBtn");
+  const poolTotalKeysCount = document.getElementById("poolTotalKeysCount");
+  const poolHealthyKeysCount = document.getElementById("poolHealthyKeysCount");
+  const poolRemainingQuotaCount = document.getElementById("poolRemainingQuotaCount");
+  const poolTodayTokensCount = document.getElementById("poolTodayTokensCount");
+  const keysLastUpdatedText = document.getElementById("keysLastUpdatedText");
+  const geminiKeysContainer = document.getElementById("geminiKeysContainer");
+
   const adminToast = document.getElementById("adminToast");
 
   // Application State
@@ -207,9 +218,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       console.warn("Failed to load settings:", err);
     }
-    // Also load banners and users stats and data
+    // Also load banners, users, and gemini keys pool data
     loadBannersData();
     loadUsersData();
+    loadGeminiKeysPool();
   }
 
   // =========================================================================
@@ -230,65 +242,367 @@ document.addEventListener("DOMContentLoaded", () => {
       if (targetId === "tabUsers") {
         loadUsersData();
       }
+      if (targetId === "tabApiKey") {
+        loadGeminiKeysPool();
+      }
     });
   });
 
   // =========================================================================
-  // 4. Encrypted Gemini API Key Management
+  // 4. Gemini Multi-Key Pool & Quota Management
   // =========================================================================
-  toggleKeyVisibilityBtn.addEventListener("click", () => {
-    if (newApiKeyInput.type === "password") {
-      newApiKeyInput.type = "text";
-      toggleKeyVisibilityBtn.textContent = "🔒";
-    } else {
-      newApiKeyInput.type = "password";
-      toggleKeyVisibilityBtn.textContent = "👁️";
-    }
-  });
+  if (toggleKeyVisibilityBtn) {
+    toggleKeyVisibilityBtn.addEventListener("click", () => {
+      if (newApiKeyInput.type === "password") {
+        newApiKeyInput.type = "text";
+        toggleKeyVisibilityBtn.textContent = "🔒";
+      } else {
+        newApiKeyInput.type = "password";
+        toggleKeyVisibilityBtn.textContent = "👁️";
+      }
+    });
+  }
 
-  updateApiKeyForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    apiKeySuccessAlert.classList.add("hidden");
-    apiKeyErrorAlert.classList.add("hidden");
-    apiKeySpinner.classList.remove("hidden");
-    saveApiKeyBtnText.textContent = "جاري التشفير والحفظ...";
+  if (refreshKeysPoolBtn) {
+    refreshKeysPoolBtn.addEventListener("click", () => {
+      loadGeminiKeysPool(true);
+    });
+  }
 
+  if (updateApiKeyForm) {
+    updateApiKeyForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      apiKeySuccessAlert.classList.add("hidden");
+      apiKeyErrorAlert.classList.add("hidden");
+      apiKeySpinner.classList.remove("hidden");
+      saveApiKeyBtnText.textContent = "جاري التشفير والإضافة...";
+
+      try {
+        const payload = {
+          api_key: newApiKeyInput.value.trim(),
+          label: newKeyLabelInput ? newKeyLabelInput.value.trim() : "",
+          daily_limit_requests: newKeyDailyLimitInput ? parseInt(newKeyDailyLimitInput.value) || 1500 : 1500,
+        };
+
+        const res = await fetch("/api/admin/keys", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "فشل إضافة المفتاح");
+        }
+
+        const data = await res.json();
+        newApiKeyInput.value = "";
+        newApiKeyInput.type = "password";
+        if (newKeyLabelInput) newKeyLabelInput.value = "";
+        if (toggleKeyVisibilityBtn) toggleKeyVisibilityBtn.textContent = "👁️";
+
+        apiKeySuccessAlert.textContent = data.message || "تمت إضافة المفتاح وتشفيره بنجاح ✓";
+        apiKeySuccessAlert.classList.remove("hidden");
+        showToast("تمت إضافة المفتاح إلى مجمع المفاتيح بنجاح ✓");
+
+        await loadGeminiKeysPool();
+      } catch (err) {
+        apiKeyErrorAlert.textContent = err.message;
+        apiKeyErrorAlert.classList.remove("hidden");
+      } finally {
+        apiKeySpinner.classList.add("hidden");
+        saveApiKeyBtnText.textContent = "➕ إضافة وتشفير المفتاح في المجمع";
+      }
+    });
+  }
+
+  async function loadGeminiKeysPool(showToastNotification = false) {
+    if (!adminToken) return;
     try {
-      const res = await fetch("/api/admin/settings/api-key", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({ api_key: newApiKeyInput.value.trim() }),
+      if (refreshKeysPoolBtn) refreshKeysPoolBtn.disabled = true;
+      const res = await fetch("/api/admin/keys", {
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
-
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "فشل تحديث المفتاح");
+        throw new Error("فشل تحميل بيانات مجمع المفاتيح");
+      }
+      const data = await res.json();
+
+      // Update Quick Stats Ribbon
+      if (poolTotalKeysCount) poolTotalKeysCount.textContent = (data.total_keys || 0);
+      if (poolHealthyKeysCount) poolHealthyKeysCount.textContent = (data.healthy_keys || 0);
+      if (poolRemainingQuotaCount) {
+        poolRemainingQuotaCount.textContent = (data.remaining_capacity_today || 0).toLocaleString();
+      }
+      if (poolTodayTokensCount) {
+        poolTodayTokensCount.textContent = (data.total_tokens_today || 0).toLocaleString();
+      }
+      if (keysLastUpdatedText) {
+        const d = new Date();
+        keysLastUpdatedText.textContent = `آخر تحديث: ${d.toLocaleTimeString("ar-EG")}`;
       }
 
-      const data = await res.json();
-      currentMaskedKeyDisplay.textContent = data.masked_key;
-      statApiKeyMasked.textContent = data.masked_key;
-      statApiKeyStatus.textContent = "نشط ومشفر 🔒";
-      statApiKeyStatus.style.color = "var(--primary)";
+      // Overview Ribbon
+      if (statApiKeyStatus && statApiKeyMasked) {
+        if (data.healthy_keys > 0) {
+          statApiKeyStatus.textContent = "نشط ومشفر 🔒";
+          statApiKeyStatus.style.color = "var(--primary)";
+        } else if (data.exhausted_keys > 0) {
+          statApiKeyStatus.textContent = "وصل للحد ⚠️";
+          statApiKeyStatus.style.color = "var(--danger-solid)";
+        } else {
+          statApiKeyStatus.textContent = "غير مضبوط ⚠️";
+          statApiKeyStatus.style.color = "var(--danger-solid)";
+        }
 
-      newApiKeyInput.value = "";
-      newApiKeyInput.type = "password";
-      toggleKeyVisibilityBtn.textContent = "👁️";
+        if (data.primary_key) {
+          statApiKeyMasked.textContent = `${data.primary_key.masked_key} (${data.primary_key.requests_today || 0} طلب)`;
+        } else if (data.keys && data.keys.length > 0) {
+          statApiKeyMasked.textContent = `${data.keys[0].masked_key}`;
+        }
+      }
 
-      apiKeySuccessAlert.textContent = data.message;
-      apiKeySuccessAlert.classList.remove("hidden");
-      showToast("تم تحديث مفتاح Gemini API وتشفيره بنجاح ✓");
+      renderGeminiKeys(data.keys || []);
+
+      if (showToastNotification) {
+        showToast("تم تحديث حالة الحصص والمفاتيح بنجاح ✓");
+      }
     } catch (err) {
-      apiKeyErrorAlert.textContent = err.message;
-      apiKeyErrorAlert.classList.remove("hidden");
+      console.warn("Error loading gemini keys pool:", err);
     } finally {
-      apiKeySpinner.classList.add("hidden");
-      saveApiKeyBtnText.textContent = "💾 حفظ وتشفير المفتاح الجديد";
+      if (refreshKeysPoolBtn) refreshKeysPoolBtn.disabled = false;
     }
-  });
+  }
+
+  function renderGeminiKeys(keys) {
+    if (!geminiKeysContainer) return;
+    if (!keys || keys.length === 0) {
+      geminiKeysContainer.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1; padding: 2.5rem 1rem; text-align: center; background: #fff; border: 1px dashed #cbd5e1; border-radius: 12px;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔑</div>
+          <h4 style="margin-bottom: 0.25rem;">لا توجد مفاتيح مسجلة في المجمع بعد</h4>
+          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
+            قم بإضافة مفتاح Google Gemini الأول أدناه لتفعيل فحص الروشتات بالذكاء الاصطناعي مع ميزة التبديل التلقائي.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    geminiKeysContainer.innerHTML = keys.map((k) => {
+      let statusBadge = "";
+      let cardClassModifier = "";
+      let barClass = "";
+
+      if (k.usage_percentage >= 90) {
+        barClass = "danger";
+      } else if (k.usage_percentage >= 70) {
+        barClass = "warning";
+      }
+
+      if (k.status === "healthy") {
+        statusBadge = `<span class="badge badge-success">🟢 نشط وجاهز</span>`;
+      } else if (k.status === "rate_limited") {
+        statusBadge = `<span class="badge badge-warning">🟡 تبريد مؤقت (429)</span>`;
+        cardClassModifier = "is-rate-limited";
+      } else if (k.status === "exhausted") {
+        statusBadge = `<span class="badge badge-danger">🔴 وصل للحد الأقصى</span>`;
+        cardClassModifier = "is-exhausted";
+      } else if (k.status === "invalid") {
+        statusBadge = `<span class="badge badge-danger">❌ غير صالح</span>`;
+        cardClassModifier = "is-exhausted";
+      } else if (k.status === "disabled") {
+        statusBadge = `<span class="badge badge-secondary">⚪ معطل</span>`;
+      } else {
+        statusBadge = `<span class="badge badge-secondary">${escapeHtml(k.status)}</span>`;
+      }
+
+      if (k.is_primary) {
+        cardClassModifier += " is-primary";
+      }
+
+      const primaryBadge = k.is_primary 
+        ? `<span class="badge badge-primary" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;">⭐ الأساسي (الأولوية 1)</span>`
+        : "";
+
+      const makePrimaryBtn = !k.is_primary && k.is_active
+        ? `<button type="button" class="btn btn-secondary btn-sm set-primary-key-btn" data-key-id="${k.id}" title="جعله المفتاح الأساسي الأول">⭐ تعيين كأساسي</button>`
+        : "";
+
+      const toggleText = k.is_active ? "⏸️ تعطيل" : "▶️ تفعيل";
+      const toggleClass = k.is_active ? "btn-secondary" : "btn-primary";
+
+      return `
+        <div class="gemini-key-card ${cardClassModifier}" id="keyCard_${k.id}">
+          <div class="key-card-header-bar">
+            <div class="key-title-group">
+              <span class="key-label-text">${escapeHtml(k.label || "مفتاح Gemini")}</span>
+              ${primaryBadge}
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+
+          <div class="key-masked-box">
+            <span>${k.masked_key}</span>
+            <span style="font-size: 0.75rem; color: #64748b;">🔒 مشفر ومحمي</span>
+          </div>
+
+          <div class="key-status-msg">
+            ${escapeHtml(k.status_message || "جاهز للاستخدام")}
+          </div>
+
+          <!-- Usage & Quota Bar -->
+          <div style="margin-top: 0.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; color: #0f172a;">
+              <span>طلبات اليوم: ${k.requests_today} / ${k.daily_limit_requests}</span>
+              <span style="color: ${k.usage_percentage >= 90 ? '#ef4444' : (k.usage_percentage >= 70 ? '#f59e0b' : '#10b981')};">
+                ${k.usage_percentage}%
+              </span>
+            </div>
+            <div class="key-progress-track">
+              <div class="key-progress-bar ${barClass}" style="width: ${Math.min(100, Math.max(k.requests_today > 0 ? 3 : 0, k.usage_percentage))}%;"></div>
+            </div>
+            <div class="key-meta-row" style="margin-top: 0.35rem;">
+              <span>المتبقي اليوم: <strong>${k.remaining_requests_today.toLocaleString()}</strong> طلب</span>
+              <span>🪙 توكنز اليوم: <strong>${k.tokens_today.toLocaleString()}</strong></span>
+            </div>
+          </div>
+
+          <!-- Historical Metadata -->
+          <div class="key-meta-row" style="padding-top: 0.35rem; border-top: 1px dashed #e2e8f0;">
+            <span>إجمالي الطلبات: ${k.total_requests.toLocaleString()}</span>
+            <span>إجمالي التوكنز: ${k.total_tokens.toLocaleString()}</span>
+          </div>
+
+          <!-- Actions Row -->
+          <div class="key-actions-row">
+            <button type="button" class="btn btn-secondary btn-sm test-key-btn" data-key-id="${k.id}" title="فحص اتصال وصحة المفتاح لحظياً">
+              🔄 فحص الآن
+            </button>
+            ${makePrimaryBtn}
+            <button type="button" class="btn ${toggleClass} btn-sm toggle-key-btn" data-key-id="${k.id}">
+              ${toggleText}
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm reset-key-btn" data-key-id="${k.id}" title="تصفير عداد اليوم وإعادة تفعيل المفتاح">
+              🔁 تصفير
+            </button>
+            <button type="button" class="btn btn-danger btn-sm delete-key-btn" data-key-id="${k.id}" title="حذف المفتاح من المجمع">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    attachKeyActionListeners();
+  }
+
+  function attachKeyActionListeners() {
+    // 1. Test Key
+    document.querySelectorAll(".test-key-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const keyId = btn.dataset.keyId;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "جاري الفحص... ⏳";
+
+        try {
+          const res = await fetch(`/api/admin/keys/${keyId}/test`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${adminToken}` },
+          });
+          const result = await res.json();
+          if (result.success) {
+            showToast(result.message || `المفتاح صالح وسريع (${result.latency_ms}ms) ✓`);
+          } else {
+            showToast(`⚠️ ${result.error || "المفتاح غير متاح"}`, 5000);
+          }
+          await loadGeminiKeysPool();
+        } catch (err) {
+          showToast(`تعذر فحص المفتاح: ${err.message}`, 4000);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+      });
+    });
+
+    // 2. Set as Primary
+    document.querySelectorAll(".set-primary-key-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const keyId = btn.dataset.keyId;
+        try {
+          const res = await fetch(`/api/admin/keys/${keyId}/set-primary`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${adminToken}` },
+          });
+          if (!res.ok) throw new Error("فشل تعيين المفتاح كأساسي");
+          showToast("تم تعيين المفتاح كمفتاح أساسي أول بنجاح ✓");
+          await loadGeminiKeysPool();
+        } catch (err) {
+          showToast(err.message, 4000);
+        }
+      });
+    });
+
+    // 3. Toggle Active
+    document.querySelectorAll(".toggle-key-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const keyId = btn.dataset.keyId;
+        try {
+          const res = await fetch(`/api/admin/keys/${keyId}/toggle`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${adminToken}` },
+          });
+          if (!res.ok) throw new Error("فشل تغيير حالة المفتاح");
+          showToast("تم تحديث حالة تفعيل المفتاح بنجاح ✓");
+          await loadGeminiKeysPool();
+        } catch (err) {
+          showToast(err.message, 4000);
+        }
+      });
+    });
+
+    // 4. Reset Stats
+    document.querySelectorAll(".reset-key-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const keyId = btn.dataset.keyId;
+        try {
+          const res = await fetch(`/api/admin/keys/${keyId}/reset-stats`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${adminToken}` },
+          });
+          if (!res.ok) throw new Error("فشل تصفير عداد المفتاح");
+          showToast("تم تصفير عدادات الاستهلاك للمفتاح بنجاح ✓");
+          await loadGeminiKeysPool();
+        } catch (err) {
+          showToast(err.message, 4000);
+        }
+      });
+    });
+
+    // 5. Delete Key
+    document.querySelectorAll(".delete-key-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const keyId = btn.dataset.keyId;
+        if (!confirm("هل أنت متأكد من رغبتك في حذف هذا المفتاح من مجمع المفاتيح؟")) return;
+        try {
+          const res = await fetch(`/api/admin/keys/${keyId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${adminToken}` },
+          });
+          if (!res.ok) throw new Error("فشل حذف المفتاح");
+          showToast("تم حذف المفتاح من مجمع المفاتيح بنجاح ✓");
+          await loadGeminiKeysPool();
+        } catch (err) {
+          showToast(err.message, 4000);
+        }
+      });
+    });
+  }
 
   // =========================================================================
   // 5. Drug File Upload & Staging Diff Analysis

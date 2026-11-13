@@ -17,6 +17,7 @@ from ..drugs.repository import drug_repository
 from ..providers.factory import register_provider
 from ..providers.gemini import GeminiProvider
 from ..services.banner_service import EGYPTIAN_GOVERNORATES, banner_service
+from ..services.gemini_key_manager import gemini_key_manager, mask_key
 from ..services.user_service import user_service
 
 logger = logging.getLogger(__name__)
@@ -113,10 +114,20 @@ class AdminSettingsResponse(BaseModel):
     default_model: str
     total_drugs: int
     last_update: str
+    gemini_keys_count: Optional[int] = 1
+    gemini_keys_healthy: Optional[int] = 1
+    gemini_total_requests_today: Optional[int] = 0
+    gemini_total_tokens_today: Optional[int] = 0
 
 
 class UpdateApiKeyRequest(BaseModel):
     api_key: str = Field(..., min_length=10, description="New Google Gemini API Key")
+
+
+class AddApiKeyRequest(BaseModel):
+    api_key: str = Field(..., min_length=10, description="Google Gemini API Key")
+    label: Optional[str] = Field(None, max_length=100, description="Key nickname or label")
+    daily_limit_requests: Optional[int] = Field(1500, ge=1, le=100000, description="Daily request quota estimate")
 
 
 class ConfirmImportRequest(BaseModel):
@@ -196,26 +207,42 @@ async def get_admin_settings(admin_email: str = Depends(get_current_admin)):
     Returns system settings and masked API key status.
     The raw API key is never returned under any circumstances.
     """
-    active_key = settings.gemini_api_key or os.environ.get("GEMINI_API_KEY")
+    pool_summary = gemini_key_manager.get_pool_summary()
+    active_key = gemini_key_manager.get_primary_key() or settings.gemini_api_key or os.environ.get("GEMINI_API_KEY")
     return AdminSettingsResponse(
         admin_email=admin_email,
-        gemini_configured=bool(active_key),
+        gemini_configured=gemini_key_manager.has_configured_keys(),
         gemini_masked_key=mask_key(active_key),
         default_model=settings.default_model,
         total_drugs=drug_repository.get_total_count(),
         last_update="October 2026",
+        gemini_keys_count=pool_summary["total_keys"],
+        gemini_keys_healthy=pool_summary["healthy_keys"],
+        gemini_total_requests_today=pool_summary["total_requests_today"],
+        gemini_total_tokens_today=pool_summary["total_tokens_today"],
     )
 
 
 @router.post("/settings/api-key")
 async def update_gemini_api_key(payload: UpdateApiKeyRequest, admin_email: str = Depends(get_current_admin)):
     """
-    Updates the Google Gemini API key.
+    Updates or sets the primary Google Gemini API key.
     The key is stored securely server-side and never returned in plain text.
     """
     new_key = payload.api_key.strip()
     if not new_key or len(new_key) < 10:
         raise HTTPException(status_code=400, detail="Invalid API key format")
+
+    try:
+        # Add to manager or update primary
+        existing = [k for k in gemini_key_manager._keys if k.get("key") == new_key]
+        if existing:
+            gemini_key_manager.set_primary(existing[0]["id"])
+        else:
+            added = gemini_key_manager.add_key(new_key, label="المفتاح الأساسي", daily_limit=1500)
+            gemini_key_manager.set_primary(added["id"])
+    except Exception as exc:
+        logger.warning(f"Key manager sync error: {exc}")
 
     # Update in runtime settings and environment
     settings.gemini_api_key = new_key
@@ -223,38 +250,123 @@ async def update_gemini_api_key(payload: UpdateApiKeyRequest, admin_email: str =
 
     # Re-register Gemini provider in factory
     try:
-        register_provider("gemini", GeminiProvider(api_key=new_key))
+        register_provider("gemini", GeminiProvider())
     except Exception as exc:
         logger.warning(f"Could not re-register Gemini provider: {exc}")
-
-    # Persist to .env if writable
-    env_file = PROJECT_ROOT / ".env"
-    try:
-        env_lines = []
-        if env_file.exists():
-            with open(env_file, "r", encoding="utf-8") as f:
-                env_lines = f.readlines()
-        
-        found = False
-        new_lines = []
-        for line in env_lines:
-            if line.strip().startswith("GEMINI_API_KEY="):
-                new_lines.append(f"GEMINI_API_KEY={new_key}\n")
-                found = True
-            else:
-                new_lines.append(line)
-        if not found:
-            new_lines.append(f"GEMINI_API_KEY={new_key}\n")
-
-        with open(env_file, "w", encoding="utf-8") as f:
-            f.writelines(new_lines)
-    except Exception as exc:
-        logger.warning(f"Could not update .env on disk (read-only filesystem or restricted): {exc}")
 
     return {
         "success": True,
         "message": "تم تحديث مفتاح Google Gemini API وتشفيره في السيرفر بنجاح ✓",
         "masked_key": mask_key(new_key),
+    }
+
+
+# ==============================================================================
+# Gemini Multi-Key Pool & Quota Management Endpoints
+# ==============================================================================
+
+@router.get("/keys")
+async def list_gemini_keys(admin_email: str = Depends(get_current_admin)):
+    """
+    Returns the complete Gemini API keys pool with live statuses,
+    usage metrics, token consumption, and remaining quota estimates.
+    Raw keys are never returned.
+    """
+    return gemini_key_manager.get_pool_summary()
+
+
+@router.post("/keys")
+async def add_gemini_key(payload: AddApiKeyRequest, admin_email: str = Depends(get_current_admin)):
+    """
+    Adds a new Gemini API key to the active failover pool.
+    """
+    try:
+        key_record = gemini_key_manager.add_key(
+            raw_key=payload.api_key,
+            label=payload.label,
+            daily_limit=payload.daily_limit_requests or 1500,
+        )
+        return {
+            "success": True,
+            "message": "تمت إضافة المفتاح إلى مجمع المفاتيح بنجاح ✓",
+            "key": key_record,
+            "pool": gemini_key_manager.get_pool_summary(),
+        }
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as exc:
+        logger.error(f"Failed to add key: {exc}")
+        raise HTTPException(status_code=500, detail="حدث خطأ أثناء حفظ المفتاح.")
+
+
+@router.delete("/keys/{key_id}")
+async def delete_gemini_key(key_id: str, admin_email: str = Depends(get_current_admin)):
+    """
+    Removes a key from the pool.
+    """
+    success = gemini_key_manager.remove_key(key_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="المفتاح المطلوب غير موجود")
+    return {
+        "success": True,
+        "message": "تم حذف المفتاح من مجمع المفاتيح بنجاح ✓",
+        "pool": gemini_key_manager.get_pool_summary(),
+    }
+
+
+@router.post("/keys/{key_id}/set-primary")
+async def set_primary_gemini_key(key_id: str, admin_email: str = Depends(get_current_admin)):
+    """
+    Sets a specific key as the primary key.
+    """
+    success = gemini_key_manager.set_primary(key_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="المفتاح المطلوب غير موجود")
+    return {
+        "success": True,
+        "message": "تم تعيين المفتاح كمفتاح أساسي أول بنجاح ✓",
+        "pool": gemini_key_manager.get_pool_summary(),
+    }
+
+
+@router.post("/keys/{key_id}/toggle")
+async def toggle_gemini_key(key_id: str, admin_email: str = Depends(get_current_admin)):
+    """
+    Enables or disables a key in the failover pool.
+    """
+    updated = gemini_key_manager.toggle_key(key_id)
+    if not updated:
+        raise HTTPException(status_code=404, detail="المفتاح المطلوب غير موجود")
+    return {
+        "success": True,
+        "message": "تم تحديث حالة تفعيل المفتاح بنجاح ✓",
+        "key": updated,
+        "pool": gemini_key_manager.get_pool_summary(),
+    }
+
+
+@router.post("/keys/{key_id}/test")
+async def test_gemini_key(key_id: str, admin_email: str = Depends(get_current_admin)):
+    """
+    Sends a live ping to Google Gemini API to verify key validity and quota.
+    """
+    result = await gemini_key_manager.test_key(key_id)
+    return result
+
+
+@router.post("/keys/{key_id}/reset-stats")
+async def reset_gemini_key_stats(key_id: str, admin_email: str = Depends(get_current_admin)):
+    """
+    Resets the usage counters and error state for a key.
+    """
+    updated = gemini_key_manager.reset_key_stats(key_id)
+    if not updated:
+        raise HTTPException(status_code=404, detail="المفتاح المطلوب غير موجود")
+    return {
+        "success": True,
+        "message": "تم تصفير عدادات الاستهلاك للمفتاح بنجاح ✓",
+        "key": updated,
+        "pool": gemini_key_manager.get_pool_summary(),
     }
 
 

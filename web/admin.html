@@ -105,7 +105,7 @@
           👥 العملاء والمستخدمين (الموبايل)
         </button>
         <button type="button" class="admin-tab-btn" data-tab="tabApiKey">
-          🔑 مفتاح Gemini المشفر (API Key)
+          🔑 مفاتيح Gemini والحصص (API Keys)
         </button>
         <button type="button" class="admin-tab-btn" data-tab="tabBackup">
           💾 تصدير وحفظ النسخة الاحتياطية
@@ -418,59 +418,140 @@
         </div>
       </section>
 
-      <!-- TAB 2: Gemini API Key Management -->
+      <!-- TAB 2: Gemini API Keys Pool & Quota Management -->
       <section class="admin-tab-content hidden" id="tabApiKey">
-        <div class="card api-key-card">
-          <div class="key-card-header">
-            <div class="key-icon-box">🔐</div>
-            <div>
-              <h3>إدارة مفتاح Google Gemini Vision API</h3>
-              <p class="text-muted">
-                المفتاح مشفر ومحمي تماماً على خوادم السيرفر، ولا يمكن لأي شخص الاطلاع عليه كوداً أو نصاً صريحاً.
+        <div class="card gemini-pool-card">
+          <!-- Card Header -->
+          <div class="card-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div class="key-icon-box">🔐</div>
+              <div>
+                <h3 style="margin: 0 0 0.25rem 0;">إدارة مجمع مفاتيح Google Gemini ومراقبة الحصص والتوكنز</h3>
+                <p class="text-muted" style="margin: 0; font-size: 0.85rem;">
+                  متابعة حالة كل مفتاح، استهلاك التوكنز والطلبات اليومية، مع ميزة التبديل التلقائي الذكي عند الوصول للحد الأقصى.
+                </p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button type="button" id="refreshKeysPoolBtn" class="btn btn-secondary btn-sm" title="تحديث حالة المفاتيح لحظياً">
+                🔄 تحديث الحصص
+              </button>
+            </div>
+          </div>
+
+          <!-- Smart Failover Alert Banner -->
+          <div class="smart-failover-banner">
+            <div class="failover-icon">⚡</div>
+            <div class="failover-body">
+              <div class="failover-title">
+                <strong>نظام التبديل التلقائي الذكي (Auto-Failover) نشط</strong>
+                <span class="badge badge-success" style="font-size: 0.72rem;">يعمل تلقائياً 🛡️</span>
+              </div>
+              <p class="failover-desc">
+                يمكنك إضافة عدة مفاتيح Gemini API. إذا وصل أي مفتاح لحد الطلبات (Rate Limit 429) أو نَفَدت حصته اليومية، يقوم السيرفر بالتحويل فوراً وتلقائياً للمفتاح التالي في المجمع لضمان استمرار فحص الروشتات دون أي انقطاع، دون أي رسالة خطأ تظهر للمستخدم.
               </p>
             </div>
           </div>
 
-          <div class="current-key-box">
-            <div class="current-key-row">
-              <span class="key-lbl">المفتاح الحالي النشط في السيرفر:</span>
-              <span class="badge badge-success">محمي ومشفر بأمان 🔒</span>
+          <!-- Pool Quick Stats Ribbon -->
+          <div class="banners-mini-stats" style="margin: 1.25rem 0;">
+            <div class="mini-stat-item">
+              <span class="mini-stat-num" id="poolTotalKeysCount" style="color: var(--primary);">0</span>
+              <span class="mini-stat-lbl">إجمالي المفاتيح المسجلة</span>
             </div>
-            <div class="masked-key-string" id="currentMaskedKeyDisplay">
-              AIzaSy••••••••••••••••••••••••3xZ
+            <div class="mini-stat-item active-item">
+              <span class="mini-stat-num" id="poolHealthyKeysCount" style="color: #10B981;">0</span>
+              <span class="mini-stat-lbl">مفاتيح نشطة وجاهزة 🟢</span>
             </div>
-            <p class="key-security-note">
-              🛡️ تم حجب باقي الأحرف حتى في لوحة التحكم الإدارية لضمان عدم تسريب المفتاح عند مشاركة الشاشة أو فتح لوحة التحكم.
-            </p>
+            <div class="mini-stat-item">
+              <span class="mini-stat-num" id="poolRemainingQuotaCount" style="color: #0284C7;">0</span>
+              <span class="mini-stat-lbl">المتبقي من الحصة اليومية 📊</span>
+            </div>
+            <div class="mini-stat-item">
+              <span class="mini-stat-num" id="poolTodayTokensCount" style="color: #8B5CF6;">0</span>
+              <span class="mini-stat-lbl">توكنز مستهلكة اليوم 🪙</span>
+            </div>
           </div>
 
-          <form id="updateApiKeyForm" class="update-key-form">
-            <h4>تحديث أو تغيير مفتاح Gemini API:</h4>
-            <div class="form-group">
-              <label for="newApiKeyInput">أدخل المفتاح الجديد:</label>
-              <div class="password-input-wrap">
-                <input 
-                  type="password" 
-                  id="newApiKeyInput" 
-                  class="form-control font-mono" 
-                  placeholder="AIzaSy..." 
-                  required 
-                  autocomplete="new-password"
-                  dir="ltr"
-                >
-                <button type="button" id="toggleKeyVisibilityBtn" class="toggle-eye-btn" title="إظهار / إخفاء">👁️</button>
-              </div>
-              <small class="text-muted">يبدأ عادةً بـ <code>AIzaSy...</code> من Google AI Studio.</small>
+          <!-- Keys List Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0 0.75rem 0; flex-wrap: wrap; gap: 0.5rem;">
+            <h4 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>🔑</span>
+              <span>حالة مفاتيح Gemini والحصص ومعدل استهلاك التوكنز</span>
+            </h4>
+            <span class="text-muted" style="font-size: 0.8rem;" id="keysLastUpdatedText">
+              آخر تحديث: جاري التحميل...
+            </span>
+          </div>
+
+          <!-- Keys Cards Grid -->
+          <div id="geminiKeysContainer" class="gemini-keys-grid">
+            <!-- Dynamically populated by admin.js -->
+            <div class="text-center text-muted" style="padding: 2rem;">جاري تحميل حالة المفاتيح والحصص...</div>
+          </div>
+
+          <!-- Add New Key Form -->
+          <div class="add-key-card" style="margin-top: 2rem;">
+            <div class="add-key-header">
+              <span style="font-size: 1.25rem;">➕</span>
+              <h4 style="margin: 0; font-size: 1rem;">إضافة مفتاح Gemini جديد إلى المجمع (لزيادة الحصة والتبديل التلقائي):</h4>
             </div>
+            <form id="updateApiKeyForm" class="update-key-form" style="margin-top: 1rem;">
+              <div class="form-grid" style="display: grid; grid-template-columns: 2fr 1.2fr 1fr; gap: 1rem; align-items: end;">
+                <div class="form-group" style="margin: 0;">
+                  <label for="newApiKeyInput">مفتاح API الجديد (Google Gemini):</label>
+                  <div class="password-input-wrap">
+                    <input 
+                      type="password" 
+                      id="newApiKeyInput" 
+                      class="form-control font-mono" 
+                      placeholder="AIzaSy..." 
+                      required 
+                      autocomplete="new-password"
+                      dir="ltr"
+                    >
+                    <button type="button" id="toggleKeyVisibilityBtn" class="toggle-eye-btn" title="إظهار / إخفاء">👁️</button>
+                  </div>
+                </div>
 
-            <button type="submit" id="saveApiKeyBtn" class="btn btn-primary">
-              <span class="btn-spinner hidden" id="apiKeySpinner"></span>
-              <span id="saveApiKeyBtnText">💾 حفظ وتشفير المفتاح الجديد</span>
-            </button>
+                <div class="form-group" style="margin: 0;">
+                  <label for="newKeyLabelInput">تسمية / وصف للمفتاح (اختياري):</label>
+                  <input 
+                    type="text" 
+                    id="newKeyLabelInput" 
+                    class="form-control" 
+                    placeholder="مثلاً: مفتاح حساب الطوارئ (حساب 2)"
+                  >
+                </div>
 
-            <div id="apiKeySuccessAlert" class="alert alert-success hidden" style="margin-top: 1rem;"></div>
-            <div id="apiKeyErrorAlert" class="alert alert-error hidden" style="margin-top: 1rem;"></div>
-          </form>
+                <div class="form-group" style="margin: 0;">
+                  <label for="newKeyDailyLimitInput">الحد اليومي المقدر:</label>
+                  <input 
+                    type="number" 
+                    id="newKeyDailyLimitInput" 
+                    class="form-control" 
+                    value="1500" 
+                    min="10" 
+                    max="100000"
+                    title="الحد اليومي المعتاد لـ Google AI Studio Free Tier هو 1500 طلب/يوم"
+                  >
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+                <small class="text-muted">
+                  💡 يبدأ المفتاح عادةً بـ <code>AIzaSy...</code> من Google AI Studio. يتم تشفيره فوراً ولا يمكن الاطلاع عليه نصياً.
+                </small>
+                <button type="submit" id="saveApiKeyBtn" class="btn btn-primary">
+                  <span class="btn-spinner hidden" id="apiKeySpinner"></span>
+                  <span id="saveApiKeyBtnText">➕ إضافة وتشفير المفتاح في المجمع</span>
+                </button>
+              </div>
+
+              <div id="apiKeySuccessAlert" class="alert alert-success hidden" style="margin-top: 1rem;"></div>
+              <div id="apiKeyErrorAlert" class="alert alert-error hidden" style="margin-top: 1rem;"></div>
+            </form>
+          </div>
         </div>
       </section>
 

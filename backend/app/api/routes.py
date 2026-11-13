@@ -70,9 +70,11 @@ async def list_google_gemini_models():
     """Fetches real-time available models directly from Google Generative Language API."""
     import httpx
     from ..config import settings
-    if not settings.gemini_api_key:
+    from ..services.gemini_key_manager import gemini_key_manager
+    active_key = gemini_key_manager.get_primary_key() or settings.gemini_api_key
+    if not active_key:
         return {"error": "No GEMINI_API_KEY configured"}
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={settings.gemini_api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={active_key}"
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(url)
