@@ -338,36 +338,58 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 9. Dimmed iOS Coming Soon Toast Notification
-  const iosButtons = document.querySelectorAll("[data-ios-tooltip]");
-  let toastEl = document.getElementById("iosToastNotification");
-  if (!toastEl) {
-    toastEl = document.createElement("div");
-    toastEl.id = "iosToastNotification";
-    toastEl.className = "landing-toast";
-    toastEl.setAttribute("role", "alert");
-    toastEl.setAttribute("aria-live", "polite");
-    document.body.appendChild(toastEl);
+  // 9. QR Store Switcher (Android Google Play / iPhone App Store)
+  const storeQrMeta = {
+    android: {
+      qrSrc: "/static/playstore-qr.svg",
+      alt: "Google Play QR Code",
+      href: "https://play.google.com/store/apps/details?id=com.bn.gor3a",
+      subAr: "للتحميل المباشر من Google Play",
+      subEn: "Direct download from Google Play",
+    },
+    ios: {
+      qrSrc: "/static/appstore-qr.svg",
+      alt: "App Store QR Code",
+      href: "https://apps.apple.com/us/app/%D8%AC%D8%B1%D8%B9%D8%A9-gor3a/id6832481541",
+      subAr: "للتحميل المباشر من App Store للآيفون",
+      subEn: "Direct download from App Store (iPhone)",
+    },
+  };
+
+  function setActiveQrStore(group, store) {
+    const meta = storeQrMeta[store];
+    if (!meta) return;
+
+    document.querySelectorAll(`.qr-store-tab[data-qr-group="${group}"]`).forEach((tab) => {
+      tab.classList.toggle("active", tab.getAttribute("data-qr-store") === store);
+    });
+
+    if (group === "banner") {
+      const img = document.getElementById("bannerQrImg");
+      const link = document.getElementById("bannerQrLink");
+      const sub = document.getElementById("bannerQrSub");
+      if (img) {
+        img.src = meta.qrSrc;
+        img.alt = meta.alt;
+      }
+      if (link) link.href = meta.href;
+      if (sub) {
+        sub.setAttribute("data-ar", meta.subAr);
+        sub.setAttribute("data-en", meta.subEn);
+        sub.textContent = currentLang === "ar" ? meta.subAr : meta.subEn;
+      }
+    } else if (group === "modal") {
+      const img = document.getElementById("modalQrImg");
+      if (img) {
+        img.src = meta.qrSrc;
+        img.alt = meta.alt;
+      }
+    }
   }
 
-  let toastTimer = null;
-  function showIosToast() {
-    const msg = currentLang === "ar"
-      ? "تطبيق Gor3a قيد المراجعة للآيفون وسيتوفر قريباً على App Store! يمكنك تحميل نسخة الأندرويد الآن من Google Play."
-      : "Gor3a for iOS is under review and coming soon to App Store! Download the Android version now from Google Play.";
-    toastEl.innerHTML = `<span class="landing-toast-icon">🍎</span><span>${msg}</span>`;
-    toastEl.classList.add("show");
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toastEl.classList.remove("show");
-    }, 4500);
-  }
-
-  iosButtons.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      showIosToast();
+  document.querySelectorAll(".qr-store-tab[data-qr-group][data-qr-store]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      setActiveQrStore(tab.getAttribute("data-qr-group"), tab.getAttribute("data-qr-store"));
     });
   });
 });

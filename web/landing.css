@@ -1629,6 +1629,60 @@ img {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
+/* QR Store Switcher Tabs (Google Play / App Store) */
+.qr-store-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  margin-bottom: 0.9rem;
+}
+
+.qr-store-tab {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.32rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qr-store-tab:hover {
+  color: #FFFFFF;
+}
+
+.qr-store-tab.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.qr-store-tabs-modal {
+  background: var(--bg-subtle);
+  border-color: var(--border-teal);
+  margin-bottom: 1rem;
+}
+
+.qr-store-tabs-modal .qr-store-tab {
+  color: var(--text-muted);
+}
+
+.qr-store-tabs-modal .qr-store-tab:hover {
+  color: var(--text-main);
+}
+
+.qr-store-tabs-modal .qr-store-tab.active {
+  background: var(--teal-primary);
+  color: #FFFFFF;
+}
+
 /* ==========================================================================
    10. Footer
    ========================================================================== */
