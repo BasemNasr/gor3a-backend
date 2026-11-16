@@ -14,7 +14,7 @@ from ..providers.factory import list_available_providers
 from ..services.analyzer import PrescriptionAnalyzer
 from ..services.banner_service import EGYPTIAN_GOVERNORATES, banner_service
 from ..services.quota_service import quota_service
-from ..services.user_service import verify_user_token
+from ..services.user_service import user_service, verify_user_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -380,6 +380,11 @@ async def get_scan_quota(
         verified = verify_user_token(token)
         if verified:
             user_id = verified[0]
+            user_service.record_user_platform(
+                user_id,
+                user_agent=request.headers.get("user-agent"),
+                explicit_platform=request.headers.get("x-platform"),
+            )
 
     client_ip = (
         request.headers.get("x-forwarded-for", "")
@@ -422,6 +427,11 @@ async def analyze_prescription(
         if verified:
             user_id, user_phone = verified
             is_authenticated = True
+            user_service.record_user_platform(
+                user_id,
+                user_agent=request.headers.get("user-agent"),
+                explicit_platform=request.headers.get("x-platform"),
+            )
         else:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

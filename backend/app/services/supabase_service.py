@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
@@ -322,17 +323,17 @@ class SupabaseService:
             return False
 
     # --------------------------------------------------------------------------
-    # Cloud Config & User Limits Persistence
+    # Cloud Config Persistence (User Limits & Detected Platforms)
     # --------------------------------------------------------------------------
-    def fetch_user_limits_config(self) -> Dict[str, int]:
-        """Fetches custom user daily limits from Supabase config row."""
+    def _fetch_config_dict(self, config_id: str) -> Dict[str, Any]:
+        """Fetches a JSON object stored in a Supabase config row inside banners."""
         if not self.is_configured():
             return {}
         for attempt in range(2):
             try:
                 client = self._get_client()
                 res = client.get(
-                    f"{self.url}/rest/v1/banners?id=eq.config_user_daily_limits&select=action_target",
+                    f"{self.url}/rest/v1/banners?id=eq.{config_id}&select=action_target",
                     headers=self._headers(),
                 )
                 if res.is_success:
@@ -340,27 +341,27 @@ class SupabaseService:
                     if rows and rows[0].get("action_target"):
                         loaded = json.loads(rows[0]["action_target"])
                         if isinstance(loaded, dict):
-                            return {str(k): int(v) for k, v in loaded.items()}
+                            return loaded
                     return {}
             except Exception as e:
-                logger.warning(f"[Supabase] fetch_user_limits_config exception (attempt {attempt+1}): {e}")
+                logger.warning(f"[Supabase] _fetch_config_dict({config_id}) exception (attempt {attempt+1}): {e}")
                 if attempt == 0:
                     time.sleep(0.2)
         return {}
 
-    def save_user_limits_config(self, limits_map: Dict[str, int]) -> bool:
-        """Upserts custom user daily limits to Supabase config row."""
+    def _save_config_dict(self, config_id: str, title: str, subtitle: str, data_map: Dict[str, Any]) -> bool:
+        """Upserts a JSON object into a Supabase config row inside banners."""
         if not self.is_configured():
             return False
         for attempt in range(2):
             try:
                 payload = {
-                    "id": "config_user_daily_limits",
-                    "title": "Config User Daily Limits",
-                    "subtitle": "System configuration for user daily scan limits",
+                    "id": config_id,
+                    "title": title,
+                    "subtitle": subtitle,
                     "image_url": "https://gor3a.app/config",
                     "action_type": "none",
-                    "action_target": json.dumps(limits_map),
+                    "action_target": json.dumps(data_map, ensure_ascii=False),
                     "is_active": False,
                     "target_type": "all",
                     "display_order": 9999,
@@ -374,10 +375,48 @@ class SupabaseService:
                 if res.is_success:
                     return True
             except Exception as e:
-                logger.warning(f"[Supabase] save_user_limits_config exception (attempt {attempt+1}): {e}")
+                logger.warning(f"[Supabase] _save_config_dict({config_id}) exception (attempt {attempt+1}): {e}")
                 if attempt == 0:
                     time.sleep(0.2)
         return False
+
+    def fetch_user_limits_config(self) -> Dict[str, int]:
+        """Fetches custom user daily limits from Supabase config row."""
+        raw = self._fetch_config_dict("config_user_daily_limits")
+        result: Dict[str, int] = {}
+        for k, v in raw.items():
+            try:
+                result[str(k)] = int(v)
+            except (TypeError, ValueError):
+                continue
+        return result
+
+    def save_user_limits_config(self, limits_map: Dict[str, int]) -> bool:
+        """Upserts custom user daily limits to Supabase config row."""
+        return self._save_config_dict(
+            config_id="config_user_daily_limits",
+            title="Config User Daily Limits",
+            subtitle="System configuration for user daily scan limits",
+            data_map=limits_map,
+        )
+
+    def fetch_user_platforms_config(self) -> Dict[str, str]:
+        """Fetches detected user platforms (android/ios) from Supabase config row."""
+        raw = self._fetch_config_dict("config_user_platforms")
+        return {
+            str(k): str(v).lower()
+            for k, v in raw.items()
+            if str(v).lower() in ("android", "ios")
+        }
+
+    def save_user_platforms_config(self, platforms_map: Dict[str, str]) -> bool:
+        """Upserts detected user platforms (android/ios) to Supabase config row."""
+        return self._save_config_dict(
+            config_id="config_user_platforms",
+            title="Config User Platforms",
+            subtitle="Auto-detected mobile OS platforms (android/ios) from HTTP User-Agent",
+            data_map=platforms_map,
+        )
 
 
 # Global singleton instance

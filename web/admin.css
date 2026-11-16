@@ -1024,3 +1024,223 @@
   padding: 0.25rem 0.5rem !important;
 }
 
+/* ==========================================================================
+   Users Management: Mini Stats, Filter Toolbar, Platform Badges & Pagination
+   ========================================================================== */
+.banner-mini-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.mini-stat-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mini-stat-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.users-filter-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.users-filter-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.users-filter-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.users-filter-select {
+  min-width: 145px;
+  padding: 0.38rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.users-filter-select:focus {
+  outline: none;
+  border-color: #00897b;
+  box-shadow: 0 0 0 2px rgba(0, 137, 123, 0.15);
+}
+
+.users-platform-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.platform-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  border-radius: 9999px;
+  padding: 0.32rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.platform-pill:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.platform-pill.active {
+  background: #00897b;
+  color: #ffffff;
+  border-color: #00897b;
+  box-shadow: 0 2px 6px rgba(0, 137, 123, 0.25);
+}
+
+.platform-pill.active-android {
+  background: #15803d;
+  color: #ffffff;
+  border-color: #15803d;
+}
+
+.platform-pill.active-ios {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.platform-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.24rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.platform-badge.android {
+  background: #ecfdf5;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.platform-badge.ios {
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+
+.platform-badge.unknown {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+}
+
+.users-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, #e2e8f0);
+  margin-top: 1rem;
+}
+
+.users-pagination-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.users-pagination-btns {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.page-num-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 0.55rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  font-family: 'JetBrains Mono', 'Cairo', sans-serif;
+}
+
+.page-num-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #00897b;
+  color: #00897b;
+}
+
+.page-num-btn.active {
+  background: #00897b;
+  color: #ffffff;
+  border-color: #00897b;
+  box-shadow: 0 2px 6px rgba(0, 137, 123, 0.25);
+}
+
+.page-num-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.users-platform-hint {
+  font-size: 0.78rem;
+  color: #475569;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+

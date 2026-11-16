@@ -1749,6 +1749,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const statUsersCount = document.getElementById("statUsersCount");
   const statUsersSub = document.getElementById("statUsersSub");
   const statUsersTotal = document.getElementById("statUsersTotal");
+  const statUsersAndroid = document.getElementById("statUsersAndroid");
+  const statUsersIos = document.getElementById("statUsersIos");
   const statTopGov = document.getElementById("statTopGov");
   const statCloudRxsTotal = document.getElementById("statCloudRxsTotal");
   const statScansToday = document.getElementById("statScansToday");
@@ -1756,8 +1758,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const usersTableBody = document.getElementById("usersTableBody");
   const usersEmptyState = document.getElementById("usersEmptyState");
+  const usersEmptyTitle = document.getElementById("usersEmptyTitle");
+  const usersEmptyDesc = document.getElementById("usersEmptyDesc");
   const userSearchInput = document.getElementById("userSearchInput");
   const refreshUsersBtn = document.getElementById("refreshUsersBtn");
+
+  // Filter & Pagination Controls
+  const userPlatformPills = document.getElementById("userPlatformPills");
+  const pillPlatformAll = document.getElementById("pillPlatformAll");
+  const pillPlatformAndroid = document.getElementById("pillPlatformAndroid");
+  const pillPlatformIos = document.getElementById("pillPlatformIos");
+  const pillPlatformUnknown = document.getElementById("pillPlatformUnknown");
+  const userGovFilter = document.getElementById("userGovFilter");
+  const userGenderFilter = document.getElementById("userGenderFilter");
+  const userActivityFilter = document.getElementById("userActivityFilter");
+  const userSortSelect = document.getElementById("userSortSelect");
+  const resetUserFiltersBtn = document.getElementById("resetUserFiltersBtn");
+  const usersFilteredBadge = document.getElementById("usersFilteredBadge");
+  const usersPaginationBar = document.getElementById("usersPaginationBar");
+  const usersPaginationInfo = document.getElementById("usersPaginationInfo");
+  const usersPaginationBtns = document.getElementById("usersPaginationBtns");
+  const usersPageSizeSelect = document.getElementById("usersPageSize");
+
+  let usersPlatformFilter = "all";
+  let usersCurrentPage = 1;
+  let usersPageSize = 10;
 
   // Local storage cache key for instant persistent user limits
   const USER_LIMITS_STORAGE_KEY = "gor3a_custom_user_limits";
@@ -1784,6 +1809,59 @@ document.addEventListener("DOMContentLoaded", () => {
       delete map[userId];
       localStorage.setItem(USER_LIMITS_STORAGE_KEY, JSON.stringify(map));
     } catch (_) {}
+  }
+
+  function getEffectiveUserPlatform(user) {
+    const plat = String((user && user.platform) || "unknown").toLowerCase();
+    return (plat === "android" || plat === "ios") ? plat : "unknown";
+  }
+
+  function getEffectiveUserLimit(user) {
+    const localLimits = getLocalCustomLimits();
+    if (localLimits[user.id] !== undefined) return localLimits[user.id];
+    return user.daily_limit !== undefined ? user.daily_limit : 5;
+  }
+
+  function updatePlatformSummaryUI(list) {
+    let androidCount = 0;
+    let iosCount = 0;
+    let unknownCount = 0;
+    list.forEach((u) => {
+      const p = getEffectiveUserPlatform(u);
+      if (p === "android") androidCount++;
+      else if (p === "ios") iosCount++;
+      else unknownCount++;
+    });
+
+    if (statUsersAndroid) statUsersAndroid.textContent = androidCount.toLocaleString();
+    if (statUsersIos) statUsersIos.textContent = iosCount.toLocaleString();
+    if (pillPlatformAll) pillPlatformAll.textContent = `الكل (${list.length})`;
+    if (pillPlatformAndroid) pillPlatformAndroid.textContent = `🤖 Android (${androidCount})`;
+    if (pillPlatformIos) pillPlatformIos.textContent = `🍎 iOS (${iosCount})`;
+    if (pillPlatformUnknown) pillPlatformUnknown.textContent = `⏳ غير محدد (${unknownCount})`;
+  }
+
+  function populateUserGovFilter(list) {
+    if (!userGovFilter) return;
+    const prevValue = userGovFilter.value || "all";
+    const govCounts = {};
+    list.forEach((u) => {
+      const gov = (u.governorate || "القاهرة").trim();
+      govCounts[gov] = (govCounts[gov] || 0) + 1;
+    });
+    const sortedGovs = Object.keys(govCounts).sort((a, b) => govCounts[b] - govCounts[a] || a.localeCompare(b, "ar"));
+    userGovFilter.innerHTML = `<option value="all">📍 كل المحافظات (${list.length})</option>`;
+    sortedGovs.forEach((gov) => {
+      const opt = document.createElement("option");
+      opt.value = gov;
+      opt.textContent = `${gov} (${govCounts[gov]})`;
+      userGovFilter.appendChild(opt);
+    });
+    if (prevValue !== "all" && sortedGovs.includes(prevValue)) {
+      userGovFilter.value = prevValue;
+    } else {
+      userGovFilter.value = "all";
+    }
   }
 
   async function loadUsersData() {
@@ -1824,27 +1902,174 @@ document.addEventListener("DOMContentLoaded", () => {
       if (statScansToday) statScansToday.textContent = (stats.total_scans_today || 0).toLocaleString();
       if (statScansMonth) statScansMonth.textContent = (stats.total_scans_month || 0).toLocaleString();
 
+      updatePlatformSummaryUI(usersList);
+      populateUserGovFilter(usersList);
       renderUsersTable(usersList);
     } catch (err) {
       console.warn("Failed to load users data:", err);
     }
   }
 
+  function getFilteredAndSortedUsers(list) {
+    const query = (userSearchInput?.value || "").trim().toLowerCase();
+    const govFilter = userGovFilter ? userGovFilter.value : "all";
+    const genderFilter = userGenderFilter ? userGenderFilter.value : "all";
+    const activityFilter = userActivityFilter ? userActivityFilter.value : "all";
+    const sortBy = userSortSelect ? userSortSelect.value : "newest";
+
+    const filtered = list.filter((u) => {
+      if (query) {
+        const platLabel = getEffectiveUserPlatform(u);
+        const matchName = (u.name || "").toLowerCase().includes(query);
+        const matchPhone = (u.phone || "").toLowerCase().includes(query);
+        const matchGov = (u.governorate || "").toLowerCase().includes(query);
+        const matchPlatform = platLabel.includes(query);
+        if (!matchName && !matchPhone && !matchGov && !matchPlatform) return false;
+      }
+
+      if (usersPlatformFilter !== "all" && getEffectiveUserPlatform(u) !== usersPlatformFilter) {
+        return false;
+      }
+
+      if (govFilter !== "all" && (u.governorate || "القاهرة").trim() !== govFilter) {
+        return false;
+      }
+
+      if (genderFilter !== "all" && (u.gender || "").toLowerCase() !== genderFilter) {
+        return false;
+      }
+
+      const dailyLimit = getEffectiveUserLimit(u);
+      const todayScans = u.today_scans || 0;
+      const rxsCount = u.prescriptions_count || 0;
+
+      if (activityFilter === "has_rxs" && rxsCount <= 0) return false;
+      if (activityFilter === "active_today" && todayScans <= 0) return false;
+      if (activityFilter === "limit_reached" && todayScans < dailyLimit) return false;
+      if (activityFilter === "custom_limit" && dailyLimit === 5) return false;
+
+      return true;
+    });
+
+    filtered.sort((a, b) => {
+      if (sortBy === "oldest") {
+        return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+      }
+      if (sortBy === "last_active") {
+        return String(b.last_login_at || b.created_at || "").localeCompare(String(a.last_login_at || a.created_at || ""));
+      }
+      if (sortBy === "most_scans") {
+        return (b.month_scans || 0) - (a.month_scans || 0) || (b.today_scans || 0) - (a.today_scans || 0);
+      }
+      if (sortBy === "most_rxs") {
+        return (b.prescriptions_count || 0) - (a.prescriptions_count || 0);
+      }
+      if (sortBy === "name_asc") {
+        return String(a.name || "").localeCompare(String(b.name || ""), "ar");
+      }
+      // default: newest
+      return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+    });
+
+    return filtered;
+  }
+
+  function renderUsersPagination(totalItems, totalPages, startIdx, endIdx) {
+    if (!usersPaginationBar || !usersPaginationInfo || !usersPaginationBtns) return;
+    if (totalItems === 0) {
+      usersPaginationBar.classList.add("hidden");
+      return;
+    }
+
+    usersPaginationBar.classList.remove("hidden");
+    usersPaginationInfo.textContent = `عرض ${startIdx + 1}–${endIdx} من أصل ${totalItems} عميل`;
+    usersPaginationBtns.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    const addBtn = (label, targetPage, disabled = false, isActive = false) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `page-num-btn${isActive ? " active" : ""}`;
+      btn.textContent = label;
+      btn.disabled = disabled;
+      if (!disabled && !isActive) {
+        btn.addEventListener("click", () => {
+          usersCurrentPage = targetPage;
+          renderUsersTable(usersList);
+        });
+      }
+      usersPaginationBtns.appendChild(btn);
+    };
+
+    addBtn("« الأولى", 1, usersCurrentPage === 1);
+    addBtn("‹ السابق", Math.max(1, usersCurrentPage - 1), usersCurrentPage === 1);
+
+    // Smart page window
+    const maxWindow = 5;
+    let startPage = Math.max(1, usersCurrentPage - Math.floor(maxWindow / 2));
+    let endPage = Math.min(totalPages, startPage + maxWindow - 1);
+    if (endPage - startPage + 1 < maxWindow) {
+      startPage = Math.max(1, endPage - maxWindow + 1);
+    }
+
+    if (startPage > 1) {
+      addBtn("1", 1, false, usersCurrentPage === 1);
+      if (startPage > 2) {
+        const dots = document.createElement("span");
+        dots.textContent = "...";
+        dots.style.padding = "0 0.25rem";
+        dots.style.color = "#94a3b8";
+        usersPaginationBtns.appendChild(dots);
+      }
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      addBtn(String(p), p, false, p === usersCurrentPage);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        const dots = document.createElement("span");
+        dots.textContent = "...";
+        dots.style.padding = "0 0.25rem";
+        dots.style.color = "#94a3b8";
+        usersPaginationBtns.appendChild(dots);
+      }
+      addBtn(String(totalPages), totalPages, false, usersCurrentPage === totalPages);
+    }
+
+    addBtn("التالي ›", Math.min(totalPages, usersCurrentPage + 1), usersCurrentPage === totalPages);
+    addBtn("الأخيرة »", totalPages, usersCurrentPage === totalPages);
+  }
+
   function renderUsersTable(list) {
     if (!usersTableBody) return;
     usersTableBody.innerHTML = "";
+    updatePlatformSummaryUI(list);
 
-    const query = (userSearchInput?.value || "").trim().toLowerCase();
-    const filtered = list.filter((u) => {
-      if (!query) return true;
-      const matchName = (u.name || "").toLowerCase().includes(query);
-      const matchPhone = (u.phone || "").toLowerCase().includes(query);
-      const matchGov = (u.governorate || "").toLowerCase().includes(query);
-      return matchName || matchPhone || matchGov;
-    });
+    const filtered = getFilteredAndSortedUsers(list);
+
+    if (usersFilteredBadge) {
+      if (filtered.length !== list.length) {
+        usersFilteredBadge.textContent = `نتائج الفلتر: ${filtered.length} من ${list.length}`;
+      } else {
+        usersFilteredBadge.textContent = `الإجمالي: ${list.length} عميل`;
+      }
+    }
 
     if (filtered.length === 0) {
       if (usersEmptyState) usersEmptyState.classList.remove("hidden");
+      if (usersEmptyTitle && usersEmptyDesc) {
+        if (list.length === 0) {
+          usersEmptyTitle.textContent = "لا يوجد عملاء مسجلين بعد";
+          usersEmptyDesc.textContent = "عند قيام أول مستخدم بالتسجيل من تطبيق الموبايل ستظهر بياناته هنا فوراً.";
+        } else {
+          usersEmptyTitle.textContent = "لا يوجد عملاء مطابقون للبحث أو الفلتر";
+          usersEmptyDesc.textContent = "جرّب تعديل كلمات البحث أو الضغط على «مسح الفلاتر» لعرض جميع العملاء.";
+        }
+      }
+      if (usersPaginationBar) usersPaginationBar.classList.add("hidden");
       usersTableBody.parentElement.classList.add("hidden");
       return;
     }
@@ -1852,8 +2077,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (usersEmptyState) usersEmptyState.classList.add("hidden");
     usersTableBody.parentElement.classList.remove("hidden");
 
-    filtered.forEach((user, idx) => {
+    const totalPages = Math.max(1, Math.ceil(filtered.length / usersPageSize));
+    if (usersCurrentPage > totalPages) usersCurrentPage = totalPages;
+    if (usersCurrentPage < 1) usersCurrentPage = 1;
+
+    const startIdx = (usersCurrentPage - 1) * usersPageSize;
+    const endIdx = Math.min(filtered.length, startIdx + usersPageSize);
+    const pageSlice = filtered.slice(startIdx, endIdx);
+
+    pageSlice.forEach((user, idx) => {
       const tr = document.createElement("tr");
+      const globalIdx = startIdx + idx + 1;
 
       // Phone formatting and WhatsApp direct link
       const rawPhone = user.phone || "";
@@ -1881,16 +2115,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const avatarLetter = (user.name || "م").trim().charAt(0);
       const rxsCount = user.prescriptions_count || 0;
-      const localLimits = getLocalCustomLimits();
-      const dailyLimit = localLimits[user.id] !== undefined
-        ? localLimits[user.id]
-        : (user.daily_limit !== undefined ? user.daily_limit : 5);
+      const dailyLimit = getEffectiveUserLimit(user);
       const todayScans = user.today_scans || 0;
       const monthScans = user.month_scans || 0;
       const isLimitReached = todayScans >= dailyLimit;
 
+      const plat = getEffectiveUserPlatform(user);
+      let platformBadgeHtml = `<span class="platform-badge unknown" title="سيتم التعرف تلقائياً بمجرد فتح العميل للتطبيق">⏳ غير محدد</span>`;
+      if (plat === "android") {
+        platformBadgeHtml = `<span class="platform-badge android" title="تم الرصد تلقائياً عبر Android (OkHttp)">🤖 Android</span>`;
+      } else if (plat === "ios") {
+        platformBadgeHtml = `<span class="platform-badge ios" title="تم الرصد تلقائياً عبر iOS (CFNetwork/Darwin)">🍎 iOS</span>`;
+      }
+
       tr.innerHTML = `
-        <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${idx + 1}</td>
+        <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${globalIdx}</td>
         <td>
           <div style="display: flex; align-items: center; gap: 0.65rem;">
             <div style="width: 36px; height: 36px; border-radius: 50%; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem;">
@@ -1903,6 +2142,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
         </td>
+        <td>${platformBadgeHtml}</td>
         <td dir="ltr" style="text-align: right;">
           <a href="${waLink}" target="_blank" rel="noopener" class="btn btn-secondary btn-xs" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; color: #15803d; font-weight: 600; border-color: #bbf7d0; background: #f0fdf4;">
             <span style="font-size: 1rem;">🟢</span>
@@ -1951,11 +2191,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
       usersTableBody.appendChild(tr);
     });
+
+    renderUsersPagination(filtered.length, totalPages, startIdx, endIdx);
   }
 
-  // Live Search Users
+  // Live Search & Filters
   if (userSearchInput) {
     userSearchInput.addEventListener("input", () => {
+      usersCurrentPage = 1;
+      renderUsersTable(usersList);
+    });
+  }
+
+  if (userPlatformPills) {
+    userPlatformPills.querySelectorAll(".platform-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        usersPlatformFilter = pill.getAttribute("data-platform") || "all";
+        userPlatformPills.querySelectorAll(".platform-pill").forEach((p) => {
+          p.classList.remove("active", "active-android", "active-ios");
+        });
+        pill.classList.add("active");
+        if (usersPlatformFilter === "android") pill.classList.add("active-android");
+        if (usersPlatformFilter === "ios") pill.classList.add("active-ios");
+        usersCurrentPage = 1;
+        renderUsersTable(usersList);
+      });
+    });
+  }
+
+  [userGovFilter, userGenderFilter, userActivityFilter, userSortSelect].forEach((sel) => {
+    if (sel) {
+      sel.addEventListener("change", () => {
+        usersCurrentPage = 1;
+        renderUsersTable(usersList);
+      });
+    }
+  });
+
+  if (usersPageSizeSelect) {
+    usersPageSizeSelect.addEventListener("change", () => {
+      const parsed = parseInt(usersPageSizeSelect.value, 10);
+      usersPageSize = (!isNaN(parsed) && parsed > 0) ? parsed : 10;
+      usersCurrentPage = 1;
+      renderUsersTable(usersList);
+    });
+  }
+
+  if (resetUserFiltersBtn) {
+    resetUserFiltersBtn.addEventListener("click", () => {
+      if (userSearchInput) userSearchInput.value = "";
+      if (userGovFilter) userGovFilter.value = "all";
+      if (userGenderFilter) userGenderFilter.value = "all";
+      if (userActivityFilter) userActivityFilter.value = "all";
+      if (userSortSelect) userSortSelect.value = "newest";
+      usersPlatformFilter = "all";
+      if (userPlatformPills) {
+        userPlatformPills.querySelectorAll(".platform-pill").forEach((p) => {
+          p.classList.remove("active", "active-android", "active-ios");
+        });
+        if (pillPlatformAll) pillPlatformAll.classList.add("active");
+      }
+      usersCurrentPage = 1;
       renderUsersTable(usersList);
     });
   }

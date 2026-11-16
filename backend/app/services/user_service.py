@@ -26,6 +26,32 @@ TMP_PRESCRIPTIONS_PATH = Path("/tmp/user_prescriptions.json")
 DEFAULT_LIMITS_PATH = PROJECT_ROOT / "dataset" / "users" / "user_limits.json"
 TMP_LIMITS_PATH = Path("/tmp/user_limits.json")
 
+DEFAULT_PLATFORMS_PATH = PROJECT_ROOT / "dataset" / "users" / "user_platforms.json"
+TMP_PLATFORMS_PATH = Path("/tmp/user_platforms.json")
+
+
+def detect_client_platform(
+    user_agent: Optional[str] = None,
+    explicit_platform: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Infers the mobile client OS ('android' or 'ios') from explicit header or HTTP User-Agent.
+    Ktor OkHttp on Android sends 'okhttp/...'; Ktor Darwin on iOS sends '... CFNetwork/... Darwin/...'.
+    Returns None for browsers/unknown clients so existing detections are preserved.
+    """
+    if explicit_platform:
+        p = explicit_platform.strip().lower()
+        if p in ("android", "ios"):
+            return p
+    if not user_agent:
+        return None
+    ua = user_agent.lower()
+    if any(tok in ua for tok in ("cfnetwork", "darwin", "iphone", "ipad", "ipod")):
+        return "ios"
+    if any(tok in ua for tok in ("okhttp", "dalvik", "android")):
+        return "android"
+    return None
+
 
 def normalize_phone(phone: str) -> str:
     """
@@ -146,41 +172,52 @@ class UserService:
         self._users: List[Dict[str, Any]] = []
         self._prescriptions: List[Dict[str, Any]] = []
         self._user_limits: Dict[str, int] = {}
+        self._user_platforms: Dict[str, str] = {}
         self._last_reload_time: float = 0.0
         self._load()
 
-    def _load_limits_from_disk(self):
-        limit_path = None
-        if TMP_LIMITS_PATH.exists():
-            limit_path = TMP_LIMITS_PATH
-        elif DEFAULT_LIMITS_PATH.exists():
-            limit_path = DEFAULT_LIMITS_PATH
+    def _load_json_dict_from_disk(self, tmp_path: Path, default_path: Path) -> Dict[str, Any]:
+        target_path = tmp_path if tmp_path.exists() else (default_path if default_path.exists() else None)
+        if not target_path:
+            return {}
+        try:
+            with open(target_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                return loaded if isinstance(loaded, dict) else {}
+        except Exception as e:
+            logger.warning(f"Failed to load dict from {target_path}: {e}")
+            return {}
 
-        if limit_path:
+    def _save_json_dict_to_disk(self, data: Dict[str, Any], default_path: Path, tmp_path: Path):
+        for path in (default_path, tmp_path):
             try:
-                with open(limit_path, "r", encoding="utf-8") as f:
-                    disk_limits = json.load(f)
-                    if isinstance(disk_limits, dict):
-                        for k, v in disk_limits.items():
-                            if k not in self._user_limits:
-                                self._user_limits[str(k)] = int(v)
-            except Exception as e:
-                logger.warning(f"Failed to load user limits from {limit_path}: {e}")
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
+    def _load_limits_from_disk(self):
+        disk_limits = self._load_json_dict_from_disk(TMP_LIMITS_PATH, DEFAULT_LIMITS_PATH)
+        for k, v in disk_limits.items():
+            if k not in self._user_limits:
+                try:
+                    self._user_limits[str(k)] = int(v)
+                except (TypeError, ValueError):
+                    continue
 
     def _save_limits_to_disk(self):
-        try:
-            DEFAULT_LIMITS_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(DEFAULT_LIMITS_PATH, "w", encoding="utf-8") as f:
-                json.dump(self._user_limits, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+        self._save_json_dict_to_disk(self._user_limits, DEFAULT_LIMITS_PATH, TMP_LIMITS_PATH)
 
-        try:
-            TMP_LIMITS_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(TMP_LIMITS_PATH, "w", encoding="utf-8") as f:
-                json.dump(self._user_limits, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+    def _load_platforms_from_disk(self):
+        disk_platforms = self._load_json_dict_from_disk(TMP_PLATFORMS_PATH, DEFAULT_PLATFORMS_PATH)
+        for k, v in disk_platforms.items():
+            val = str(v).lower()
+            if k not in self._user_platforms and val in ("android", "ios"):
+                self._user_platforms[str(k)] = val
+
+    def _save_platforms_to_disk(self):
+        self._save_json_dict_to_disk(self._user_platforms, DEFAULT_PLATFORMS_PATH, TMP_PLATFORMS_PATH)
 
     def _reload_if_needed(self, force: bool = False):
         """Ensures memory reflects latest state in serverless environments with 5s cache throttle."""
@@ -196,6 +233,13 @@ class UserService:
             else:
                 self._load_limits_from_disk()
 
+            cloud_platforms = supabase_service.fetch_user_platforms_config()
+            if cloud_platforms:
+                self._user_platforms.update(cloud_platforms)
+                self._save_platforms_to_disk()
+            else:
+                self._load_platforms_from_disk()
+
             cloud_users = supabase_service.fetch_all_users()
             if cloud_users is not None:
                 for u in cloud_users:
@@ -206,6 +250,8 @@ class UserService:
                         u["daily_limit"] = self._user_limits[uid]
                     else:
                         u["daily_limit"] = 5
+                    if uid in self._user_platforms:
+                        u["platform"] = self._user_platforms[uid]
                 self._users = cloud_users
 
             cloud_rxs = supabase_service.fetch_all_prescriptions()
@@ -215,6 +261,7 @@ class UserService:
             return
 
         self._load_limits_from_disk()
+        self._load_platforms_from_disk()
         if TMP_USERS_PATH.exists():
             try:
                 with open(TMP_USERS_PATH, "r", encoding="utf-8") as f:
@@ -275,13 +322,18 @@ class UserService:
             self._prescriptions = []
 
     def _load(self):
-        """Loads users, limits, and cloud prescriptions from Supabase or persistent files."""
+        """Loads users, limits, platforms, and cloud prescriptions from Supabase or persistent files."""
         self._load_limits_from_disk()
+        self._load_platforms_from_disk()
         if supabase_service.is_configured():
             cloud_limits = supabase_service.fetch_user_limits_config()
             if cloud_limits:
                 self._user_limits.update(cloud_limits)
                 self._save_limits_to_disk()
+            cloud_platforms = supabase_service.fetch_user_platforms_config()
+            if cloud_platforms:
+                self._user_platforms.update(cloud_platforms)
+                self._save_platforms_to_disk()
 
         # 1. Users
         if supabase_service.is_configured():
@@ -741,6 +793,31 @@ class UserService:
             return True
         return False
 
+    def record_user_platform(
+        self,
+        user_id: Optional[str],
+        user_agent: Optional[str] = None,
+        explicit_platform: Optional[str] = None,
+    ) -> Optional[str]:
+        """Records detected mobile OS ('android' or 'ios') for a user if detected and changed."""
+        if not user_id:
+            return None
+        detected = detect_client_platform(user_agent=user_agent, explicit_platform=explicit_platform)
+        if not detected:
+            return self._user_platforms.get(user_id)
+        if self._user_platforms.get(user_id) == detected:
+            return detected
+
+        self._user_platforms[user_id] = detected
+        for u in self._users:
+            if u.get("id") == user_id:
+                u["platform"] = detected
+                break
+        self._save_platforms_to_disk()
+        if supabase_service.is_configured():
+            supabase_service.save_user_platforms_config(self._user_platforms)
+        return detected
+
     def delete_user(self, user_id: str) -> bool:
         """Permanently deletes a user and all their cloud prescriptions (Apple Guideline 5.1.1(v))."""
         self._reload_if_needed()
@@ -750,6 +827,11 @@ class UserService:
         if len(self._users) < before_count:
             self._save_users()
             self._save_prescriptions()
+            if user_id in self._user_platforms:
+                self._user_platforms.pop(user_id, None)
+                self._save_platforms_to_disk()
+                if supabase_service.is_configured():
+                    supabase_service.save_user_platforms_config(self._user_platforms)
             if supabase_service.is_configured():
                 supabase_service.delete_user(user_id)
             return True
@@ -767,6 +849,7 @@ class UserService:
             user_data = sanitize_user(u)
             user_data["prescriptions_count"] = self.count_user_prescriptions(u["id"])
             user_data["daily_limit"] = int(self._user_limits.get(u["id"]) or u.get("daily_limit") or 5)
+            user_data["platform"] = self._user_platforms.get(u["id"]) or u.get("platform") or "unknown"
             scan_stats = quota_service.get_user_scan_stats(u["id"])
             user_data["today_scans"] = scan_stats["today_scans"]
             user_data["month_scans"] = scan_stats["month_scans"]
@@ -810,9 +893,15 @@ class UserService:
         global_scan_stats = quota_service.get_global_scan_stats()
 
         gov_counts: Dict[str, int] = {}
+        platform_counts: Dict[str, int] = {"android": 0, "ios": 0, "unknown": 0}
         for u in self._users:
             gov = u.get("governorate") or "غير محدد"
             gov_counts[gov] = gov_counts.get(gov, 0) + 1
+            plat = (self._user_platforms.get(u.get("id")) or u.get("platform") or "unknown").lower()
+            if plat in ("android", "ios"):
+                platform_counts[plat] += 1
+            else:
+                platform_counts["unknown"] += 1
 
         top_gov = "القاهرة"
         if gov_counts:
@@ -825,6 +914,7 @@ class UserService:
             "total_scans_month": global_scan_stats["month_scans"],
             "top_governorate": top_gov,
             "governorates_distribution": gov_counts,
+            "platform_counts": platform_counts,
         }
 
 

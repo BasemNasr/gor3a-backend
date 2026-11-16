@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gor3a | جرعة — لوحة تحكم الإدارة (Admin Dashboard)</title>
   <link rel="icon" type="image/png" href="/static/logo.png">
-  <link rel="stylesheet" href="/static/styles.css?v=3.1">
-  <link rel="stylesheet" href="/static/drugs.css?v=3.1">
-  <link rel="stylesheet" href="/static/admin.css?v=3.1">
+  <link rel="stylesheet" href="/static/styles.css?v=3.2">
+  <link rel="stylesheet" href="/static/drugs.css?v=3.2">
+  <link rel="stylesheet" href="/static/admin.css?v=3.2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -363,14 +363,22 @@
           </div>
 
           <!-- Mini Stats Ribbon -->
-          <div class="banner-mini-stats-grid" style="margin-bottom: 1.25rem;">
+          <div class="banner-mini-stats-grid" style="margin-bottom: 1rem;">
             <div class="mini-stat-box">
               <span class="mini-stat-title">إجمالي العملاء المسجلين</span>
               <span class="mini-stat-num" id="statUsersTotal" style="color: #0284c7;">0</span>
             </div>
             <div class="mini-stat-box">
+              <span class="mini-stat-title">🤖 عملاء Android</span>
+              <span class="mini-stat-num" id="statUsersAndroid" style="color: #15803d;">0</span>
+            </div>
+            <div class="mini-stat-box">
+              <span class="mini-stat-title">🍎 عملاء iOS (آيفون)</span>
+              <span class="mini-stat-num" id="statUsersIos" style="color: #0f172a;">0</span>
+            </div>
+            <div class="mini-stat-box">
               <span class="mini-stat-title">أعلى محافظة تواجداً</span>
-              <span class="mini-stat-num" id="statTopGov" style="font-size: 1.1rem; color: #00897b;">القاهرة</span>
+              <span class="mini-stat-num" id="statTopGov" style="font-size: 1.05rem; color: #00897b;">القاهرة</span>
             </div>
             <div class="mini-stat-box">
               <span class="mini-stat-title">إجمالي الروشتات المحفوظة</span>
@@ -386,6 +394,55 @@
             </div>
           </div>
 
+          <div class="users-platform-hint">
+            <span>📡</span>
+            <span>
+              يتم التعرف على نظام التشغيل (<strong>Android</strong> / <strong>iOS</strong>) تلقائياً من السيرفر بدون تحديث للتطبيق بمجرد فتح العميل للتطبيق أو تسجيل الدخول أو فحص روشتة. العملاء المسجلون قبل تفعيل الرصد يظهرون كـ «لم يُحدَّد بعد» حتى أول نشاط جديد لهم.
+            </span>
+          </div>
+
+          <!-- Search & Multi-Filter Toolbar -->
+          <div class="users-filter-toolbar">
+            <div class="users-filter-top-row">
+              <div class="users-platform-pills" id="userPlatformPills" role="group" aria-label="تصفية حسب نظام التشغيل">
+                <button type="button" class="platform-pill active" data-platform="all" id="pillPlatformAll">الكل (0)</button>
+                <button type="button" class="platform-pill" data-platform="android" id="pillPlatformAndroid">🤖 Android (0)</button>
+                <button type="button" class="platform-pill" data-platform="ios" id="pillPlatformIos">🍎 iOS (0)</button>
+                <button type="button" class="platform-pill" data-platform="unknown" id="pillPlatformUnknown">⏳ غير محدد (0)</button>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span id="usersFilteredBadge" style="font-size: 0.8rem; font-weight: 700; color: #0f766e;"></span>
+                <button type="button" id="resetUserFiltersBtn" class="btn btn-secondary btn-xs" title="إعادة ضبط جميع الفلاتر">↺ مسح الفلاتر</button>
+              </div>
+            </div>
+
+            <div class="users-filter-controls">
+              <select id="userGovFilter" class="users-filter-select" title="تصفية حسب المحافظة">
+                <option value="all">📍 كل المحافظات</option>
+              </select>
+              <select id="userGenderFilter" class="users-filter-select" title="تصفية حسب الجنس">
+                <option value="all">👤 كل الأجناس</option>
+                <option value="male">👨 ذكر</option>
+                <option value="female">👩 أنثى</option>
+              </select>
+              <select id="userActivityFilter" class="users-filter-select" title="تصفية حسب النشاط والروشتات">
+                <option value="all">📊 كل حالات النشاط</option>
+                <option value="has_rxs">📋 لديهم روشتات محفوظة</option>
+                <option value="active_today">🩺 نشط اليوم (فحص ≥ 1)</option>
+                <option value="limit_reached">⚠️ وصل للحد اليومي</option>
+                <option value="custom_limit">🎯 حد يومي مخصص</option>
+              </select>
+              <select id="userSortSelect" class="users-filter-select" title="ترتيب النتائج">
+                <option value="newest">🕒 الأحدث تسجيلاً</option>
+                <option value="oldest">🕒 الأقدم تسجيلاً</option>
+                <option value="last_active">⚡ آخر نشاط</option>
+                <option value="most_scans">📈 الأكثر فحوصات (الشهر)</option>
+                <option value="most_rxs">📋 الأكثر روشتات</option>
+                <option value="name_asc">🔤 الاسم (أ - ي)</option>
+              </select>
+            </div>
+          </div>
+
           <!-- Users Table Container -->
           <div class="admin-table-container">
             <table class="admin-table" id="usersTable">
@@ -393,6 +450,7 @@
                 <tr>
                   <th style="width: 50px; text-align: center;">#</th>
                   <th>العميل</th>
+                  <th>المنصة 📱</th>
                   <th>رقم الهاتف (واتساب)</th>
                   <th>المحافظة 📍</th>
                   <th style="text-align: center;">الحد اليومي 🎯</th>
@@ -409,11 +467,28 @@
             </table>
           </div>
 
+          <!-- Pagination Bar -->
+          <div id="usersPaginationBar" class="users-pagination-bar hidden">
+            <div class="users-pagination-meta">
+              <span id="usersPaginationInfo">عرض 0–0 من أصل 0 عميل</span>
+              <label style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                <span>عدد الصفوف:</span>
+                <select id="usersPageSize" class="users-filter-select" style="min-width: 72px; padding: 0.25rem 0.5rem;">
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </label>
+            </div>
+            <div class="users-pagination-btns" id="usersPaginationBtns"></div>
+          </div>
+
           <!-- Empty State -->
           <div id="usersEmptyState" class="banners-empty-card hidden" style="text-align: center; padding: 2.5rem 1rem;">
             <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">👥</span>
-            <h4>لا يوجد عملاء مسجلين بعد</h4>
-            <p class="text-muted">عند قيام أول مستخدم بالتسجيل من تطبيق الموبايل ستظهر بياناته هنا فوراً.</p>
+            <h4 id="usersEmptyTitle">لا يوجد عملاء مطابقون للبحث</h4>
+            <p id="usersEmptyDesc" class="text-muted">جرّب تعديل كلمات البحث أو مسح الفلاتر لعرض جميع العملاء.</p>
           </div>
         </div>
       </section>
@@ -1218,7 +1293,7 @@
   <!-- Toast Notification -->
   <div id="adminToast" class="eda-toast hidden">تم الحفظ بنجاح!</div>
 
-  <script src="/static/admin.js?v=3.2"></script>
+  <script src="/static/admin.js?v=3.3"></script>
   <script src="/static/app.js?v=3.2"></script>
 </body>
 </html>

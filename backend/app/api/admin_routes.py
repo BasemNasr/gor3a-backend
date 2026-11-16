@@ -18,6 +18,7 @@ from ..providers.factory import register_provider
 from ..providers.gemini import GeminiProvider
 from ..services.banner_service import EGYPTIAN_GOVERNORATES, banner_service
 from ..services.gemini_key_manager import gemini_key_manager, mask_key
+from ..services.supabase_service import supabase_service
 from ..services.user_service import user_service
 
 logger = logging.getLogger(__name__)
@@ -631,6 +632,11 @@ async def admin_delete_user(
         user_service._save_limits_to_disk()
         if supabase_service.is_configured():
             supabase_service.save_user_limits_config(user_service._user_limits)
+    if user_id in user_service._user_platforms:
+        user_service._user_platforms.pop(user_id, None)
+        user_service._save_platforms_to_disk()
+        if supabase_service.is_configured():
+            supabase_service.save_user_platforms_config(user_service._user_platforms)
     if supabase_service.is_configured():
         supabase_service.delete_user(user_id)
 

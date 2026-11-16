@@ -59,6 +59,8 @@ class PrescriptionsSyncPayload(BaseModel):
 async def get_current_user(
     authorization: Optional[str] = Header(None),
     token: Optional[str] = Query(None),
+    user_agent: Optional[str] = Header(None, alias="User-Agent"),
+    x_platform: Optional[str] = Header(None, alias="X-Platform"),
 ) -> Dict[str, Any]:
     raw_token = None
     if authorization:
@@ -86,6 +88,7 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="المستخدم غير موجود بالنظام",
         )
+    user_service.record_user_platform(user_id, user_agent=user_agent, explicit_platform=x_platform)
     return user
 
 
@@ -93,7 +96,11 @@ async def get_current_user(
 # Endpoints
 # ==============================================================================
 @router.post("/auth/register")
-async def register_user(payload: RegisterRequest):
+async def register_user(
+    payload: RegisterRequest,
+    user_agent: Optional[str] = Header(None, alias="User-Agent"),
+    x_platform: Optional[str] = Header(None, alias="X-Platform"),
+):
     """
     Registers a new mobile app user with strict Egyptian phone validation, password hashing, and gender.
     If already registered with matching credentials, seamlessly logs the user in.
@@ -108,6 +115,11 @@ async def register_user(payload: RegisterRequest):
             gender=payload.gender,
             age=payload.age,
         )
+        detected_platform = user_service.record_user_platform(
+            user.get("id"), user_agent=user_agent, explicit_platform=x_platform
+        )
+        if detected_platform:
+            user["platform"] = detected_platform
         msg = "مرحباً بك مجدداً، تم تسجيل دخولك لحسابك بنجاح ✓" if is_existing else "تم إنشاء حسابك بنجاح ✓"
         return {
             "success": True,
@@ -122,7 +134,11 @@ async def register_user(payload: RegisterRequest):
 
 
 @router.post("/auth/login")
-async def login_user(payload: LoginRequest):
+async def login_user(
+    payload: LoginRequest,
+    user_agent: Optional[str] = Header(None, alias="User-Agent"),
+    x_platform: Optional[str] = Header(None, alias="X-Platform"),
+):
     """
     Logs in user with phone number and password.
     """
@@ -131,6 +147,11 @@ async def login_user(payload: LoginRequest):
             phone=payload.phone,
             password=payload.password,
         )
+        detected_platform = user_service.record_user_platform(
+            user.get("id"), user_agent=user_agent, explicit_platform=x_platform
+        )
+        if detected_platform:
+            user["platform"] = detected_platform
         msg = f"مرحباً بك {user.get('name', '')} في جرعة ✓"
         return {
             "success": True,
