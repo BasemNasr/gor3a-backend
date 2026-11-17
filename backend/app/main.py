@@ -99,6 +99,16 @@ if WEB_DIR.exists() and not is_hf_space:
             return FileResponse(terms_file)
         return {"message": "Terms of service page not found in web/terms.html."}
 
+    @app.api_route("/download", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/app", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/get", methods=["GET", "HEAD"], include_in_schema=False)
+    @app.api_route("/onelink", methods=["GET", "HEAD"], include_in_schema=False)
+    async def serve_download_onelink():
+        download_file = WEB_DIR / "download.html"
+        if download_file.exists():
+            return FileResponse(download_file)
+        return {"message": "Download OneLink page not found in web/download.html."}
+
 
 if __name__ == "__main__":
     import uvicorn

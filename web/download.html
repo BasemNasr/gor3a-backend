@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تحميل تطبيق جرعة | Gor3a — Google Play & App Store</title>
+  <meta name="description" content="حمّل تطبيق جرعة (Gor3a) مجاناً للآيفون والأندرويد — المسح الذكي للروشتات الطبية بالذكاء الاصطناعي ودليل 25,098 دواء مصري.">
+
+  <!-- Open Graph / Facebook / WhatsApp Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="تحميل تطبيق جرعة | Gor3a">
+  <meta property="og:description" content="حوّل خط الطبيب اليدوي في الروشتة فوراً إلى بيانات أدوية دقيقة، تشخيص مقترح، وأسعار الصيدليات الرسمية. متوفر الآن على Android وiPhone.">
+  <meta property="og:image" content="https://gor3a-backend.vercel.app/static/logo.png">
+  <meta property="og:url" content="https://gor3a-backend.vercel.app/download">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#00897B">
+  <link rel="icon" type="image/png" href="/static/logo.png">
+
+  <style>
+    :root {
+      --teal: #00897b;
+      --teal-dark: #00695c;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Cairo", Tahoma, Arial, sans-serif;
+      background: radial-gradient(circle at top right, rgba(0, 137, 123, 0.12), transparent 55%),
+                  radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.1), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+
+    .onelink-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.12);
+    }
+
+    .app-logo {
+      width: 84px;
+      height: 84px;
+      border-radius: 22px;
+      object-fit: cover;
+      margin: 0 auto 1rem;
+      display: block;
+      box-shadow: 0 12px 26px rgba(0, 137, 123, 0.25);
+    }
+
+    .app-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 0.35rem;
+      color: var(--text);
+    }
+
+    .app-subtitle {
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.95rem;
+      border-radius: 999px;
+      background: #f0fdfa;
+      color: var(--teal-dark);
+      border: 1px solid #99f6e4;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 1.35rem;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(0, 137, 123, 0.25);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .store-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .store-link-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1.2rem;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.98rem;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      border: 1.5px solid transparent;
+    }
+
+    .store-link-btn:active {
+      transform: scale(0.98);
+    }
+
+    .store-link-btn.btn-android {
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+      color: #ffffff;
+      box-shadow: 0 10px 22px -6px rgba(0, 137, 123, 0.45);
+    }
+
+    .store-link-btn.btn-ios {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 10px 22px -6px rgba(15, 23, 42, 0.35);
+    }
+
+    .store-link-btn.highlighted {
+      outline: 3px solid rgba(0, 137, 123, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .store-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: start;
+      line-height: 1.2;
+    }
+
+    .store-meta small {
+      font-size: 0.7rem;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+
+    .store-meta strong {
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .qr-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .qr-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.75rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .qr-card img {
+      width: 96px;
+      height: 96px;
+      background: #ffffff;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .home-link {
+      display: inline-block;
+      margin-top: 1.15rem;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--teal);
+      text-decoration: none;
+    }
+
+    .home-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <main class="onelink-card">
+    <img src="/static/logo.png" alt="Gor3a Logo" class="app-logo">
+    <h1 class="app-title">جرعة | Gor3a</h1>
+    <p class="app-subtitle">
+      المسح الذكي للروشتات الطبية بالذكاء الاصطناعي ودليل الأدوية المصرية الرسمي (25,098 دواء).
+    </p>
+
+    <div class="status-pill" id="redirectStatus">
+      <span class="spinner" id="redirectSpinner"></span>
+      <span id="redirectStatusText">جاري التعرف على جهازك وتحويلك للمتجر...</span>
+    </div>
+
+    <div class="store-stack" id="storeButtons">
+      <a href="https://apps.apple.com/us/app/%D8%AC%D8%B1%D8%B9%D8%A9-gor3a/id6832481541"
+         id="iosStoreBtn"
+         class="store-link-btn btn-ios"
+         rel="noopener noreferrer">
+        <svg width="26" height="26" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+          <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+        </svg>
+        <div class="store-meta">
+          <small>تحميل للآيفون والآيباد من</small>
+          <strong>App Store</strong>
+        </div>
+      </a>
+
+      <a href="https://play.google.com/store/apps/details?id=com.bn.gor3a"
+         id="androidStoreBtn"
+         class="store-link-btn btn-android"
+         rel="noopener noreferrer">
+        <svg width="26" height="26" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+          <path fill="#A7F3D0" d="M48 59.49v393a14.07 14.07 0 0 0 22.2 11.49L284 256 70.2 48A14.07 14.07 0 0 0 48 59.49z"/>
+          <path fill="#FDE68A" d="M361.4 333.4 284 256l77.4-77.4 91.5 52.3c18.8 10.7 18.8 39.5 0 50.2l-91.5 52.3z"/>
+          <path fill="#BAE6FD" d="M70.2 48 284 256l77.4-77.4L95.7 26.8C83.8 20 69.5 29.8 70.2 48z"/>
+          <path fill="#FECACA" d="M284 256 70.2 464c-.7 18.2 13.6 28 25.5 21.2l265.7-151.8L284 256z"/>
+        </svg>
+        <div class="store-meta">
+          <small>تحميل للأندرويد من</small>
+          <strong>Google Play</strong>
+        </div>
+      </a>
+    </div>
+
+    <div class="qr-grid" id="desktopQrGrid">
+      <a href="https://apps.apple.com/us/app/%D8%AC%D8%B1%D8%B9%D8%A9-gor3a/id6832481541" class="qr-card" target="_blank" rel="noopener noreferrer">
+        <img src="/static/appstore-qr.svg" alt="App Store QR Code">
+        <span>🍎 آيفون (App Store)</span>
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=com.bn.gor3a" class="qr-card" target="_blank" rel="noopener noreferrer">
+        <img src="/static/playstore-qr.svg" alt="Google Play QR Code">
+        <span>🤖 أندرويد (Google Play)</span>
+      </a>
+    </div>
+
+    <a href="/" class="home-link">العودة إلى الموقع الرسمي لتطبيق جرعة ←</a>
+  </main>
+
+  <script>
+    (function () {
+      var IOS_URL = "https://apps.apple.com/us/app/%D8%AC%D8%B1%D8%B9%D8%A9-gor3a/id6832481541";
+      var ANDROID_URL = "https://play.google.com/store/apps/details?id=com.bn.gor3a";
+
+      var params = new URLSearchParams(window.location.search);
+      var forcedStore = (params.get("store") || "").toLowerCase();
+
+      var ua = navigator.userAgent || navigator.vendor || window.opera || "";
+      var isIPadDesktopMode = /Macintosh/i.test(ua) && navigator.maxTouchPoints && navigator.maxTouchPoints > 1;
+      var isIOS = forcedStore === "ios" || (!forcedStore && (/iPad|iPhone|iPod/i.test(ua) || isIPadDesktopMode) && !window.MSStream);
+      var isAndroid = forcedStore === "android" || (!forcedStore && /Android/i.test(ua));
+
+      var statusEl = document.getElementById("redirectStatusText");
+      var spinnerEl = document.getElementById("redirectSpinner");
+      var iosBtn = document.getElementById("iosStoreBtn");
+      var androidBtn = document.getElementById("androidStoreBtn");
+      var storeStack = document.getElementById("storeButtons");
+
+      if (isIOS) {
+        if (statusEl) statusEl.textContent = "تم التعرف على جهاز iPhone/iPad — جاري فتح App Store...";
+        if (iosBtn) iosBtn.classList.add("highlighted");
+        if (storeStack && iosBtn) storeStack.prepend(iosBtn);
+        setTimeout(function () {
+          window.location.replace(IOS_URL);
+        }, 80);
+      } else if (isAndroid) {
+        if (statusEl) statusEl.textContent = "تم التعرف على جهاز Android — جاري فتح Google Play...";
+        if (androidBtn) androidBtn.classList.add("highlighted");
+        if (storeStack && androidBtn) storeStack.prepend(androidBtn);
+        setTimeout(function () {
+          window.location.replace(ANDROID_URL);
+        }, 80);
+      } else {
+        if (spinnerEl) spinnerEl.style.display = "none";
+        if (statusEl) statusEl.textContent = "اختر متجر التطبيقات المناسب لهاتفك أو امسح رمز QR:";
+      }
+    })();
+  </script>
+</body>
+</html>
